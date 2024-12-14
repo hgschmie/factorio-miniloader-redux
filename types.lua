@@ -4,8 +4,22 @@
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
---
+-- prototypes/templates
 ----------------------------------------------------------------------------------------------------
+
+---@class data.LoaderTemplate
+---@field prefix string?
+---@field name string?
+---@field localised_name string?
+---@field order string
+---@field subgroup string
+---@field speed integer
+---@field next_upgrade string?
+---@field tint Color?
+---@field loader_tier string?
+---@field stack_size number?
+---@field condition (fun():boolean)?
+
 
 ----------------------------------------------------------------------------------------------------
 --
