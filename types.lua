@@ -4,7 +4,7 @@
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
--- prototypes/templates
+-- prototypes/templates.lua
 ----------------------------------------------------------------------------------------------------
 
 ---@class miniloader.LoaderTemplate
@@ -22,6 +22,14 @@
 
 
 ----------------------------------------------------------------------------------------------------
---
+-- scripts/controller.lua
 ----------------------------------------------------------------------------------------------------
 
+---@class miniloader.Storage
+---@field VERSION integer
+---@field supported_loaders table<string, true>
+---@field count integer
+---@field miniloaders table<number, miniloader.Data>
+
+---@class miniloader.Data
+---@field main LuaEntity
