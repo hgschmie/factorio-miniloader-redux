@@ -9,11 +9,13 @@ local Player = require('stdlib.event.player')
 local tools = require('framework.tools')
 local const = require('lib.constants')
 
+
 --------------------------------------------------------------------------------
 -- mod init/load code
 --------------------------------------------------------------------------------
 
 local function onInitMiniloaders()
+    This.MiniLoader:init()
 end
 
 local function onLoadMiniloaders()
@@ -34,6 +36,8 @@ end
 
 ---@param changed ConfigurationChangedData?
 local function onConfigurationChanged(changed)
+    This.MiniLoader:init()
+    This.MiniLoader:update_supported_loaders()
 end
 
 --------------------------------------------------------------------------------

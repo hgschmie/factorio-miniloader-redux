@@ -9,6 +9,8 @@
 -- globals
 --------------------------------------------------------------------------------
 
+local table = require('stdlib.utils.table')
+
 local Constants = {}
 
 --------------------------------------------------------------------------------
@@ -16,7 +18,7 @@ local Constants = {}
 --------------------------------------------------------------------------------
 
 -- the current version that is the result of the latest migration
-Constants.current_version = 1
+Constants.CURRENT_VERSION = 1
 
 Constants.prefix = 'hps__ml-'
 Constants.name = 'miniloader'
@@ -69,7 +71,6 @@ function Constants:name_from_prefix(prefix)
     return self:with_prefix(name)
 end
 
-
 --------------------------------------------------------------------------------
 -- entity names and maps
 --------------------------------------------------------------------------------
@@ -77,9 +78,28 @@ end
 -- Base name
 Constants.miniloader_name = Constants:with_prefix(Constants.name)
 
+Constants.supported_type_names = {
+    'loader-1x1',
+}
+
+Constants.supported_types = table.array_to_dictionary(Constants.supported_type_names, true)
+
+Constants.snapping_type_names = {
+    'lane-splitter', 'linked-belt', 'loader', 'loader-1x1', 'splitter', 'underground-belt', 'transport-belt'
+}
+
+-- supported types for snapping
+---@type table<string, true>
+Constants.snapping_types = table.array_to_dictionary(Constants.snapping_type_names, true)
+
+
 --------------------------------------------------------------------------------
 -- settings
 --------------------------------------------------------------------------------
+
+Constants.settings = {
+    loader_snapping = Constants:with_prefix('loader_snapping')
+}
 
 --------------------------------------------------------------------------------
 -- localization

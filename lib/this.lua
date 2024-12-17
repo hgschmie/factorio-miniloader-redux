@@ -5,25 +5,17 @@
 
 ---@class InvSensorModThis
 ---@field other_mods table<string, string>
----@field SensorController InventorySensorController
----@field gui InventorySensorGui?
+---@field MiniLoader miniloader.Controller
 local This = {
     other_mods = {
 --        PickerDollies = 'picker-dollies',
 --        ['even-pickier-dollies'] = 'picker-dollies',
     },
 
---    SensorController = require('scripts.controller'),
---    gui = nil,
+    MiniLoader = require('scripts.controller')
 }
 
-function This:this_runtime()
-    if script then
---        This.gui = This.gui or require('scripts.gui') --[[@as InventorySensorGui ]]
-    end
-end
-
--- Framework.settings:add_defaults(require('scripts.settings'))
+Framework.settings:add_defaults(require('scripts.settings'))
 
 ----------------------------------------------------------------------------------------------------
 

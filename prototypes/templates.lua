@@ -3,7 +3,7 @@
 -- Loader templates
 ------------------------------------------------------------------------
 
----@type table<string, data.LoaderTemplate>
+---@type table<string, miniloader.LoaderTemplate>
 local templates = {
     -- regular miniloader, base game
     [''] = {

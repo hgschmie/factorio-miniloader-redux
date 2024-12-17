@@ -7,7 +7,7 @@
 -- prototypes/templates
 ----------------------------------------------------------------------------------------------------
 
----@class data.LoaderTemplate
+---@class miniloader.LoaderTemplate
 ---@field prefix string?
 ---@field name string?
 ---@field localised_name string?

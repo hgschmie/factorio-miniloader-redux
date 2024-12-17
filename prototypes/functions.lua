@@ -12,19 +12,19 @@ require 'circuit-connector-sprites'
 local connector_definitions = circuit_connector_definitions.create_vector(
     universal_connector_template,
     {
-        { variation = 26, main_offset = util.by_pixel(1, 11),   shadow_offset = util.by_pixel(1, 12), show_shadow = true },  -- North
-        { variation = 24, main_offset = util.by_pixel(-15, 0),  shadow_offset = { 0, 0 }, },                                 -- East
-        { variation = 24, main_offset = util.by_pixel(-17, 0),  shadow_offset = { 0, 0 }, },                                 -- South
-        { variation = 31, main_offset = util.by_pixel(15, 0),   shadow_offset = { 0, 0 }, },                                 -- West
+        { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = util.by_pixel(1, 12), show_shadow = true },   -- North
+        { variation = 24, main_offset = util.by_pixel(-15, 0), shadow_offset = { 0, 0 }, },                                  -- East
+        { variation = 24, main_offset = util.by_pixel(-17, 0), shadow_offset = { 0, 0 }, },                                  -- South
+        { variation = 31, main_offset = util.by_pixel(15, 0),  shadow_offset = { 0, 0 }, },                                  -- West
 
-        { variation = 31, main_offset = util.by_pixel(17, 0),   shadow_offset = { 0, 0 }, },                                 -- South
-        { variation = 31, main_offset = util.by_pixel(15, 0),   shadow_offset = { 0, 0 }, },                                 -- West
-        { variation = 30, main_offset = util.by_pixel(0, 11),   shadow_offset = util.by_pixel(0, 12), show_shadow = true, }, -- North
-        { variation = 24, main_offset = util.by_pixel(-15, 0),  shadow_offset = { 0, 0 }, },                                 -- East
+        { variation = 31, main_offset = util.by_pixel(17, 0),  shadow_offset = { 0, 0 }, },                                  -- South
+        { variation = 31, main_offset = util.by_pixel(15, 0),  shadow_offset = { 0, 0 }, },                                  -- West
+        { variation = 30, main_offset = util.by_pixel(0, 11),  shadow_offset = util.by_pixel(0, 12), show_shadow = true, },  -- North
+        { variation = 24, main_offset = util.by_pixel(-15, 0), shadow_offset = { 0, 0 }, },                                  -- East
     }
 )
 
----@param params data.LoaderTemplate
+---@param params miniloader.LoaderTemplate
 local function create_item(params)
     local item = {
         -- PrototypeBase
@@ -54,7 +54,7 @@ local function create_item(params)
     data:extend { item }
 end
 
----@param params data.LoaderTemplate
+---@param params miniloader.LoaderTemplate
 local function create_entity(params)
     local entity = {
         -- Prototype Base
