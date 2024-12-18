@@ -27,9 +27,14 @@
 
 ---@class miniloader.Storage
 ---@field VERSION integer
----@field supported_loaders table<string, true>
 ---@field count integer
 ---@field miniloaders table<number, miniloader.Data>
 
+---@class miniloader.Config
+---@field enabled boolean
+---@field status defines.entity_status?
+
 ---@class miniloader.Data
 ---@field main LuaEntity
+---@field config miniloader.Config
+---@field ref table<string, LuaEntity>

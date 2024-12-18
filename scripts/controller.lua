@@ -10,7 +10,51 @@ require('stdlib.utils.string')
 local const = require('lib.constants')
 
 ---@class miniloader.Controller
-local Controller = {}
+---@field supported_loaders table<string, true>
+---@field supported_loader_names string[]
+local Controller = {
+    supported_loaders = {},
+    supported_loader_names = {},
+}
+
+if script then
+    for prototype_name, prototype in pairs(prototypes.entity) do
+        -- currently only supports 1x1 loaders
+        if prototype_name:starts_with(const.prefix) and const.supported_types[prototype.type] then
+            Controller.supported_loaders[prototype_name] = true
+            table.insert(Controller.supported_loader_names, prototype_name)
+        end
+    end
+end
+
+------------------------------------------------------------------------
+
+---@type miniloader.Config
+local default_config = {
+    enabled = true,
+}
+
+--- Creates a default configuration with some fields overridden by
+--- an optional parent.
+---
+---@param parent_config miniloader.Config
+---@return miniloader.Config
+local function create_config(parent_config)
+    parent_config = parent_config or default_config
+
+    local config = {}
+    -- iterate over all field names given in the default_config
+    for field_name, _ in pairs(default_config) do
+        if parent_config[field_name] ~= nil then
+            config[field_name] = parent_config[field_name]
+        else
+            config[field_name] = default_config[field_name]
+        end
+    end
+
+    return config
+end
+
 
 ------------------------------------------------------------------------
 
@@ -19,7 +63,6 @@ function Controller:init()
     ---@type miniloader.Storage
     storage.ml_data = storage.ml_data or {
         VERSION = const.CURRENT_VERSION,
-        supported_loaders = {},
         count = 0,
         miniloaders = {},
     }
@@ -68,22 +111,9 @@ function Controller:setEntity(entity_id, ml_entity)
     end
 end
 
-
 ------------------------------------------------------------------------
 --
 ------------------------------------------------------------------------
-
-function Controller:update_supported_loaders()
-    local supported_loaders = {}
-    for prototype_name, prototype in pairs(prototypes.entity) do
-        -- currently only supports 1x1 loaders
-        if prototype_name:starts_with(const.prefix) and const.supported_types[prototype.type] then
-            supported_loaders[prototype_name] = true
-        end
-    end
-
-    storage.ml_data.supported_loaders = supported_loaders
-end
 
 ---@param entity LuaEntity?
 ---@return boolean
@@ -107,6 +137,21 @@ function Controller:create(main, player_index, tags)
     if not Is.Valid(main) then return end
 
     local entity_id = main.unit_number --[[@as integer]]
+
+    assert(self:getEntity(entity_id) == nil)
+
+    -- if true, draw all combinators and wires. For debugging
+    local debug = player_index and Framework.settings:runtime_setting('debug_mode') --[[@as boolean]]
+
+    -- if tags were passed in and they contain a fc config, use that.
+    local config = create_config(tags and tags['fc_config'] --[[@as FilterCombinatorConfig]])
+    config.status = main.status
+
+    ---@type miniloader.Data
+    local ml_entity = {
+        main = main,
+        ref = { main = main, },
+    }
 end
 
 --- Destroys a Miniloader and all its sub-entities
@@ -120,6 +165,5 @@ function Controller:destroy(entity_id)
 end
 
 ------------------------------------------------------------------------
-
 
 return Controller

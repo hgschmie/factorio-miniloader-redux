@@ -79,7 +79,7 @@ end
 Constants.miniloader_name = Constants:with_prefix(Constants.name)
 
 Constants.supported_type_names = {
-    'loader-1x1',
+    'simple-entity-with-owner',
 }
 
 Constants.supported_types = table.array_to_dictionary(Constants.supported_type_names, true)

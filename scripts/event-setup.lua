@@ -11,7 +11,6 @@ local tools = require('framework.tools')
 
 local const = require('lib.constants')
 
-
 --------------------------------------------------------------------------------
 -- mod init/load code
 --------------------------------------------------------------------------------
@@ -62,12 +61,6 @@ end
 
 ---@param event EventData.on_object_destroyed
 local function onObjectDestroyed(event)
-    -- is it a ghost?
-    if storage.ghosts and storage.ghosts[event.useful_id] then
-        storage.ghosts[event.useful_id] = nil
-        return
-    end
-
     -- or a main entity?
     local ml_entity = This.MiniLoader:getEntity(event.useful_id)
     if not ml_entity then return end
@@ -85,7 +78,6 @@ end
 ---@param changed ConfigurationChangedData?
 local function onConfigurationChanged(changed)
     This.MiniLoader:init()
-    This.MiniLoader:update_supported_loaders()
     storage.ml_data.miniloaders = storage.ml_data.miniloaders or {}
     storage.ml_data.count = storage.ml_data.count or 0
 end
@@ -96,7 +88,7 @@ end
 -- event registration
 --------------------------------------------------------------------------------
 
-local ml_entity_filter = tools.create_event_entity_matcher('type', const.supported_type_names)
+local ml_entity_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_loader_names)
 
 -- mod init code
 Event.on_init(onInitMiniloaders)
@@ -110,7 +102,7 @@ Event.register(defines.events.on_runtime_mod_setting_changed, onConfigurationCha
 Event.register(defines.events.on_object_destroyed, onObjectDestroyed, ml_entity_filter)
 
 -- manage ghost building (robot building) Register all ghosts we are interested in
-Framework.ghost_manager:register_for_ghost_names(const.miniloader_name)
+Framework.ghost_manager:register_for_ghost_names(This.MiniLoader.supported_loader_names)
 
 -- entity create / delete
 tools.event_register(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)

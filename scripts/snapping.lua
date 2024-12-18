@@ -217,8 +217,8 @@ local function onEntityCreated(event)
     end
 end
 
-local ml_entity_filter = tools.create_event_entity_matcher('type', const.snapping_type_names)
+local ml_entity_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_loader_names)
 
-Event.on_event(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)
+-- Event.on_event(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)
 
-Event.on_event(defines.events.on_player_rotated_entity, onRotatedEntity, ml_entity_filter)
+-- Event.on_event(defines.events.on_player_rotated_entity, onRotatedEntity, ml_entity_filter)
