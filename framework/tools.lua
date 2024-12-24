@@ -71,18 +71,28 @@ end
 -- entity event matcher management
 --------------------------------------------------------------------------------
 
-local function create_matcher(values, entity_matcher)
+---@param values string|string[] One or more values to match.
+---@param entity_matcher fun(entity: LuaEntity?, pattern: any?): boolean
+---@param invert boolean?
+---@return fun(entity: LuaEntity?, pattern: any?): boolean
+local function create_matcher(values, entity_matcher, invert)
+    invert = invert or false
+
     if type(values) ~= 'table' then
         values = { values }
     end
     local matcher_map = table.array_to_dictionary(values, true)
 
     return function(entity, pattern)
-        if not Is.Valid(entity) then return false end
-        return matcher_map[entity_matcher(entity, pattern)]
+        if not Is.Valid(entity) then return false end -- invalid is always not a match
+        local match = matcher_map[entity_matcher(entity, pattern)] or false
+
+        return (match and not invert) or (not match and invert) -- discrete XOR ...
     end
 end
 
+---@param matcher_function fun(entity: LuaEntity?, pattern: any?): boolean
+---@return fun(ev: EventData, pattern: any?): boolean
 local function create_event_matcher(matcher_function)
     return function(event, pattern)
         if not event then return false end
@@ -91,36 +101,39 @@ local function create_event_matcher(matcher_function)
             return matcher_function(event.source, pattern) and matcher_function(event.destination, pattern)
         end
 
-        return matcher_function(event.entity, pattern)
+        return matcher_function(event.entity --[[@as LuaEntity? ]], pattern)
     end
 end
 
 ---@param attribute string The entity attribute to match.
 ---@param values string|string[] One or more values to match.
----@return function(ev: EventData, pattern: any): boolean event_matcher
-function Tools.create_event_entity_matcher(attribute, values)
+---@param invert boolean?
+---@return function(ev: EventData, pattern: any?): boolean event_matcher
+function Tools.create_event_entity_matcher(attribute, values, invert)
     local matcher_function = create_matcher(values, function(entity)
         return entity and entity[attribute]
-    end)
+    end, invert)
 
     return create_event_matcher(matcher_function)
 end
 
 ---@param attribute string The entity attribute to match.
 ---@param values string|string[] One or more values to match.
+---@param invert boolean?
 ---@return function(ev: EventData, pattern: any): boolean event_matcher
-function Tools.create_event_ghost_entity_matcher(attribute, values)
+function Tools.create_event_ghost_entity_matcher(attribute, values, invert)
     local matcher_function = create_matcher(values, function(entity)
         return entity and entity.type == 'entity-ghost' and entity[attribute]
-    end)
+    end, invert)
 
     return create_event_matcher(matcher_function)
 end
 
 ---@param values string|string[] One or more names to match to the ghost_name field.
+---@param invert boolean?
 ---@return function(ev: EventData, pattern: any): boolean event_matcher
-function Tools.create_event_ghost_entity_name_matcher(values)
-    return Tools.create_event_ghost_entity_matcher('ghost_name', values)
+function Tools.create_event_ghost_entity_name_matcher(values, invert)
+    return Tools.create_event_ghost_entity_matcher('ghost_name', values, invert)
 end
 
 --------------------------------------------------------------------------------
