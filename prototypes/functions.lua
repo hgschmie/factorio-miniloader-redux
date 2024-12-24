@@ -9,7 +9,12 @@ local collision_mask_util = require('collision-mask-util')
 require 'circuit-connector-generated-definitions'
 require 'circuit-connector-sprites'
 
-local connector_definitions = circuit_connector_definitions.create_vector(
+--
+-- similar to the existing miniloader module, this uses an inserter as the "main" entity.
+-- unlike the miniloader, it manages all other entities fully. It also uses different inserter entities for
+-- primary and hidden inserters which allows for correct power stats and blueprints.
+
+local loader_connector_definitions = circuit_connector_definitions.create_vector(
     universal_connector_template,
     {
         { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = util.by_pixel(1, 12), show_shadow = true },  -- North
@@ -21,6 +26,16 @@ local connector_definitions = circuit_connector_definitions.create_vector(
         { variation = 31, main_offset = util.by_pixel(15, 0),  shadow_offset = { 0, 0 }, },                                 -- West
         { variation = 30, main_offset = util.by_pixel(0, 11),  shadow_offset = util.by_pixel(0, 12), show_shadow = true, }, -- North
         { variation = 24, main_offset = util.by_pixel(-15, 0), shadow_offset = { 0, 0 }, },                                 -- East
+    }
+)
+
+local inserter_connector_definitions = circuit_connector_definitions.create_vector(
+    universal_connector_template,
+    {
+        { variation = 31, main_offset = util.by_pixel(17, 0),  shadow_offset = { 0, 0 }, }, -- North
+        { variation = 30, main_offset = util.by_pixel(0, 11),  shadow_offset = { 0, 0 }, }, -- West
+        { variation = 24, main_offset = util.by_pixel(-17, 0), shadow_offset = { 0, 0 }, }, -- South
+        { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = { 0, 0 }, }, -- East
     }
 )
 
@@ -57,25 +72,41 @@ end
 ---@param params miniloader.LoaderTemplate
 local function create_entity(params)
     local entity_name = params.name
-    local loader_name = entity_name .. '-loader'
+    local loader_name = const.loader_name(entity_name)
+    local inserter_name = const.inserter_name(entity_name)
 
+    local items_per_second = math.floor(params.speed * 480 * 100 + 0.5) / 100
+    local description = { '',
+        '[font=default-semibold][color=255,230,192]',
+        { 'description.belt-speed' },
+        ':[/color][/font] ',
+        tostring(items_per_second),
+        ' ',
+        { 'description.belt-items' },
+        { 'per-second-suffix' }
+    }
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
     -- - it has four different pictures
     -- - it has no wire connections
 
-    local entity = {
+    local inserter = {
         -- Prototype Base
+        type = 'inserter',
         name = entity_name,
-        type = 'simple-entity-with-owner',
-        localised_name = params.localised_name,
         order = params.order,
+        localised_name = params.localised_name,
+        localised_description = description,
         subgroup = params.subgroup,
         hidden = false,
+        hidden_in_factoriopedia = false,
 
-        -- SimpleEntityWithOwnerPrototype
-        render_layer = 'object',
-        picture = {
+        -- InserterPrototype
+        extension_speed = 1,
+        rotation_speed = 0.5,
+        insert_position = { 0, 0 },
+        pickup_position = { 0, 0 },
+        platform_picture = {
             sheets = {
                 -- Base
                 {
@@ -108,9 +139,47 @@ local function create_entity(params)
                 }
             }
         },
+        hand_base_picture = util.empty_sprite(),
+        hand_open_picture = util.empty_sprite(),
+        hand_closed_picture = util.empty_sprite(),
+        hand_base_shadow = util.empty_sprite(),
+        hand_open_shadow = util.empty_sprite(),
+        hand_closed_shadow = util.empty_sprite(),
+        energy_source = {
+            type = 'electric',
+            usage_priority = 'secondary-input',
+        },
+        energy_per_movement = '2kJ',
+        energy_per_rotation = '2kJ',
+        -- energy_source = { type = 'void', },
+        -- energy_per_movement = '.0000001J',
+        -- energy_per_rotation = '.0000001J',
+        bulk = false,
+        allow_custom_vectors = true,
+        draw_held_item = false,
+        use_easter_egg = false,
+        grab_less_to_match_belt_stack = false,
+        wait_for_full_hand = false, -- todo for bulk?
+        filter_count = 5,
+
+        circuit_wire_max_distance = default_circuit_wire_max_distance,
+        draw_inserter_arrow = false,
+        chases_belt_items = false,
+        stack_size_bonus = 0,
+        circuit_connector = inserter_connector_definitions,
 
         -- EntityWitHealthPrototype
         max_health = 170,
+        resistances = {
+            {
+                type = 'fire',
+                percent = 60
+            },
+            {
+                type = 'impact',
+                percent = 30
+            }
+        },
 
         -- EntityPrototype
         icons = {
@@ -125,20 +194,37 @@ local function create_entity(params)
             },
         },
 
-        collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-        collision_mask = collision_mask_util.get_default_mask('loader'),
+        collision_box = { { -0.2, -0.2 }, { 0.2, 0.2 } },
+        collision_mask = collision_mask_util.get_default_mask('inserter'),
         selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
         flags = { 'placeable-player', 'player-creation' },
         minable = { mining_time = 0.1, result = entity_name },
-        fast_replaceable_group = 'mini-loaders',
+        selection_priority = 50,
+        fast_replaceable_group = 'mini-loader',
         next_upgrade = params.next_upgrade,
     }
+
+    local hidden_inserter = util.copy(inserter)
+    hidden_inserter.name = inserter_name
+    hidden_inserter.localised_name = nil
+    hidden_inserter.localised_description = nil
+    hidden_inserter.hidden = true
+    hidden_inserter.hidden_in_factoriopedia = true
+    hidden_inserter.platform_picture = util.empty_sprite()
+    hidden_inserter.energy_source = { type = 'void' }
+    hidden_inserter.icons = { util.empty_icon() }
+    -- hidden_inserter.collision_box = { { 0,0}, { 0,0 }}
+    hidden_inserter.collision_mask = collision_mask_util.new_mask()
+    hidden_inserter.selection_box =  { { 0,0}, { 0,0 }}
+    hidden_inserter.minable = nil
+    hidden_inserter.selection_priority = 0
+    hidden_inserter.fast_replaceable_group = nil
+    hidden_inserter.next_upgrade = nil
 
     local loader = {
         -- Prototype Base
         name = loader_name,
         type = 'loader-1x1',
-        localised_name = params.localised_name,
         order = params.order,
         subgroup = params.subgroup,
         hidden = true,
@@ -238,12 +324,12 @@ local function create_entity(params)
         allow_container_interaction = true,
         per_lane_filters = false,
         energy_source = {
-            type = 'electric',
-            usage_priority = 'secondary-input',
+            type = 'void',
         },
-        energy_per_item = '1.5kJ',
+
+        energy_per_item = '.0000001J',
         circuit_wire_max_distance = default_circuit_wire_max_distance,
-        circuit_connector = connector_definitions,
+        circuit_connector = loader_connector_definitions,
 
         -- TransportBeltConnectablePrototype
         belt_animation_set = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
@@ -263,13 +349,11 @@ local function create_entity(params)
             },
         },
 
-        collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-        collision_mask = collision_mask_util.get_default_mask('loader'),
-        selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+        collision_box = { { -0.3, -0.3, }, { 0.3, 0.3 } },
+        collision_mask = { layers = { transport_belt = true, } },
+        selection_box = { { 0, 0 }, { 0, 0 } },
+        selection_priority = 0,
         flags = { 'placeable-player', 'player-creation' },
-        minable = { mining_time = 0.1, result = params.name },
-        fast_replaceable_group = 'mini-loaders',
-        next_upgrade = params.next_upgrade,
     }
 
     -- hack to get the belt color right
@@ -282,7 +366,7 @@ local function create_entity(params)
         end
     end
 
-    data:extend { entity, loader }
+    data:extend { inserter, hidden_inserter, loader }
 end
 
 return {

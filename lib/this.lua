@@ -6,13 +6,15 @@
 ---@class InvSensorModThis
 ---@field other_mods table<string, string>
 ---@field MiniLoader miniloader.Controller
+---@field Snapping miniloader.Snapping
 local This = {
     other_mods = {
 --        PickerDollies = 'picker-dollies',
 --        ['even-pickier-dollies'] = 'picker-dollies',
     },
 
-    MiniLoader = require('scripts.controller')
+    MiniLoader = require('scripts.controller'),
+    Snapping = require('scripts.snapping'),
 }
 
 Framework.settings:add_defaults(require('scripts.settings'))

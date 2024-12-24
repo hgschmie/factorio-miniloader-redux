@@ -78,11 +78,23 @@ end
 -- Base name
 Constants.miniloader_name = Constants:with_prefix(Constants.name)
 
-Constants.supported_type_names = {
-    'simple-entity-with-owner',
+---@param name string
+---@return string
+function Constants.loader_name(name)
+    return name .. '-l'
+end
+
+---@param name string
+---@return string
+function Constants.inserter_name(name)
+    return name .. '-i'
+end
+
+Constants.miniloader_type_names = {
+    'inserter',
 }
 
-Constants.supported_types = table.array_to_dictionary(Constants.supported_type_names, true)
+Constants.miniloader_types = table.array_to_dictionary(Constants.miniloader_type_names, true)
 
 Constants.snapping_type_names = {
     'lane-splitter', 'linked-belt', 'loader', 'loader-1x1', 'splitter', 'underground-belt', 'transport-belt'
@@ -92,6 +104,12 @@ Constants.snapping_type_names = {
 ---@type table<string, true>
 Constants.snapping_types = table.array_to_dictionary(Constants.snapping_type_names, true)
 
+---@enum miniloader.LoaderDirection
+---@type table<miniloader.LoaderDirection, string>
+Constants.loader_direction = {
+    input = 'input',
+    output = 'output',
+}
 
 --------------------------------------------------------------------------------
 -- settings
@@ -100,6 +118,8 @@ Constants.snapping_types = table.array_to_dictionary(Constants.snapping_type_nam
 Constants.settings = {
     loader_snapping = Constants:with_prefix('loader_snapping')
 }
+
+Constants.debug_lifetime = 10 -- how long debug info is shown
 
 --------------------------------------------------------------------------------
 -- localization

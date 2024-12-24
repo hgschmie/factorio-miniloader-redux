@@ -3,7 +3,6 @@
 -- snapping logic
 ------------------------------------------------------------------------
 
-local Event = require('stdlib.event.event')
 local Is = require('stdlib.utils.is')
 local Area = require('stdlib.area.area')
 local Position = require('stdlib.area.position')
@@ -13,47 +12,66 @@ local const = require('lib.constants')
 
 local tools = require('framework.tools')
 
+---@class miniloader.Snapping
+local Snapping = {}
+
+---@type table<string, fun(entity: LuaEntity): ('input'|'output')>
+local loader_types = {
+    ['loader'] = function(entity) return entity.loader_type end,
+    ['loader-1x1'] = function(entity) return entity.loader_type end,
+    ['underground-belt'] = function(entity) return entity.belt_to_ground_type end,
+    ['linked-belt'] = function(entity) return entity.linked_belt_type end,
+}
+
 ---@param entity LuaEntity
----@return 'input'|'output'|nil
+---@return miniloader.LoaderDirection?
 local function get_loader_type(entity)
-    if entity.type == 'loader' or entity.type == 'loader-1x1' then return entity.loader_type end
-    if entity.type == 'underground-belt' then return entity.belt_to_ground_type end
-    if entity.type == 'linked-belt' then return entity.linked_belt_type end
+    if not Is.Valid(entity) then return end
+    assert(entity)
+    if loader_types[entity.type] then return loader_types[entity.type](entity) --[[@as miniloader.LoaderDirection ]] end
     return nil
 end
 
 ---@param entity LuaEntity
 ---@return boolean
-local function is_vertical_aligned(entity)
+function Snapping:is_vertical_aligned(entity)
     return entity.direction == defines.direction.north or entity.direction == defines.direction.south
 end
 
 ---@param entity LuaEntity
 ---@return boolean
-local function is_horizontal_aligned(entity)
+function Snapping:is_horizontal_aligned(entity)
     return entity.direction == defines.direction.west or entity.direction == defines.direction.east
 end
 
 ---@param entity1 LuaEntity
 ---@param entity2 LuaEntity
 ---@return boolean
-local function are_aligned(entity1, entity2)
-    return is_vertical_aligned(entity1) ~= is_horizontal_aligned(entity2)
+function Snapping:are_aligned(entity1, entity2)
+    return self:is_vertical_aligned(entity1) ~= self:is_horizontal_aligned(entity2)
 end
 
----@param loader LuaEntity
----@param loader_type 'input'|'output'
-local function to_loader_type(loader, loader_type)
-    if loader.loader_type ~= loader_type then
-        loader.loader_type = loader_type
+---@param ml_entity miniloader.Data
+---@param loader_type miniloader.LoaderDirection
+function Snapping:to_loader_type(ml_entity, loader_type)
+    if ml_entity.config.loader_type ~= loader_type then
+        ml_entity.config.loader_type = loader_type
     end
 end
 
----@param loader_type 'input'|'output'
----@return 'input'|'output'
-local function reverse_loader_type(loader_type)
-    return loader_type == 'input' and 'output' or 'input'
+---@param loader_type miniloader.LoaderDirection
+---@return miniloader.LoaderDirection reverse_direction
+function Snapping:reverse_loader_type(loader_type)
+    return loader_type == const.loader_direction.input and const.loader_direction.output or const.loader_direction.input
 end
+
+---@param config miniloader.Config
+---@return defines.direction
+function Snapping:compute_loader_direction(config)
+    -- output loader points in the same direction as the miniloader, input loader points in opposite direction
+    return config.loader_type == const.loader_direction.output and config.direction or Direction.opposite(config.direction)
+end
+
 
 -- set loader direction according to the entity in front. Unlike other snapping code,
 -- this only considers the entity in front of the loader
@@ -63,34 +81,33 @@ end
 --  - a belt in direction - align loader with belt
 --  - an entity in direction - check the direction of the entity, align with direction
 --
----@param loader LuaEntity
+---@param ml_entity miniloader.Data
 ---@param entity LuaEntity
 ---
-local function snap_loader_to_target(loader, entity)
-    if not (Is.Valid(entity) and Is.Valid(loader)) then return end
+function Snapping:snap_loader_to_target(ml_entity, entity)
     if not const.snapping_types[entity.type] then return end
 
-    if not are_aligned(loader, entity) then
+    if not self:are_aligned(ml_entity.main, entity) then
         if entity.type ~= 'transport-belt' then return end
 
         -- if the loader points at a transport belt, make it output to the belt
-        return to_loader_type(loader, 'output')
+        return self:to_loader_type(ml_entity, const.loader_direction.output)
     else
         -- is the thing that we point at some sort of directional object
         local entity_loader_type = get_loader_type(entity)
-        if entity_loader_type then return to_loader_type(loader, reverse_loader_type(entity_loader_type)) end
+        if entity_loader_type then return self:to_loader_type(ml_entity, self:reverse_loader_type(entity_loader_type)) end
 
         -- something without loader_type, e.g. a belt
-        -- if the direction is the same, do nothing, otherwise flip the loader type
-        if loader.direction ~= entity.direction then
-            loader.loader_type = reverse_loader_type(loader.loader_type)
+        -- if the actual loader direction is the same, do nothing, otherwise flip the loader type
+        if self:compute_loader_direction(ml_entity.config) ~= entity.direction then
+            ml_entity.config.loader_type = self:reverse_loader_type(ml_entity.config.loader_type)
         end
     end
 end
 
 -- returns loaders next to a given entity
 ---@param entity LuaEntity
----@return (LuaEntity[]) loaders
+---@return (miniloader.Data[]) ml_entities
 local function find_loader_by_entity(entity)
     local area = Area(entity.prototype.selection_box):offset(entity.position):expand(1)
 
@@ -100,125 +117,91 @@ local function find_loader_by_entity(entity)
             surface = entity.surface,
             left_top = area.left_top,
             right_bottom = area.right_bottom,
-            time_to_live = 10,
+            time_to_live = const.debug_lifetime,
         }
     end
 
-    return entity.surface.find_entities_filtered {
-        type = const.supported_type_names,
-        name = storage.supported_loader_names,
+    local candidates = entity.surface.find_entities_filtered {
+        type = const.miniloader_type_names,
+        name = This.MiniLoader.supported_type_names,
         area = area,
         force = entity.force
     }
+
+    local ml_entities = {}
+    for _, candidate in pairs(candidates) do
+        local ml_entity = This.MiniLoader:getEntity(candidate.unit_number)
+        if ml_entity then table.insert(ml_entities, ml_entity) end
+    end
+
+    return ml_entities
 end
 
----@param loader LuaEntity The loader to check
+---@param ml_entity miniloader.Data The loader to check
 ---@param direction defines.direction? Direction override
 ---@return LuaEntity? An entity that may influence the loader direction
-local function find_neighbor_entity(loader, direction)
-    direction = direction or loader.direction
+local function find_neighbor_entity(ml_entity, direction)
+    direction = direction or ml_entity.config.direction
 
-    -- if the loader is "input", the directions are actually reversed
-    local offset = loader.loader_type == 'input' and -1 or 1
-
-    -- find area to look at
-    local area = Area { { -0.5, -0.5 }, { 0.5, 0.5 } }:offset(Position(loader.position)):translate(direction, offset)
+    -- find area to look at. As the miniloader itself always points in the "chute direction", it is always 1
+    local area = Area(ml_entity.main.prototype.selection_box):offset(Position(ml_entity.main.position)):translate(direction, 1)
 
     if Framework.settings:runtime_setting('debug_mode') then
         rendering.draw_rectangle {
             color = { r = 0.5, g = 0.5, b = 1 },
-            surface = loader.surface,
+            surface = ml_entity.main.surface,
             left_top = area.left_top,
             right_bottom = area.right_bottom,
-            time_to_live = 10,
+            time_to_live = const.debug_lifetime,
         }
     end
 
-    local entities = loader.surface.find_entities_filtered {
+    local entities = ml_entity.main.surface.find_entities_filtered {
         type = const.snapping_type_names,
         area = area,
-        force = loader.force,
+        force = ml_entity.main.force,
     }
 
-    return #entities > 0 and entities[1] or nil
+    return #entities > 0 and Is.Valid(entities[1]) and entities[1] or nil
 end
 
----@param loader LuaEntity
----@param entity LuaEntity?
-local function snap_to_neighbor(loader, entity)
-    local neighbor = find_neighbor_entity(loader)
-    if neighbor and (not entity or (entity.unit_number == neighbor.unit_number)) then
-        return snap_loader_to_target(loader, neighbor)
+---@param ml_entity miniloader.Data
+function Snapping:snapToNeighbor(ml_entity)
+    if not Is.Valid(ml_entity.main) then return end
+    local neighbor = find_neighbor_entity(ml_entity)
+    if neighbor then
+        return self:snap_loader_to_target(ml_entity, neighbor)
     end
 
     -- now look at back unit, if no front unit found
-    neighbor = find_neighbor_entity(loader, Direction.opposite(loader.direction))
-    if neighbor and (not entity or (entity.unit_number == neighbor.unit_number)) then
-        return snap_loader_to_target(loader, neighbor)
-    end
+    -- neighbor = find_neighbor_entity(loader, Direction.opposite(loader.direction))
+    -- if neighbor and (not entity or (entity.unit_number == neighbor.unit_number)) then
+    --     return snap_loader_to_target(loader, neighbor)
+    -- end
 end
 
-local function update_neighbor_loaders(entity)
+function Snapping:updateNeighborLoaders(entity)
     if not Is.Valid(entity) then return end
     assert(entity)
 
-    local loaders = find_loader_by_entity(entity)
-    for _, loader in pairs(loaders) do
-        snap_to_neighbor(loader)
+    local ml_entities = find_loader_by_entity(entity)
+    for _, ml_entity in pairs(ml_entities) do
+        self:snapToNeighbor(ml_entity)
+        This.MiniLoader:reconfigure(ml_entity)
     end
 end
 
 -- called when entity was rotated or non loader was built
 ---@param entity LuaEntity
-local function update_loaders(entity)
+function Snapping:updateLoaders(entity)
     if not const.snapping_types[entity.type] then return end
-    update_neighbor_loaders(entity)
+    self:updateNeighborLoaders(entity)
 
     if entity.type == 'underground-belt' then
-        update_neighbor_loaders(entity.neighbours)
+        self:updateNeighborLoaders(entity.neighbours)
     elseif entity.type == 'linked-belt' then
-        update_neighbor_loaders(entity.linked_belt_neighbour)
+        self:updateNeighborLoaders(entity.linked_belt_neighbour)
     end
 end
 
---------------------------------------------------------------------------------
--- entity rotation
---------------------------------------------------------------------------------
-
-local function onRotatedEntity(event)
-    if not Framework.settings:runtime_setting('loader_snapping') then return end
-    local entity = event.entity
-
-    if not Is.Valid(entity) then return end
-
-    assert(entity)
-    -- don't snap when the miniloader is rotated, otherwise it will never rotate again
-    if This.MiniLoader:is_supported(entity) then return end
-
-    update_loaders(entity)
-end
-
---------------------------------------------------------------------------------
--- entity creation
---------------------------------------------------------------------------------
-
-local function onEntityCreated(event)
-    if not Framework.settings:runtime_setting('loader_snapping') then return end
-    local entity = event.entity
-
-    if not Is.Valid(entity) then return end
-    assert(entity)
-
-    -- is it a supported loader?
-    if This.MiniLoader:is_supported(entity) then
-        snap_to_neighbor(entity)
-    else
-        update_loaders(entity)
-    end
-end
-
-local ml_entity_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_loader_names)
-
--- Event.on_event(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)
-
--- Event.on_event(defines.events.on_player_rotated_entity, onRotatedEntity, ml_entity_filter)
+return Snapping
