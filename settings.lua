@@ -18,7 +18,13 @@ data:extend({
         setting_type = 'runtime-global',
         default_value = false,
     },
-
+    {
+        type = 'bool-setting',
+        name = const.settings.chute_loader,
+        order = 'aa',
+        setting_type = 'startup',
+        default_value = false,
+    },
 })
 
 --------------------------------------------------------------------------------

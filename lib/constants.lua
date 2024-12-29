@@ -116,7 +116,8 @@ Constants.loader_direction = {
 --------------------------------------------------------------------------------
 
 Constants.settings = {
-    loader_snapping = Constants:with_prefix('loader_snapping')
+    loader_snapping = Constants:with_prefix('loader_snapping'),
+    chute_loader = Constants:with_prefix('chute_loader'),
 }
 
 Constants.debug_lifetime = 10 -- how long debug info is shown
