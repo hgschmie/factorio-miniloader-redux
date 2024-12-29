@@ -15,14 +15,18 @@ local const = require('lib.constants')
 ---@class miniloader.Controller
 ---@field supported_types table<string, true>
 ---@field supported_type_names string[]
+---@field supported_loaders table<string, true>
 ---@field supported_loader_names string[]
+---@field supported_inserters table<string, true>
 ---@field supported_inserter_names string[]
 ---@field outside_positions table<defines.direction, MapPosition[]>
 ---@field inside_positions table<defines.direction, MapPosition[]>
 local Controller = {
     supported_types = {},
     supported_type_names = {},
+    supported_loaders = {},
     supported_loader_names = {},
+    supported_inserters = {},
     supported_inserter_names = {},
 }
 
@@ -31,8 +35,14 @@ if script then
         if prototype_name:starts_with(const.prefix) and const.miniloader_types[prototype.type] and prototype_name:ends_with(const.name) then
             Controller.supported_types[prototype_name] = true
             table.insert(Controller.supported_type_names, prototype_name)
-            table.insert(Controller.supported_loader_names, const.loader_name(prototype_name))
-            table.insert(Controller.supported_inserter_names, const.inserter_name(prototype_name))
+
+            local loader_name = const.loader_name(prototype_name)
+            Controller.supported_loaders[loader_name] = true
+            table.insert(Controller.supported_loader_names, loader_name)
+
+            local inserter_name = const.inserter_name(prototype_name)
+            Controller.supported_inserters[inserter_name] = true
+            table.insert(Controller.supported_inserter_names, inserter_name)
         end
     end
 end
@@ -92,6 +102,9 @@ end
 local default_config = {
     enabled = true,
     loader_type = const.loader_direction.input, -- freshly minted loader image is 'input'
+    inserter_config = {
+        filters = {},
+    },
 }
 
 --- Creates a default configuration with some fields overridden by
@@ -185,6 +198,7 @@ end
 ---@param main LuaEntity
 ---@param config miniloader.Config
 local function create_loader(main, config)
+
     -- create the loader with the same orientation as the inserter. Then look in front of the
     -- loader and snap the direction for it.
     local loader = main.surface.create_entity {
@@ -195,7 +209,10 @@ local function create_loader(main, config)
         type = tostring(config.loader_type),
     }
     assert(loader)
+
+    loader.active = false
     loader.destructible = false
+    loader.operable = false
 
     script.register_on_object_destroyed(loader)
 
@@ -213,6 +230,8 @@ local function create_inserters(main, loader, config)
 
     local inserters = { main }
 
+    local main_wire_connectors = main.get_wire_connectors(true)
+
     assert(#inserters <= inserter_count)
 
     while #inserters < inserter_count do
@@ -223,9 +242,17 @@ local function create_inserters(main, loader, config)
             force = main.force,
         }
         assert(inserter)
-
+        
+        inserter.active = false
         inserter.destructible = false
+        inserter.operable = false
         script.register_on_object_destroyed(inserter)
+
+        local inserter_wire_connectors = inserter.get_wire_connectors(true)
+
+        for wire_connector_id, wire_connector in pairs(inserter_wire_connectors) do
+            wire_connector.connect_to(main_wire_connectors[wire_connector_id], false, defines.wire_origin.script)
+        end
 
         table.insert(inserters, inserter)
     end
@@ -269,10 +296,9 @@ end
 --- Creates a new entity from the main entity, registers with the mod
 --- and configures it.
 ---@param main LuaEntity
----@param player_index integer?
 ---@param tags Tags?
 ---@return miniloader.Data?
-function Controller:create(main, player_index, tags)
+function Controller:create(main, tags)
     if not Is.Valid(main) then return nil end
 
     local entity_id = main.unit_number --[[@as integer]]
@@ -282,7 +308,9 @@ function Controller:create(main, player_index, tags)
     -- if tags were passed in and they contain a config, use that.
     local config = create_config(tags and tags['ml_config'] --[[@as miniloader.Config]])
     config.status = main.status
-    config.direction = main.direction     -- miniloader entity always points in inserter direction
+    config.direction = main.direction -- miniloader entity always points in inserter direction
+
+    main.active = false
 
     local loader = create_loader(main, config)
     local inserters = create_inserters(main, loader, config)
@@ -298,6 +326,7 @@ function Controller:create(main, player_index, tags)
     self:setEntity(entity_id, ml_entity)
 
     This.Snapping:snapToNeighbor(ml_entity)
+    self:syncInserterConfig(ml_entity)
     self:reconfigure(ml_entity)
 
     return ml_entity
@@ -330,13 +359,63 @@ function Controller:destroy(entity_id)
 end
 
 ------------------------------------------------------------------------
+-- sync inserter control behavior
+------------------------------------------------------------------------
+
+local control_attributes = {
+    'circuit_set_filters',
+    'circuit_read_hand_contents',
+    'circuit_hand_read_mode',
+    'circuit_set_stack_size',
+    'circuit_stack_control_signal',
+    'circuit_enable_disable',
+    'circuit_condition',
+    'connect_to_logistic_network',
+    'logistic_condition',
+}
+
+local entity_attributes = {
+    'inserter_stack_size_override',
+    'use_filters',
+    'inserter_filter_mode',
+
+}
+
+
+---@param ml_entity miniloader.Data
+function Controller:syncInserterConfig(ml_entity)
+    local control = ml_entity.main.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
+    assert(control)
+
+    if not control.valid then return end
+
+    local inserter_config = {
+        filters = {},
+    }
+
+    for _, attribute in pairs(control_attributes) do
+        inserter_config[attribute] = control[attribute]
+    end
+
+    for _, attribute in pairs(entity_attributes) do
+        inserter_config[attribute] = ml_entity.main[attribute]
+    end
+
+    for i = 1, ml_entity.main.filter_slot_count, 1 do
+        inserter_config.filters[i] = ml_entity.main.get_filter(i)
+    end
+
+    ml_entity.config.inserter_config = inserter_config
+end
+
+------------------------------------------------------------------------
 -- manage internal state
 ------------------------------------------------------------------------
 
 -- compute 1-based modulo.
 ---@param x number
 ---@param y number
----@return number 
+---@return number
 local function one_mod(x, y)
     return ((x - 1) % y) + 1
 end
@@ -345,8 +424,7 @@ end
 ---@param position MapPosition
 ---@param color Color
 ---@param index number
-local function draw_thing(ml_entity, position, color, index)
-
+local function draw_position(ml_entity, position, color, index)
     if ml_entity.inserters[index] and not ml_entity.inserters[index].active then
         color = { r = 0.3, g = 0.3, b = 0.3 }
     end
@@ -371,9 +449,17 @@ local function draw_thing(ml_entity, position, color, index)
     }
 end
 
-
 ---@param ml_entity miniloader.Data
-function Controller:reconfigure(ml_entity)
+function Controller:reconfigure(ml_entity, cfg)
+    if cfg then
+        local new_config = util.copy(cfg)
+        -- do not overwrite direction and loader type. But they need to be
+        -- in the config to allow blueprinting / copy&paste of entities
+        new_config.direction = ml_entity.config.direction
+        new_config.loader_type = ml_entity.config.loader_type
+        ml_entity.config = new_config
+    end
+
     local config = ml_entity.config
     local direction = config.direction
     assert(direction)
@@ -401,10 +487,12 @@ function Controller:reconfigure(ml_entity)
                 drop_position = outside_position
             end
 
-            draw_thing(ml_entity, drop_position, { r = 0.4, g = 0.1, b = 0.1 }, x)
-            draw_thing(ml_entity, pickup_position, { r = 0.1, g = 0.4, b = 0.1 }, x)
+            draw_position(ml_entity, drop_position, { r = 0.4, g = 0.1, b = 0.1 }, x)
+            draw_position(ml_entity, pickup_position, { r = 0.1, g = 0.4, b = 0.1 }, x)
         end
     end
+
+    ml_entity.loader.active = true
 
     for index, inserter in pairs(ml_entity.inserters) do
         -- reorient inserter
@@ -432,9 +520,28 @@ function Controller:reconfigure(ml_entity)
         inserter.pickup_position = pickup_position
         inserter.drop_position = drop_position
 
+        for _, attribute in pairs(entity_attributes) do
+            inserter[attribute] = ml_entity.config.inserter_config[attribute]
+        end
+
+        for i = 1, inserter.filter_slot_count, 1 do
+            inserter.set_filter(i, ml_entity.config.inserter_config.filters[i])
+        end
+
+        local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
+        assert(control)
+
+        if control.valid then
+            for _, attribute in pairs(control_attributes) do
+                control[attribute] = ml_entity.config.inserter_config[attribute]
+            end
+        end
+
+        inserter.active = true
+
         if Framework.settings:runtime_setting('debug_mode') then
-            draw_thing(ml_entity, drop_position, { r = 1, g = 0, b = 0 }, index)
-            draw_thing(ml_entity, pickup_position, { r = 0, g = 1, b = 0 }, index)
+            draw_position(ml_entity, drop_position, { r = 1, g = 0, b = 0 }, index)
+            draw_position(ml_entity, pickup_position, { r = 0, g = 1, b = 0 }, index)
         end
     end
 end

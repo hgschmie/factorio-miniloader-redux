@@ -41,6 +41,8 @@ local inserter_connector_definitions = circuit_connector_definitions.create_vect
 
 ---@param params miniloader.LoaderTemplate
 local function create_item(params)
+    local stack_size = params.stack_size or 50
+
     local item = {
         -- PrototypeBase
         type = 'item',
@@ -50,7 +52,8 @@ local function create_item(params)
         subgroup = params.subgroup,
 
         -- ItemPrototype
-        stack_size = params.stack_size or 50,
+        stack_size = stack_size,
+        weight = 1000 / stack_size * kg,
         icons = {
             {
                 icon = const:png('item/icon-base'),
@@ -85,6 +88,12 @@ local function create_entity(params)
         { 'description.belt-items' },
         { 'per-second-suffix' }
     }
+
+    local energy_source = params.energy_source or {
+        type = 'electric',
+        usage_priority = 'secondary-input',
+    }
+
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
     -- - it has four different pictures
@@ -145,27 +154,24 @@ local function create_entity(params)
         hand_base_shadow = util.empty_sprite(),
         hand_open_shadow = util.empty_sprite(),
         hand_closed_shadow = util.empty_sprite(),
-        energy_source = {
-            type = 'electric',
-            usage_priority = 'secondary-input',
-        },
+        energy_source = energy_source,
         energy_per_movement = '2kJ',
         energy_per_rotation = '2kJ',
-        -- energy_source = { type = 'void', },
-        -- energy_per_movement = '.0000001J',
-        -- energy_per_rotation = '.0000001J',
-        bulk = false,
         allow_custom_vectors = true,
         draw_held_item = false,
         use_easter_egg = false,
-        grab_less_to_match_belt_stack = false,
-        wait_for_full_hand = false, -- todo for bulk?
         filter_count = 5,
+
+        -- handle stacking
+        bulk = params.bulk or false,
+        wait_for_full_hand = params.bulk or false,
+        grab_less_to_match_belt_stack = params.bulk or false,
+        stack_size_bonus = params.bulk and 4,
+        max_belt_stack_size = params.bulk and 4,
 
         circuit_wire_max_distance = default_circuit_wire_max_distance,
         draw_inserter_arrow = false,
         chases_belt_items = false,
-        stack_size_bonus = 0,
         circuit_connector = inserter_connector_definitions,
 
         -- EntityWitHealthPrototype
@@ -201,7 +207,6 @@ local function create_entity(params)
         minable = { mining_time = 0.1, result = entity_name },
         selection_priority = 50,
         fast_replaceable_group = 'mini-loader',
-        next_upgrade = params.next_upgrade,
     }
 
     local hidden_inserter = util.copy(inserter)
@@ -213,13 +218,26 @@ local function create_entity(params)
     hidden_inserter.platform_picture = util.empty_sprite()
     hidden_inserter.energy_source = { type = 'void' }
     hidden_inserter.icons = { util.empty_icon() }
-    -- hidden_inserter.collision_box = { { 0,0}, { 0,0 }}
+    -- hidden_inserter.collision_box = { { 0, 0 }, { 0, 0 } }
     hidden_inserter.collision_mask = collision_mask_util.new_mask()
-    hidden_inserter.selection_box =  { { 0,0}, { 0,0 }}
+    hidden_inserter.selection_box = { { 0, 0 }, { 0, 0 } }
+    hidden_inserter.flags = {
+        'placeable-player',
+        'not-on-map',
+        'not-deconstructable',
+        'not-blueprintable',
+        'hide-alt-info',
+        'not-flammable',
+        'not-upgradable',
+        'not-in-kill-statistics',
+        'not-in-made-in',
+    }
+
     hidden_inserter.minable = nil
     hidden_inserter.selection_priority = 0
+    hidden_inserter.allow_copy_paste = false
+    hidden_inserter.selectable_in_game = false
     hidden_inserter.fast_replaceable_group = nil
-    hidden_inserter.next_upgrade = nil
 
     local loader = {
         -- Prototype Base
@@ -318,10 +336,10 @@ local function create_entity(params)
             }
         },
         filter_count = 5,
-        structure_render_layer = 'lower-object',
+        structure_render_layer = 'object',
         container_distance = 1,
-        allow_rail_interaction = true,
-        allow_container_interaction = true,
+        allow_rail_interaction = false,
+        allow_container_interaction = false,
         per_lane_filters = false,
         energy_source = {
             type = 'void',
@@ -352,8 +370,21 @@ local function create_entity(params)
         collision_box = { { -0.3, -0.3, }, { 0.3, 0.3 } },
         collision_mask = { layers = { transport_belt = true, } },
         selection_box = { { 0, 0 }, { 0, 0 } },
-        selection_priority = 0,
-        flags = { 'placeable-player', 'player-creation' },
+        flags = {
+            'placeable-player',
+            'not-on-map',
+            'not-deconstructable',
+            'not-blueprintable',
+            'hide-alt-info',
+            'not-flammable',
+            'not-upgradable',
+            'not-in-kill-statistics',
+            'not-in-made-in',
+        },
+        minable = nil,
+        selection_priority = 45,
+        allow_copy_paste = false,
+        selectable_in_game = false,
     }
 
     -- hack to get the belt color right
@@ -369,7 +400,65 @@ local function create_entity(params)
     data:extend { inserter, hidden_inserter, loader }
 end
 
+local technology_icons = {
+    {
+        icon = const:png('technology/technology-base'),
+        icon_size = 128,
+    },
+    {
+        icon = const:png('technology/technology-mask'),
+        icon_size = 128,
+    },
+}
+
+local function create_recipe(params)
+    local recipe = {
+        type = 'recipe',
+        name = params.name,
+        localised_name = params.localised_name,
+        ingredients = params.ingredients,
+        results = {
+            {
+                type = 'item',
+                name = params.name,
+                amount = 1,
+            },
+        },
+    }
+
+    local technology = {
+        type = 'technology',
+        name = params.name,
+        order = params.order,
+        icons = util.copy(technology_icons),
+        prerequisites = params.prerequisites,
+        research_trigger = params.research_trigger,
+        effects = {
+            {
+                type = 'unlock-recipe',
+                recipe = params.name,
+            }
+        }
+    }
+
+    -- apply tint to copied icon
+    technology.icons[2].tint = params.tint
+
+    if not (technology.unit or technology.research_trigger) then
+        local main_prereq = data.raw['technology'][technology.prerequisites[1]]
+
+        if main_prereq.unit then
+            technology.unit = util.copy(main_prereq.unit)
+        else
+            technology.research_trigger = util.copy(main_prereq.research_trigger)
+        end
+    end
+
+    data:extend { recipe, technology }
+end
+
 return {
     create_item = create_item,
     create_entity = create_entity,
+    create_recipe = create_recipe,
 }

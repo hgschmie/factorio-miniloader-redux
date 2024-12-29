@@ -107,8 +107,8 @@ end
 
 ---@param attribute string The entity attribute to match.
 ---@param values string|string[] One or more values to match.
----@param invert boolean?
----@return function(ev: EventData, pattern: any?): boolean event_matcher
+---@param invert boolean? If true, invert the match.
+---@return fun(ev: EventData, pattern: any?): boolean event_matcher
 function Tools.create_event_entity_matcher(attribute, values, invert)
     local matcher_function = create_matcher(values, function(entity)
         return entity and entity[attribute]
@@ -119,8 +119,8 @@ end
 
 ---@param attribute string The entity attribute to match.
 ---@param values string|string[] One or more values to match.
----@param invert boolean?
----@return function(ev: EventData, pattern: any): boolean event_matcher
+---@param invert boolean? If true, invert the match.
+---@return fun(ev: EventData, pattern: any): boolean event_matcher
 function Tools.create_event_ghost_entity_matcher(attribute, values, invert)
     local matcher_function = create_matcher(values, function(entity)
         return entity and entity.type == 'entity-ghost' and entity[attribute]
@@ -130,10 +130,21 @@ function Tools.create_event_ghost_entity_matcher(attribute, values, invert)
 end
 
 ---@param values string|string[] One or more names to match to the ghost_name field.
----@param invert boolean?
----@return function(ev: EventData, pattern: any): boolean event_matcher
+---@param invert boolean? If true, invert the match.
+---@return fun(ev: EventData, pattern: any): boolean event_matcher
 function Tools.create_event_ghost_entity_name_matcher(values, invert)
     return Tools.create_event_ghost_entity_matcher('ghost_name', values, invert)
+end
+
+
+---@param func fun(entity: LuaEntity?): any? Function called for any entity, needs to return a value or nil
+---@param values string|string[] One or more values to match by the function return value.
+---@param invert boolean? If true, invert the match.
+---@return fun(ev: EventData, pattern: any): boolean event_matcher
+function Tools.create_entity_matcher(func, values, invert)
+    local matcher_function = create_matcher(values, func, invert)
+
+    return create_event_matcher(matcher_function)
 end
 
 --------------------------------------------------------------------------------
@@ -146,8 +157,8 @@ if script then
     --- Registers a handler for the given events.
     --- works around https://github.com/Afforess/Factorio-Stdlib/pull/164
     ---@param event_ids defines.events[]
-    ---@param handler function(ev: EventData)
-    ---@param filter? function(ev: EventData, pattern: any?)?:boolean
+    ---@param handler fun(ev: EventData)
+    ---@param filter  fun(ev: EventData, pattern: any?)?:boolean
     ---@param pattern any?
     ---@param options table<string, boolean>?
     function Tools.event_register(event_ids, handler, filter, pattern, options)

@@ -3,7 +3,7 @@
 -- event setup for the mod
 --------------------------------------------------------------------------------
 
-local Direction = require('stdlib.area.direction')
+local Position = require('stdlib.area.position')
 local Event = require('stdlib.event.event')
 local Is = require('stdlib.utils.is')
 local Player = require('stdlib.event.player')
@@ -43,7 +43,7 @@ local function onEntityCreated(event)
     -- register entity for destruction
     script.register_on_object_destroyed(entity)
 
-    This.MiniLoader:create(entity, player_index, tags)
+    This.MiniLoader:create(entity, tags)
 end
 
 ---@param event EventData.on_player_mined_entity | EventData.on_robot_mined_entity | EventData.on_entity_died | EventData.script_raised_destroy
@@ -53,7 +53,6 @@ local function onEntityDeleted(event)
     local unit_number = entity.unit_number
 
     This.MiniLoader:destroy(unit_number)
-    -- Gui.closeByEntity(unit_number)
 end
 
 --------------------------------------------------------------------------------
@@ -91,12 +90,10 @@ end
 
 ---@param event EventData.on_object_destroyed
 local function onObjectDestroyed(event)
-
     -- clear out references if applicable
     if This.MiniLoader:getEntity(event.useful_id) then
         This.MiniLoader:setEntity(event.useful_id, nil)
     end
-
 end
 
 --------------------------------------------------------------------------------
@@ -128,77 +125,101 @@ local function onBlueprintCallback(entity, idx, blueprint, context)
 end
 
 --------------------------------------------------------------------------------
+-- Entity settings pasting
+--------------------------------------------------------------------------------
+
+---@param event EventData.on_entity_settings_pasted
+local function onEntitySettingsPasted(event)
+    local player = Player.get(event.player_index)
+
+    if not (Is.Valid(player) and player.force == event.source.force and player.force == event.destination.force) then return end
+
+    local src_entity = This.MiniLoader:getEntity(event.source.unit_number)
+    local dst_entity = This.MiniLoader:getEntity(event.destination.unit_number)
+
+    if not (src_entity and dst_entity) then return end
+
+    This.MiniLoader:reconfigure(dst_entity, src_entity.config)
+end
+
+--------------------------------------------------------------------------------
+-- Entity cloning
+--------------------------------------------------------------------------------
+
+---@param event EventData.on_entity_cloned
+local function onEntityCloned(event)
+    if not (Is.Valid(event.source) and Is.Valid(event.destination)) then return end
+
+    local src_data = This.MiniLoader:getEntity(event.source.unit_number)
+    if not src_data then return end
+
+    local cloned_entities = event.destination.surface.find_entities(Position(event.destination.position):expand_to_area(0.5))
+    for _, cloned_entity in pairs(cloned_entities) do
+        if This.MiniLoader.supported_inserters[cloned_entity.name] then
+            cloned_entity.destroy()
+        elseif This.MiniLoader.supported_loaders[cloned_entity.name] then
+            cloned_entity.destroy()
+        end
+    end
+
+    local tags = { ml_config = src_data.config } -- clone the config from the src to the destination
+
+    This.MiniLoader:create(event.destination, tags)
+end
+
+---@param event EventData.on_entity_cloned
+local function onInternalEntityCloned(event)
+    if not (Is.Valid(event.source) and Is.Valid(event.destination)) then return end
+
+    -- delete the destination entity, it is not needed as the internal structure of the
+    -- miniloader is recreated when the main entity is cloned
+    event.destination.destroy()
+end
+
+--------------------------------------------------------------------------------
+-- GUI
+--------------------------------------------------------------------------------
+
+---@param event EventData.on_gui_opened
+local function onGuiOpened(event)
+    if event.gui_type ~= defines.gui_type.entity then return end
+    if not Is.Valid(event.entity) then return end
+
+    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
+    if not ml_entity then return end
+
+    ml_entity.loader.active = false
+    for _, inserter in pairs(ml_entity.inserters) do
+        inserter.active = false
+    end
+end
+
+---@param event EventData.on_gui_closed
+local function onGuiClosed(event)
+    if not Is.Valid(event.entity) then return end
+    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
+    if not ml_entity then return end
+
+    This.MiniLoader:syncInserterConfig(ml_entity)
+    This.MiniLoader:reconfigure(ml_entity)
+end
+
+--------------------------------------------------------------------------------
 -- Configuration changes (runtime and startup)
 --------------------------------------------------------------------------------
 
 ---@param changed ConfigurationChangedData?
 local function onConfigurationChanged(changed)
     This.MiniLoader:init()
-    storage.ml_data.by_loader = nil
 
-    for id, ml_entity in pairs(This.MiniLoader:entities()) do
-        ml_entity.config.direction = ml_entity.config.orientation or ml_entity.config.direction
-        ml_entity.config.orientation = nil
-        ml_entity.config.loader_type = ml_entity.config.loader_direction or ml_entity.config.loader_type
-        ml_entity.config.loader_direction = nil
-        ml_entity.config.direction = Direction.opposite(ml_entity.config.direction)
-
-        This.MiniLoader:reconfigure(ml_entity)
+    -- enable recipes if researched
+    for _, force in pairs(game.forces) do
+        for _, name in pairs(This.MiniLoader.supported_type_names) do
+            if force.recipes[name] and force.technologies[name] then
+                force.recipes[name].enabled = force.technologies[name].researched
+            end
+        end
     end
-
-    -- if storage.ml_data.miniloaders then
-    --     storage.ml_data.by_main = storage.ml_data.miniloaders
-    --     storage.ml_data.miniloaders = nil
-    -- end
-
-    -- storage.ml_data.by_main = storage.ml_data.by_main or {}
-    -- storage.ml_data.count = storage.ml_data.count or 0
-
-    -- storage.ml_data.supported_loaders = nil
-
-    -- local rescued_loaders = {}
-    -- local ids = util.copy(This.MiniLoader:entities())
-    -- for id, ml_entity in pairs(ids) do
-    --     local main = ml_entity.main
-    --     if Is.Valid(main) then
-    --         rescued_loaders[main.unit_number] = { main = main, config = ml_entity.config }
-    --     end
-    --     This.MiniLoader:destroy(id)
-    -- end
-
-    -- assert(table_size(storage.ml_data.by_main) == 0)
-
-    -- for _, surface in pairs(game.surfaces) do
-    --     local entities = surface.find_entities_filtered {
-    --         name = This.MiniLoader.supported_type_names,
-    --     }
-
-    --     for _, entity in pairs(entities) do
-    --         if Is.Valid(entity) and not rescued_loaders[entity.unit_number] then
-    --             entity.destroy()
-    --         end
-    --     end
-
-    --     local loaders = surface.find_entities_filtered {
-    --         name = This.MiniLoader.supported_loader_names,
-    --     }
-
-    --     for _, loader in pairs(loaders) do
-    --         loader.destroy()
-    --     end
-
-    --     local inserters = surface.find_entities_filtered {
-    --         name = This.MiniLoader.supported_inserter_names,
-    --     }
-
-    --     for _, inserter in pairs(inserters) do
-    --         inserter.destroy()
-    --     end
-
-    --     for id, data in pairs(rescued_loaders) do
-    --         This.MiniLoader:create(data.main, 1, { ml_config = data.config })
-    --     end
-    -- end
 end
 
 --------------------------------------------------------------------------------
@@ -208,6 +229,8 @@ end
 --------------------------------------------------------------------------------
 
 local ml_entity_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_type_names)
+local ml_inserter_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_inserter_names)
+local ml_loader_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_loader_names)
 local snap_entity_filter = tools.create_event_entity_matcher('type', const.snapping_type_names)
 
 -- mod init code
@@ -237,3 +260,15 @@ Event.register(defines.events.on_player_rotated_entity, onSnappableEntityRotated
 
 -- entity rotation
 Event.register(defines.events.on_player_rotated_entity, onEntityRotated, ml_entity_filter)
+
+-- Gui updates / sync inserters
+Event.register(defines.events.on_gui_opened, onGuiOpened, ml_entity_filter)
+Event.register(defines.events.on_gui_closed, onGuiClosed, ml_entity_filter)
+
+-- Entity cloning
+Event.register(defines.events.on_entity_cloned, onEntityCloned, ml_entity_filter)
+Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_inserter_filter)
+Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_loader_filter)
+
+-- Entity settings pasting
+Event.register(defines.events.on_entity_settings_pasted, onEntitySettingsPasted, ml_entity_filter)
