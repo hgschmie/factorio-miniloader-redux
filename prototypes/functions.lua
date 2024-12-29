@@ -8,6 +8,7 @@ local collision_mask_util = require('collision-mask-util')
 
 require 'circuit-connector-generated-definitions'
 require 'circuit-connector-sprites'
+require 'sound-util'
 
 --
 -- similar to the existing miniloader module, this uses an inserter as the "main" entity.
@@ -38,6 +39,16 @@ local inserter_connector_definitions = circuit_connector_definitions.create_vect
         { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = { 0, 0 }, }, -- East
     }
 )
+
+---@param prefix string?
+---@param name string
+local function add_tier_prefix(prefix, name)
+    if prefix and prefix:len() > 0 then
+        return prefix .. '-' .. name
+    else
+        return name
+    end
+end
 
 ---@param params miniloader.LoaderTemplate
 local function create_item(params)
@@ -155,8 +166,8 @@ local function create_entity(params)
         hand_open_shadow = util.empty_sprite(),
         hand_closed_shadow = util.empty_sprite(),
         energy_source = energy_source,
-        energy_per_movement = '2kJ',
-        energy_per_rotation = '2kJ',
+        energy_per_movement = '10kJ',
+        energy_per_rotation = '10kJ',
         allow_custom_vectors = true,
         draw_held_item = false,
         use_easter_egg = false,
@@ -176,6 +187,14 @@ local function create_entity(params)
 
         -- EntityWitHealthPrototype
         max_health = 170,
+        damaged_trigger_effect = {
+            type = 'create-entity',
+            entity_name = 'spark-explosion',
+            offset_deviation = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+            offsets = { { 0, 1 } },
+            damage_type_filters = 'fire'
+        },
+        dying_explosion = add_tier_prefix(params.loader_tier, 'underground-belt-explosion'),
         resistances = {
             {
                 type = 'fire',
@@ -186,6 +205,7 @@ local function create_entity(params)
                 percent = 30
             }
         },
+        remnants = 'medium-small-remnants',
 
         -- EntityPrototype
         icons = {
@@ -203,9 +223,17 @@ local function create_entity(params)
         collision_box = { { -0.2, -0.2 }, { 0.2, 0.2 } },
         collision_mask = collision_mask_util.get_default_mask('inserter'),
         selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-        flags = { 'placeable-player', 'player-creation' },
+        flags = { 'placeable-neutral', 'placeable-player', 'player-creation' },
         minable = { mining_time = 0.1, result = entity_name },
         selection_priority = 50,
+        impact_category = 'metal',
+        open_sound = { filename = '__base__/sound/open-close/inserter-open.ogg', volume = 0.6 },
+        close_sound = { filename = '__base__/sound/open-close/inserter-close.ogg', volume = 0.5 },
+        working_sound = {
+            match_progress_to_activity = true,
+            sound = sound_variations('__base__/sound/inserter-basic', 5, 0.5, { volume_multiplier('main-menu', 2), volume_multiplier('tips-and-tricks', 1.8) }),
+            audible_distance_modifier = 0.3
+        },
         fast_replaceable_group = 'mini-loader',
     }
 
@@ -222,6 +250,7 @@ local function create_entity(params)
     hidden_inserter.collision_mask = collision_mask_util.new_mask()
     hidden_inserter.selection_box = { { 0, 0 }, { 0, 0 } }
     hidden_inserter.flags = {
+        'placeable-neutral',
         'placeable-player',
         'not-on-map',
         'not-deconstructable',
@@ -371,6 +400,7 @@ local function create_entity(params)
         collision_mask = { layers = { transport_belt = true, } },
         selection_box = { { 0, 0 }, { 0, 0 } },
         flags = {
+            'placeable-neutral',
             'placeable-player',
             'not-on-map',
             'not-deconstructable',
@@ -391,7 +421,7 @@ local function create_entity(params)
     local loader_tier = params.loader_tier or params.prefix
 
     if loader_tier and loader_tier:len() > 0 then
-        local belt_source = data.raw['underground-belt'][loader_tier .. '-underground-belt']
+        local belt_source = data.raw['underground-belt'][add_tier_prefix(loader_tier, 'underground-belt')]
         if belt_source then
             loader.belt_animation_set = util.copy(belt_source.belt_animation_set)
         end
