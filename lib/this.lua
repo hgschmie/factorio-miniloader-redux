@@ -9,8 +9,8 @@
 ---@field Snapping miniloader.Snapping
 local This = {
     other_mods = {
---        PickerDollies = 'picker-dollies',
---        ['even-pickier-dollies'] = 'picker-dollies',
+        ['PickerDollies'] = 'picker-dollies',
+        ['even-pickier-dollies'] = 'picker-dollies',
     },
 
     MiniLoader = require('scripts.controller'),

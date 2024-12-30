@@ -12,6 +12,9 @@ local tools = require('framework.tools')
 
 local const = require('lib.constants')
 
+local migration = require('scripts.migration')
+
+
 --------------------------------------------------------------------------------
 -- mod init/load code
 --------------------------------------------------------------------------------
@@ -220,9 +223,17 @@ local function onConfigurationChanged(changed)
             end
         end
     end
+
+    if Framework.settings:startup_setting('migrate_loaders') then
+        migration:migrate_miniloaders()
+        migration:migrate_game_blueprints()
+    end
 end
 
---------------------------------------------------------------------------------
+---@param changed EventData.on_runtime_mod_setting_changed
+local function onRuntimeConfigurationChanged(changed)
+    migration:migrate_game_blueprints()
+end
 
 --------------------------------------------------------------------------------
 -- event registration
@@ -239,7 +250,7 @@ Event.on_load(onLoadMiniloaders)
 
 -- Configuration changes (runtime and startup)
 Event.on_configuration_changed(onConfigurationChanged)
-Event.register(defines.events.on_runtime_mod_setting_changed, onConfigurationChanged)
+Event.register(defines.events.on_runtime_mod_setting_changed, onRuntimeConfigurationChanged)
 
 -- entity destroy (can't filter on that)
 Event.register(defines.events.on_object_destroyed, onObjectDestroyed)

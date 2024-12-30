@@ -293,14 +293,10 @@ end
 -- create/destroy
 ------------------------------------------------------------------------
 
---- Creates a new entity from the main entity, registers with the mod
---- and configures it.
 ---@param main LuaEntity
 ---@param tags Tags?
----@return miniloader.Data?
-function Controller:create(main, tags)
-    if not Is.Valid(main) then return nil end
-
+---@return miniloader.Data
+function Controller:setup(main, tags)
     local entity_id = main.unit_number --[[@as integer]]
 
     assert(self:getEntity(entity_id) == nil)
@@ -326,6 +322,20 @@ function Controller:create(main, tags)
     self:setEntity(entity_id, ml_entity)
 
     This.Snapping:snapToNeighbor(ml_entity)
+
+    return ml_entity
+end
+
+--- Creates a new entity from the main entity, registers with the mod
+--- and configures it.
+---@param main LuaEntity
+---@param tags Tags?
+---@return miniloader.Data?
+function Controller:create(main, tags)
+    if not Is.Valid(main) then return nil end
+
+    local ml_entity = self:setup(main, tags)
+
     self:syncInserterConfig(ml_entity)
     self:reconfigure(ml_entity)
 
@@ -378,13 +388,16 @@ local entity_attributes = {
     'inserter_stack_size_override',
     'use_filters',
     'inserter_filter_mode',
-
 }
 
 
 ---@param ml_entity miniloader.Data
-function Controller:syncInserterConfig(ml_entity)
-    local control = ml_entity.main.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
+---@param inserter LuaEntity?
+function Controller:syncInserterConfig(ml_entity, inserter)
+
+    inserter = inserter or ml_entity.main
+
+    local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
     assert(control)
 
     if not control.valid then return end
@@ -398,11 +411,11 @@ function Controller:syncInserterConfig(ml_entity)
     end
 
     for _, attribute in pairs(entity_attributes) do
-        inserter_config[attribute] = ml_entity.main[attribute]
+        inserter_config[attribute] = inserter[attribute]
     end
 
-    for i = 1, ml_entity.main.filter_slot_count, 1 do
-        inserter_config.filters[i] = ml_entity.main.get_filter(i)
+    for i = 1, inserter.filter_slot_count, 1 do
+        inserter_config.filters[i] = inserter.get_filter(i)
     end
 
     ml_entity.config.inserter_config = inserter_config
@@ -467,6 +480,11 @@ function Controller:reconfigure(ml_entity, cfg)
     -- reorient loader
     ml_entity.loader.loader_type = tostring(config.loader_type)
     ml_entity.loader.direction = compute_loader_direction(config)
+    if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
+        -- loader was moved
+        ml_entity.loader.destroy()
+        ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
+    end
 
     -- connect inserters and loader
 
@@ -497,6 +515,7 @@ function Controller:reconfigure(ml_entity, cfg)
     for index, inserter in pairs(ml_entity.inserters) do
         -- reorient inserter
         inserter.direction = direction
+        inserter.teleport(ml_entity.main.position)
 
         -- either pickup or drop position
         local outside_position = back_position + self.outside_positions[direction][one_mod(index, 8)]
@@ -544,6 +563,16 @@ function Controller:reconfigure(ml_entity, cfg)
             draw_position(ml_entity, pickup_position, { r = 0, g = 1, b = 0 }, index)
         end
     end
+end
+
+---@param main LuaEntity
+function Controller:move(main)
+    if not self.supported_types[main.name] then return end
+
+    local ml_entity = self:getEntity(main.unit_number)
+    if not ml_entity then return end
+
+    self:reconfigure(ml_entity)
 end
 
 ------------------------------------------------------------------------

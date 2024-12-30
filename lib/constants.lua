@@ -118,9 +118,30 @@ Constants.loader_direction = {
 Constants.settings = {
     loader_snapping = Constants:with_prefix('loader_snapping'),
     chute_loader = Constants:with_prefix('chute_loader'),
+    migrate_loaders = Constants:with_prefix('migrate_loaders'),
+    migrate_player_blueprints = Constants:with_prefix('migrate_player_blueprints')
 }
 
 Constants.debug_lifetime = 10 -- how long debug info is shown
+
+function Constants:migrations()
+    -- entities that can be migrated from the old 1.1 miniloader.
+    local migrations = {
+        [''] = self:with_prefix('miniloader'),
+        ['fast-'] = self:with_prefix('fast-miniloader'),
+        ['express-'] = self:with_prefix('express-miniloader'),
+        ['filter-'] = self:with_prefix('miniloader'),
+        ['fast-filter-'] = self:with_prefix('fast-miniloader'),
+        ['express-filter-'] = self:with_prefix('express-miniloader'),
+    }
+
+    if Framework.settings:startup_setting('chute_loader') then
+        migrations['chute-'] = self:with_prefix('chute-miniloader')
+        migrations['chute-filter-'] = self:with_prefix('chute-miniloader')
+    end
+
+    return migrations
+end
 
 --------------------------------------------------------------------------------
 -- localization

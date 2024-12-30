@@ -25,6 +25,13 @@ data:extend({
         setting_type = 'startup',
         default_value = false,
     },
+    {
+        type = 'bool-setting',
+        name = const.settings.migrate_loaders,
+        order = 'ab',
+        setting_type = 'startup',
+        default_value = false,
+    },
 })
 
 --------------------------------------------------------------------------------
