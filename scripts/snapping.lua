@@ -123,7 +123,7 @@ local function find_loader_by_entity(entity)
 
     local candidates = entity.surface.find_entities_filtered {
         type = const.miniloader_type_names,
-        name = This.MiniLoader.supported_type_names,
+        name = const.supported_type_names,
         area = area,
         force = entity.force
     }

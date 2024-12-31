@@ -4,7 +4,6 @@
 ------------------------------------------------------------------------
 
 local Is = require('stdlib.utils.is')
-local Area = require('stdlib.area.area')
 local Direction = require('stdlib.area.direction')
 local Position = require('stdlib.area.position')
 
@@ -13,39 +12,9 @@ require('stdlib.utils.string')
 local const = require('lib.constants')
 
 ---@class miniloader.Controller
----@field supported_types table<string, true>
----@field supported_type_names string[]
----@field supported_loaders table<string, true>
----@field supported_loader_names string[]
----@field supported_inserters table<string, true>
----@field supported_inserter_names string[]
 ---@field outside_positions table<defines.direction, MapPosition[]>
 ---@field inside_positions table<defines.direction, MapPosition[]>
-local Controller = {
-    supported_types = {},
-    supported_type_names = {},
-    supported_loaders = {},
-    supported_loader_names = {},
-    supported_inserters = {},
-    supported_inserter_names = {},
-}
-
-if script then
-    for prototype_name, prototype in pairs(prototypes.entity) do
-        if prototype_name:starts_with(const.prefix) and const.miniloader_types[prototype.type] and prototype_name:ends_with(const.name) then
-            Controller.supported_types[prototype_name] = true
-            table.insert(Controller.supported_type_names, prototype_name)
-
-            local loader_name = const.loader_name(prototype_name)
-            Controller.supported_loaders[loader_name] = true
-            table.insert(Controller.supported_loader_names, loader_name)
-
-            local inserter_name = const.inserter_name(prototype_name)
-            Controller.supported_inserters[inserter_name] = true
-            table.insert(Controller.supported_inserter_names, inserter_name)
-        end
-    end
-end
+local Controller = {}
 
 -- position calculation
 --
@@ -198,7 +167,6 @@ end
 ---@param main LuaEntity
 ---@param config miniloader.Config
 local function create_loader(main, config)
-
     -- create the loader with the same orientation as the inserter. Then look in front of the
     -- loader and snap the direction for it.
     local loader = main.surface.create_entity {
@@ -210,7 +178,6 @@ local function create_loader(main, config)
     }
     assert(loader)
 
-    loader.active = false
     loader.destructible = false
     loader.operable = false
 
@@ -242,8 +209,7 @@ local function create_inserters(main, loader, config)
             force = main.force,
         }
         assert(inserter)
-        
-        inserter.active = false
+
         inserter.destructible = false
         inserter.operable = false
         script.register_on_object_destroyed(inserter)
@@ -305,8 +271,6 @@ function Controller:setup(main, tags)
     local config = create_config(tags and tags['ml_config'] --[[@as miniloader.Config]])
     config.status = main.status
     config.direction = main.direction -- miniloader entity always points in inserter direction
-
-    main.active = false
 
     local loader = create_loader(main, config)
     local inserters = create_inserters(main, loader, config)
@@ -394,7 +358,6 @@ local entity_attributes = {
 ---@param ml_entity miniloader.Data
 ---@param inserter LuaEntity?
 function Controller:syncInserterConfig(ml_entity, inserter)
-
     inserter = inserter or ml_entity.main
 
     local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
@@ -419,6 +382,31 @@ function Controller:syncInserterConfig(ml_entity, inserter)
     end
 
     ml_entity.config.inserter_config = inserter_config
+end
+
+---@param ml_entity miniloader.Data
+---@param skip_main boolean?
+function Controller:resyncInserters(ml_entity, skip_main)
+    for _, inserter in pairs(ml_entity.inserters) do
+        if skip_main and inserter.unit_number ~= ml_entity.main.unit_number then
+            for _, attribute in pairs(entity_attributes) do
+                inserter[attribute] = ml_entity.config.inserter_config[attribute]
+            end
+
+            for i = 1, inserter.filter_slot_count, 1 do
+                inserter.set_filter(i, ml_entity.config.inserter_config.filters[i])
+            end
+
+            local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
+            assert(control)
+
+            if control.valid then
+                for _, attribute in pairs(control_attributes) do
+                    control[attribute] = ml_entity.config.inserter_config[attribute]
+                end
+            end
+        end
+    end
 end
 
 ------------------------------------------------------------------------
@@ -510,8 +498,6 @@ function Controller:reconfigure(ml_entity, cfg)
         end
     end
 
-    ml_entity.loader.active = true
-
     for index, inserter in pairs(ml_entity.inserters) do
         -- reorient inserter
         inserter.direction = direction
@@ -539,35 +525,18 @@ function Controller:reconfigure(ml_entity, cfg)
         inserter.pickup_position = pickup_position
         inserter.drop_position = drop_position
 
-        for _, attribute in pairs(entity_attributes) do
-            inserter[attribute] = ml_entity.config.inserter_config[attribute]
-        end
-
-        for i = 1, inserter.filter_slot_count, 1 do
-            inserter.set_filter(i, ml_entity.config.inserter_config.filters[i])
-        end
-
-        local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
-        assert(control)
-
-        if control.valid then
-            for _, attribute in pairs(control_attributes) do
-                control[attribute] = ml_entity.config.inserter_config[attribute]
-            end
-        end
-
-        inserter.active = true
-
         if Framework.settings:runtime_setting('debug_mode') then
             draw_position(ml_entity, drop_position, { r = 1, g = 0, b = 0 }, index)
             draw_position(ml_entity, pickup_position, { r = 0, g = 1, b = 0 }, index)
         end
     end
+
+    self:resyncInserters(ml_entity)
 end
 
 ---@param main LuaEntity
 function Controller:move(main)
-    if not self.supported_types[main.name] then return end
+    if not const.supported_types[main.name] then return end
 
     local ml_entity = self:getEntity(main.unit_number)
     if not ml_entity then return end

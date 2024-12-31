@@ -9,22 +9,44 @@
 -- globals
 --------------------------------------------------------------------------------
 
-local table = require('stdlib.utils.table')
+require('stdlib.utils.string')
 
-local Constants = {}
+local table = require('stdlib.utils.table')
 
 --------------------------------------------------------------------------------
 -- main constants
 --------------------------------------------------------------------------------
 
--- the current version that is the result of the latest migration
-Constants.CURRENT_VERSION = 1
+---@class miniloader.Constants
+---@field supported_types table<string, true>
+---@field supported_type_names string[]
+---@field supported_loaders table<string, true>
+---@field supported_loader_names string[]
+---@field supported_inserters table<string, true>
+---@field supported_inserter_names string[]
+---@field CURRENT_VERSION number
+---@field prefix string
+---@field name string
+---@field root string
+--_@field order string
+local Constants = {
+    -- the current version that is the result of the latest migration
+    CURRENT_VERSION = 1,
 
-Constants.prefix = 'hps__ml-'
-Constants.name = 'miniloader'
-Constants.root = '__miniloader-redux__'
+    prefix = 'hps__ml-',
+    name = 'miniloader',
+    root = '__miniloader-redux__',
+    order = 'l[oaders]-m[iniloader]',
+
+    supported_types = {},
+    supported_type_names = {},
+    supported_loaders = {},
+    supported_loader_names = {},
+    supported_inserters = {},
+    supported_inserter_names = {},
+}
+
 Constants.gfx_location = Constants.root .. '/graphics/'
-Constants.order = 'l[oaders]-m[iniloader]'
 
 --------------------------------------------------------------------------------
 -- Framework intializer
@@ -124,6 +146,9 @@ Constants.settings = {
 
 Constants.debug_lifetime = 10 -- how long debug info is shown
 
+--------------------------------------------------------------------------------
+-- migrations
+--------------------------------------------------------------------------------
 function Constants:migrations()
     -- entities that can be migrated from the old 1.1 miniloader.
     local migrations = {
@@ -144,8 +169,25 @@ function Constants:migrations()
 end
 
 --------------------------------------------------------------------------------
--- localization
+-- supported entities
 --------------------------------------------------------------------------------
+
+if script then
+    for prototype_name, prototype in pairs(prototypes.entity) do
+        if prototype_name:starts_with(Constants.prefix) and Constants.miniloader_types[prototype.type] and prototype_name:ends_with(Constants.name) then
+            Constants.supported_types[prototype_name] = true
+            table.insert(Constants.supported_type_names, prototype_name)
+
+            local loader_name = Constants.loader_name(prototype_name)
+            Constants.supported_loaders[loader_name] = true
+            table.insert(Constants.supported_loader_names, loader_name)
+
+            local inserter_name = Constants.inserter_name(prototype_name)
+            Constants.supported_inserters[inserter_name] = true
+            table.insert(Constants.supported_inserter_names, inserter_name)
+        end
+    end
+end
 
 --------------------------------------------------------------------------------
 return Constants

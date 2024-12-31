@@ -69,7 +69,7 @@ local function onSnappableEntityCreated(event)
     if not Is.Valid(entity) then return end
 
     -- if this is an actual miniloader, don't snap it
-    if This.MiniLoader.supported_types[entity.name] then return end
+    if const.supported_types[entity.name] then return end
 
     This.Snapping:updateLoaders(entity)
 end
@@ -82,7 +82,7 @@ local function onSnappableEntityRotated(event)
     assert(entity)
 
     -- if this is an actual miniloader, don't snap it
-    if This.MiniLoader.supported_types[entity.name] then return end
+    if const.supported_types[entity.name] then return end
 
     This.Snapping:updateLoaders(entity)
 end
@@ -158,9 +158,9 @@ local function onEntityCloned(event)
 
     local cloned_entities = event.destination.surface.find_entities(Position(event.destination.position):expand_to_area(0.5))
     for _, cloned_entity in pairs(cloned_entities) do
-        if This.MiniLoader.supported_inserters[cloned_entity.name] then
+        if const.supported_inserters[cloned_entity.name] then
             cloned_entity.destroy()
-        elseif This.MiniLoader.supported_loaders[cloned_entity.name] then
+        elseif const.supported_loaders[cloned_entity.name] then
             cloned_entity.destroy()
         end
     end
@@ -180,34 +180,6 @@ local function onInternalEntityCloned(event)
 end
 
 --------------------------------------------------------------------------------
--- GUI
---------------------------------------------------------------------------------
-
----@param event EventData.on_gui_opened
-local function onGuiOpened(event)
-    if event.gui_type ~= defines.gui_type.entity then return end
-    if not Is.Valid(event.entity) then return end
-
-    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
-    if not ml_entity then return end
-
-    ml_entity.loader.active = false
-    for _, inserter in pairs(ml_entity.inserters) do
-        inserter.active = false
-    end
-end
-
----@param event EventData.on_gui_closed
-local function onGuiClosed(event)
-    if not Is.Valid(event.entity) then return end
-    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
-    if not ml_entity then return end
-
-    This.MiniLoader:syncInserterConfig(ml_entity)
-    This.MiniLoader:reconfigure(ml_entity)
-end
-
---------------------------------------------------------------------------------
 -- Configuration changes (runtime and startup)
 --------------------------------------------------------------------------------
 
@@ -217,7 +189,7 @@ local function onConfigurationChanged(changed)
 
     -- enable recipes if researched
     for _, force in pairs(game.forces) do
-        for _, name in pairs(This.MiniLoader.supported_type_names) do
+        for _, name in pairs(const.supported_type_names) do
             if force.recipes[name] and force.technologies[name] then
                 force.recipes[name].enabled = force.technologies[name].researched
             end
@@ -239,9 +211,9 @@ end
 -- event registration
 --------------------------------------------------------------------------------
 
-local ml_entity_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_type_names)
-local ml_inserter_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_inserter_names)
-local ml_loader_filter = tools.create_event_entity_matcher('name', This.MiniLoader.supported_loader_names)
+local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
+local ml_inserter_filter = tools.create_event_entity_matcher('name', const.supported_inserter_names)
+local ml_loader_filter = tools.create_event_entity_matcher('name', const.supported_loader_names)
 local snap_entity_filter = tools.create_event_entity_matcher('type', const.snapping_type_names)
 
 -- mod init code
@@ -256,10 +228,10 @@ Event.register(defines.events.on_runtime_mod_setting_changed, onRuntimeConfigura
 Event.register(defines.events.on_object_destroyed, onObjectDestroyed)
 
 -- manage ghost building (robot building) Register all ghosts we are interested in
-Framework.ghost_manager:register_for_ghost_names(This.MiniLoader.supported_type_names)
+Framework.ghost_manager:register_for_ghost_names(const.supported_type_names)
 
 -- manage blueprinting and copy/paste
-Framework.blueprint:register_callback(This.MiniLoader.supported_type_names, onBlueprintCallback)
+Framework.blueprint:register_callback(const.supported_type_names, onBlueprintCallback)
 
 -- entity create / delete
 tools.event_register(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)
@@ -271,10 +243,6 @@ Event.register(defines.events.on_player_rotated_entity, onSnappableEntityRotated
 
 -- entity rotation
 Event.register(defines.events.on_player_rotated_entity, onEntityRotated, ml_entity_filter)
-
--- Gui updates / sync inserters
-Event.register(defines.events.on_gui_opened, onGuiOpened, ml_entity_filter)
-Event.register(defines.events.on_gui_closed, onGuiClosed, ml_entity_filter)
 
 -- Entity cloning
 Event.register(defines.events.on_entity_cloned, onEntityCloned, ml_entity_filter)

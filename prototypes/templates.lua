@@ -132,7 +132,7 @@ local templates = {
                 },
                 prerequisites = { 'logistics' },
                 research_trigger = {
-                    type = 'craft-item', item = 'iron-gear-wheel', count = 10,
+                    type = 'craft-item', item = 'iron-gear-wheel', count = 100,
                 },
                 loader_tier = '', -- use basic belt animation
             }
