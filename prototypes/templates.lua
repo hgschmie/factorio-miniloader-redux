@@ -122,7 +122,7 @@ local templates = {
                 order = 'd[a]-a',
                 subgroup = 'belt',
                 stack_size = 50,
-                tint = util.color('777777d9'),
+                tint = util.color('999999d9'),
                 speed = data.raw['transport-belt']['transport-belt'].speed / 4,
                 energy_source = { type = 'void' },
                 ingredients = {

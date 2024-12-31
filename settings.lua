@@ -16,7 +16,7 @@ data:extend({
         name = const.settings.loader_snapping,
         order = 'aa',
         setting_type = 'runtime-global',
-        default_value = false,
+        default_value = true,
     },
     {
         type = 'bool-setting',
