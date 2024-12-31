@@ -11,6 +11,13 @@
     "base >= 2.0.0"
   ],
   "package": {
+    "ignore":[
+      "portal/*",
+      "release/*",
+      "graphics/**/*.webp",
+      ".gitignore",
+      ".vscode"
+    ],
     "git_publish_branch": "main",
     "readme": "README.md",
     "sync_portal_details": true
