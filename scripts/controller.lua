@@ -3,6 +3,8 @@
 -- controller
 ------------------------------------------------------------------------
 
+local util = require('util')
+
 local Is = require('stdlib.utils.is')
 local Direction = require('stdlib.area.direction')
 local Position = require('stdlib.area.position')

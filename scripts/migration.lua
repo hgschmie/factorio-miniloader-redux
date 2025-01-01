@@ -2,6 +2,9 @@
 --------------------------------------------------------------------------------
 -- loader migration
 --------------------------------------------------------------------------------
+
+local util = require('util')
+
 local Position = require('stdlib.area.position')
 local Is = require('stdlib.utils.is')
 

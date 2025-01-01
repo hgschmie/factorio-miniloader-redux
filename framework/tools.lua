@@ -3,10 +3,11 @@
 -- Utility functions
 --------------------------------------------------------------------------------
 
+local util = require('util')
+
 local Is = require('stdlib.utils.is')
 local table = require('stdlib.utils.table')
 
-local lualib_util = require('util')
 
 ---@class FrameworkTools
 ---@field STATUS_TABLE table<defines.entity_status, string>
@@ -35,7 +36,7 @@ local Tools = {
         defines.events.script_raised_destroy,
     },
 
-    copy = lualib_util.copy -- allow `tools.copy`
+    copy = util.copy -- allow `tools.copy`
 }
 
 --------------------------------------------------------------------------------

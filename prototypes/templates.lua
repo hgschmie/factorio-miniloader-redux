@@ -3,6 +3,8 @@
 -- Loader templates
 ------------------------------------------------------------------------
 
+local util = require('util')
+
 local const = require('lib.constants')
 
 ---@type table<string, miniloader.LoaderDefinition>

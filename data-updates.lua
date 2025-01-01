@@ -6,6 +6,8 @@ require('lib.init')('data')
 
 ------------------------------------------------------------------------
 
+local util = require('util')
+
 local const = require('lib.constants')
 
 -- all loaders are templated

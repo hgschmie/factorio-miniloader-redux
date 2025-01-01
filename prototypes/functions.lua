@@ -3,12 +3,15 @@
 -- Item generation code
 ------------------------------------------------------------------------
 
-local const = require('lib.constants')
+local util = require('util')
 local collision_mask_util = require('collision-mask-util')
 
 require 'circuit-connector-generated-definitions'
 require 'circuit-connector-sprites'
 require 'sound-util'
+
+local const = require('lib.constants')
+
 
 --
 -- similar to the existing miniloader module, this uses an inserter as the "main" entity.
