@@ -22,14 +22,16 @@ local Migrations = {
     stats = {},
 }
 
+
 for prefix, migration in pairs(const:migrations()) do
     local name = prefix .. 'miniloader-inserter'
     local blueprint_name = prefix .. 'miniloader'
     local entity = prototypes.entity[name]
-    assert(entity)
-    table.insert(Migrations.ml_entities, entity)
-    Migrations.migrations[name] = migration
-    Migrations.blueprint_migrations[blueprint_name] = migration
+    if entity then
+        table.insert(Migrations.ml_entities, entity)
+        Migrations.migrations[name] = migration
+        Migrations.blueprint_migrations[blueprint_name] = migration
+    end
 end
 
 ---@param src LuaEntity
