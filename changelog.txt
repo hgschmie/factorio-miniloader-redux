@@ -3,6 +3,8 @@ Version: 0.2.0
 Date: 2024-12-30
   Bugfixes:
     - fix a problem where the config was not fully copied when copy&pasting miniloaders
+    - fix potential problem with global 'util' not being defined
+    - fix a crash with miniloader migration
 
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.0
