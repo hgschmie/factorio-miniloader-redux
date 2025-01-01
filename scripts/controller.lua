@@ -399,7 +399,7 @@ end
 ---@param skip_main boolean?
 function Controller:resyncInserters(ml_entity, skip_main)
     for _, inserter in pairs(ml_entity.inserters) do
-        if skip_main and inserter.unit_number ~= ml_entity.main.unit_number then
+        if not (skip_main and inserter.unit_number == ml_entity.main.unit_number) then
             for _, attribute in pairs(entity_attributes) do
                 inserter[attribute] = ml_entity.config.inserter_config[attribute]
             end
