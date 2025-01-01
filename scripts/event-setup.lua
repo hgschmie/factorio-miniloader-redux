@@ -110,7 +110,7 @@ local function onEntityRotated(event)
     local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
     if not ml_entity then return end
 
-    This.MiniLoader:rotate(ml_entity, event.previous_direction)
+    This.MiniLoader:rotate(ml_entity)
 end
 
 --------------------------------------------------------------------------------

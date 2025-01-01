@@ -229,16 +229,25 @@ local function create_inserters(main, loader, config)
 end
 
 ------------------------------------------------------------------------
--- rotate
+-- rotate/move
 ------------------------------------------------------------------------
 
 ---@param ml_entity miniloader.Data
----@param previous_direction defines.direction
-function Controller:rotate(ml_entity, previous_direction)
+function Controller:rotate(ml_entity)
     if ml_entity.config.loader_type == const.loader_direction.output then
         ml_entity.config.direction = Direction.opposite(ml_entity.config.direction)
     end
     ml_entity.config.loader_type = This.Snapping:reverse_loader_type(ml_entity.config.loader_type)
+    self:reconfigure(ml_entity)
+end
+
+---@param main LuaEntity
+function Controller:move(main)
+    if not const.supported_types[main.name] then return end
+
+    local ml_entity = self:getEntity(main.unit_number)
+    if not ml_entity then return end
+
     self:reconfigure(ml_entity)
 end
 
@@ -534,16 +543,6 @@ function Controller:reconfigure(ml_entity, cfg)
     end
 
     self:resyncInserters(ml_entity)
-end
-
----@param main LuaEntity
-function Controller:move(main)
-    if not const.supported_types[main.name] then return end
-
-    local ml_entity = self:getEntity(main.unit_number)
-    if not ml_entity then return end
-
-    self:reconfigure(ml_entity)
 end
 
 ------------------------------------------------------------------------
