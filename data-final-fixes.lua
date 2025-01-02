@@ -11,6 +11,9 @@ require 'circuit-connector-sprites'
 require('lib.init')('data')
 
 local function create_miniloader_entity(name)
+    local source_inserter = data.raw['inserter'][const:name_from_prefix('')]
+    assert(source_inserter)
+
     local loader_inserter = {
         type = 'inserter',
         name = name,
@@ -32,7 +35,7 @@ local function create_miniloader_entity(name)
         draw_held_item = false,
         draw_inserter_arrow = false,
         circuit_wire_max_distance = default_circuit_wire_max_distance,
-        circuit_connector = data.raw['inserter'][const:name_from_prefix('')],
+        circuit_connector = source_inserter.circuit_connector,
     }
 
     data:extend { loader_inserter }
