@@ -81,4 +81,4 @@ Default value is "off".
 
 ## Legal
 
-(C) 2024 Henning Schmiedehausen (hgschmie). Released under the MIT License.
+(C) 2024-2025 Henning Schmiedehausen (hgschmie). Released under the MIT License.
