@@ -450,6 +450,7 @@ local function create_recipe(params)
         name = params.name,
         localised_name = params.localised_name,
         ingredients = params.ingredients,
+        enabled = false,
         results = {
             {
                 type = 'item',
@@ -466,6 +467,7 @@ local function create_recipe(params)
         icons = util.copy(technology_icons),
         prerequisites = params.prerequisites,
         research_trigger = params.research_trigger,
+        visible_when_disabled = false,
         effects = {
             {
                 type = 'unlock-recipe',
