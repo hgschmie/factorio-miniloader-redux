@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.2
-Date: ????
+Date: 2025-01-03
   Bugfixes:
     - Turbo loader should not require Turbo loader but Express Loader. Reported by @Inleo in the mod discussions
 ---------------------------------------------------------------------------------------------------
