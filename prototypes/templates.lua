@@ -80,9 +80,9 @@ local templates = {
                 tint = util.color('A8D550d9'),
                 speed = data.raw['transport-belt']['turbo-transport-belt'].speed,
                 ingredients = {
-                    { type = 'item', name = const:name_from_prefix('turbo'), amount = 1 },
-                    { type = 'item', name = 'turbo-underground-belt',        amount = 1 },
-                    { type = 'item', name = 'bulk-inserter',                 amount = 4 },
+                    { type = 'item', name = const:name_from_prefix('express'), amount = 1 },
+                    { type = 'item', name = 'turbo-underground-belt',          amount = 1 },
+                    { type = 'item', name = 'bulk-inserter',                   amount = 4 },
                 },
                 prerequisites = { 'logistics-3', 'metallurgic-science-pack', const:name_from_prefix('express'), },
                 upgrade_from = const:name_from_prefix('express'),
