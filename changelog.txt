@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
-Date: ????
+Date: 2025-01-04
   Changes:
     - Nerf chute a bit more: No filters and no GUI (it is "mechanical" after all)
   Bugfixes:
