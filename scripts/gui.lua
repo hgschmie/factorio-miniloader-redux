@@ -10,6 +10,7 @@ local tools = require('framework.tools')
 
 local const = require('lib.constants')
 
+local TICK_INTERVAL = -10
 
 ---@class miniloader.Gui
 ---@field open_guis table<integer, miniloader.Data>
@@ -34,14 +35,13 @@ local function onGuiOpened(event)
     local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
     if not ml_entity then return end
 
+    -- nerf mode
     if ml_entity.main.prototype.filter_count == 0 then
         game.players[event.player_index].opened = nil
         return
     end
 
-    if table_size(Gui.open_guis) == 0 then
-        Event.register(-10, sync_open_guis)
-    end
+    Event.register_if(table_size(Gui.open_guis) == 0, TICK_INTERVAL, sync_open_guis)
 
     Gui.open_guis[event.player_index] = ml_entity
 end
@@ -50,9 +50,7 @@ end
 local function onGuiClosed(event)
     Gui.open_guis[event.player_index] = nil
 
-    if table_size(Gui.open_guis) == 0 then
-        Event.remove(-10, sync_open_guis)
-    end
+    Event.remove_if(table_size(Gui.open_guis) == 0, TICK_INTERVAL, sync_open_guis)
 
     if not Is.Valid(event.entity) then return end
     local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)

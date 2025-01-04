@@ -137,7 +137,7 @@ local templates = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 100,
                 },
                 loader_tier = '', -- use basic belt animation
-                disable_filters = true,
+                nerf_mode = true,
             }
         end,
     },

@@ -174,7 +174,7 @@ local function create_entity(params)
         allow_custom_vectors = true,
         draw_held_item = false,
         use_easter_egg = false,
-        filter_count = params.disable_filters and 0 or 5,
+        filter_count = params.nerf_mode and 0 or 5,
 
         -- handle stacking
         bulk = params.bulk or false,
@@ -183,10 +183,10 @@ local function create_entity(params)
         stack_size_bonus = params.bulk and 4,
         max_belt_stack_size = params.bulk and 4,
 
-        circuit_wire_max_distance = default_circuit_wire_max_distance,
+        circuit_wire_max_distance = not params.nerf_mode and default_circuit_wire_max_distance or 0,
         draw_inserter_arrow = false,
         chases_belt_items = false,
-        circuit_connector = not params.disable_filters and inserter_connector_definitions or nil,
+        circuit_connector = not params.nerf_mode and inserter_connector_definitions or nil,
 
         -- EntityWitHealthPrototype
         max_health = 170,
@@ -368,7 +368,7 @@ local function create_entity(params)
                 }
             }
         },
-        filter_count = params.disable_filters and 0 or 5,
+        filter_count = params.nerf_mode and 0 or 5,
         structure_render_layer = 'object',
         container_distance = 1,
         allow_rail_interaction = false,

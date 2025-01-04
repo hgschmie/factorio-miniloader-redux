@@ -28,7 +28,7 @@
 ---@field energy_source? data.ElectricEnergySource|data.VoidEnergySource
 ---@field loader_tier string? Optional, if missing use the prefix. Loader Tier for belt speed
 ---@field bulk? boolean If true, support bulk moves
----@field disable_filters? boolean If true, do not support filtering.
+---@field nerf_mode? boolean Turn off all the nice features and make the loader really dumb.
 
 
 ----------------------------------------------------------------------------------------------------
