@@ -328,6 +328,8 @@ function Controller:destroy(entity_id)
 
     self:setEntity(entity_id, nil)
 
+    ml_entity.main = nil
+
     if Is.Valid(ml_entity.loader) then
         ml_entity.loader.destroy()
         ml_entity.loader = nil

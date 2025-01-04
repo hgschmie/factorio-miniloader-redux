@@ -227,9 +227,6 @@ Event.register(defines.events.on_runtime_mod_setting_changed, onRuntimeConfigura
 -- entity destroy (can't filter on that)
 Event.register(defines.events.on_object_destroyed, onObjectDestroyed)
 
--- manage ghost building (robot building) Register all ghosts we are interested in
-Framework.ghost_manager:register_for_ghost_names(const.supported_type_names)
-
 -- manage blueprinting and copy/paste
 Framework.blueprint:register_callback(const.supported_type_names, onBlueprintCallback)
 

@@ -5,6 +5,7 @@ Date: ????
     - Nerf chute a bit more: No filters and no GUI (it is "mechanical" after all)
   Bugfixes:
     - Don't leave invisible entitites "dangling" around when a miniloader gets destroyed
+    - Don't kill miniloader ghosts after 10 seconds, they hang around until the game finishes them
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.2
 Date: 2025-01-03
