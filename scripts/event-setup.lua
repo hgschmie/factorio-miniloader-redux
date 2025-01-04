@@ -94,9 +94,9 @@ end
 ---@param event EventData.on_object_destroyed
 local function onObjectDestroyed(event)
     -- clear out references if applicable
-    if This.MiniLoader:getEntity(event.useful_id) then
-        This.MiniLoader:setEntity(event.useful_id, nil)
-    end
+    if not This.MiniLoader:getEntity(event.useful_id) then return end
+
+    This.MiniLoader:destroy(event.useful_id)
 end
 
 --------------------------------------------------------------------------------

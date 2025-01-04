@@ -3,6 +3,8 @@ Version: 0.3.0
 Date: ????
   Changes:
     - Nerf chute a bit more: No filters and no GUI (it is "mechanical" after all)
+  Bugfixes:
+    - Don't leave invisible entitites "dangling" around when a miniloader gets destroyed
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.2
 Date: 2025-01-03
