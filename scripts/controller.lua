@@ -361,6 +361,9 @@ local control_attributes = {
 
 local entity_attributes = {
     'inserter_stack_size_override',
+}
+
+local filter_attributes = {
     'use_filters',
     'inserter_filter_mode',
 }
@@ -388,8 +391,14 @@ function Controller:syncInserterConfig(ml_entity, inserter)
         inserter_config[attribute] = inserter[attribute]
     end
 
-    for i = 1, inserter.filter_slot_count, 1 do
-        inserter_config.filters[i] = inserter.get_filter(i)
+    if inserter.filter_slot_count > 0 then
+        for _, attribute in pairs(filter_attributes) do
+            inserter_config[attribute] = inserter[attribute]
+        end
+
+        for i = 1, inserter.filter_slot_count, 1 do
+            inserter_config.filters[i] = inserter.get_filter(i)
+        end
     end
 
     ml_entity.config.inserter_config = inserter_config
@@ -404,8 +413,17 @@ function Controller:resyncInserters(ml_entity, skip_main)
                 inserter[attribute] = ml_entity.config.inserter_config[attribute]
             end
 
-            for i = 1, inserter.filter_slot_count, 1 do
-                inserter.set_filter(i, ml_entity.config.inserter_config.filters[i])
+            if inserter.filter_slot_count > 0 then
+                for _, attribute in pairs(filter_attributes) do
+                    inserter[attribute] = ml_entity.config.inserter_config[attribute]
+                end
+
+                for i = 1, inserter.filter_slot_count, 1 do
+                    inserter.set_filter(i, ml_entity.config.inserter_config.filters[i])
+                end
+            else
+                -- hack to nerf the chute loader. No filters, then only one item at a time.
+                inserter.inserter_stack_size_override = 1
             end
 
             local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]

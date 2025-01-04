@@ -174,7 +174,7 @@ local function create_entity(params)
         allow_custom_vectors = true,
         draw_held_item = false,
         use_easter_egg = false,
-        filter_count = 5,
+        filter_count = params.disable_filters and 0 or 5,
 
         -- handle stacking
         bulk = params.bulk or false,
@@ -186,7 +186,7 @@ local function create_entity(params)
         circuit_wire_max_distance = default_circuit_wire_max_distance,
         draw_inserter_arrow = false,
         chases_belt_items = false,
-        circuit_connector = inserter_connector_definitions,
+        circuit_connector = not params.disable_filters and inserter_connector_definitions or nil,
 
         -- EntityWitHealthPrototype
         max_health = 170,
@@ -270,6 +270,7 @@ local function create_entity(params)
     hidden_inserter.allow_copy_paste = false
     hidden_inserter.selectable_in_game = false
     hidden_inserter.fast_replaceable_group = nil
+    hidden_inserter.collision_mask = collision_mask_util.new_mask()
 
     local loader = {
         -- Prototype Base
@@ -367,7 +368,7 @@ local function create_entity(params)
                 }
             }
         },
-        filter_count = 5,
+        filter_count = params.disable_filters and 0 or 5,
         structure_render_layer = 'object',
         container_distance = 1,
         allow_rail_interaction = false,

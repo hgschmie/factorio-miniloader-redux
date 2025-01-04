@@ -34,6 +34,11 @@ local function onGuiOpened(event)
     local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
     if not ml_entity then return end
 
+    if ml_entity.main.prototype.filter_count == 0 then
+        game.players[event.player_index].opened = nil
+        return
+    end
+
     if table_size(Gui.open_guis) == 0 then
         Event.register(-10, sync_open_guis)
     end

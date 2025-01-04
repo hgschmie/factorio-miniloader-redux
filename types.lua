@@ -27,7 +27,8 @@
 ---@field unit data.TechnologyUnit? The unit of research required. If both unit and research_trigger are undefined, the values from the first ingredient are copied.
 ---@field energy_source? data.ElectricEnergySource|data.VoidEnergySource
 ---@field loader_tier string? Optional, if missing use the prefix. Loader Tier for belt speed
----@field bulk? boolean
+---@field bulk? boolean If true, support bulk moves
+---@field disable_filters? boolean If true, do not support filtering.
 
 
 ----------------------------------------------------------------------------------------------------
