@@ -9,6 +9,8 @@ local Position = require('stdlib.area.position')
 
 local tools = require('framework.tools')
 
+local TICK_INTERVAL = -61 -- run all 61 ticks; negative because Event.register/Event.remove need negative value
+
 ---@alias FrameworkGhostManagerRefreshCallback function(entity: FrameworkAttachedEntity, all_entities: FrameworkAttachedEntity[]): FrameworkAttachedEntity[]
 
 ---@class FrameworkGhostManager
@@ -31,6 +33,10 @@ function FrameworkGhostManager:state()
     return storage.ghost_manager
 end
 
+local function onTick()
+    Framework.ghost_manager:tick()
+end
+
 ---@param entity LuaEntity
 ---@param player_index integer
 function FrameworkGhostManager:registerGhost(entity, player_index)
@@ -38,6 +44,8 @@ function FrameworkGhostManager:registerGhost(entity, player_index)
     -- an entity if it is placed over the ghost
 
     local state = self:state()
+
+    Event.register_if(table_size(state.ghost_entities) == 0, TICK_INTERVAL, onTick)
 
     state.ghost_entities[entity.unit_number] = {
         -- maintain entity reference for attached entity ghosts
@@ -58,10 +66,11 @@ end
 function FrameworkGhostManager:deleteGhost(unit_number)
     local state = self:state()
 
-    if state.ghost_entities[unit_number] then
-        state.ghost_entities[unit_number].entity.destroy()
-        state.ghost_entities[unit_number] = nil
-    end
+    if not state.ghost_entities[unit_number] then return end
+    state.ghost_entities[unit_number].entity.destroy()
+    state.ghost_entities[unit_number] = nil
+
+    Event.remove_if(table_size(state.ghost_entities) == 0, TICK_INTERVAL, onTick)
 end
 
 ---@param entity LuaEntity
@@ -76,7 +85,7 @@ function FrameworkGhostManager:findMatchingGhost(entity)
             and entity.position.x == ghost.position.x
             and entity.position.y == ghost.position.y
             and entity.orientation == ghost.orientation then
-            state.ghost_entities[idx] = nil
+            self:deleteGhost(idx)
             return ghost
         end
     end
@@ -127,10 +136,6 @@ end
 --------------------------------------------------------------------------------
 -- ticker
 --------------------------------------------------------------------------------
-
-local function onTick()
-    Framework.ghost_manager:tick()
-end
 
 -- entities that do not get refreshed will disappear after 10 seconds
 local timeout_for_ghosts = 600
@@ -185,7 +190,5 @@ function FrameworkGhostManager:register_for_ghost_refresh(names, callback)
 end
 
 Event.register(defines.events.on_object_destroyed, onObjectDestroyed)
-
-Event.on_nth_tick(61, onTick)
 
 return FrameworkGhostManager
