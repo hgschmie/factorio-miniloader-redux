@@ -103,11 +103,12 @@ local function create_entity(params)
         { 'per-second-suffix' }
     }
 
+    local drain = tostring((params.speed * 480) * 4) .. 'kW'
+
     local energy_source = params.energy_source or {
         type = 'electric',
         buffer_capacity = '0kJ',
         usage_priority = 'secondary-input',
-        drain = '1kW',
         render_no_power_icon = false,
         render_no_network_icon = true,
     }
@@ -174,8 +175,8 @@ local function create_entity(params)
         hand_open_shadow = util.empty_sprite(),
         hand_closed_shadow = util.empty_sprite(),
         energy_source = energy_source,
-        energy_per_movement = '2kW',
-        energy_per_rotation = '2kW',
+        energy_per_movement = drain,
+        energy_per_rotation = drain,
         allow_custom_vectors = true,
         draw_held_item = false,
         use_easter_egg = false,
