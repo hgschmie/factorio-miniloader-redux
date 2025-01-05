@@ -6,7 +6,7 @@ The all-popular [Miniloader](https://mods.factorio.com/mod/miniloader) has not s
 - Migrating the 1.1 Miniloader mod to 2.0 would have been possible, but the code is gnarly and especially the wire handling has changed a bit. It also uses an intermediate container which is no longer needed. Basically, migrating would have been a full rewrite.
 - [Loader Redux](https://mods.factorio.com/mod/LoaderRedux) was never migrated to 2.0 (which would have been trivial) and suffers from the same problems as Loader Modernized. Also the entities are 1x2.
 
-And there are a more mods, which are basically reskinning the existing 1x1 or 1x2 loaders. None of them covered what I needed. 
+And there are a more mods, which are basically reskinning the existing 1x1 or 1x2 loaders. None of them covered what I needed.
 
 The genius of the 1x1 Miniloader module is that it checks all the boxes. Hence Miniloader Redux.
 
@@ -23,7 +23,6 @@ The genius of the 1x1 Miniloader module is that it checks all the boxes. Hence M
 - Can be moved with [Even Pickier Dollies](https://mods.factorio.com/mod/even-pickier-dollies)
 - Supports migrating games from the "old" Miniloaders to Miniloader (Redux) with a startup setting.
 - Rotates better than the old miniloader (flips through belt directions and orientation).
-- Shows up as a single entity in the Power Display and Blueprints. The old Miniloaders showed up as multiple (usually two).
 - Supports Fast replacement, Blueprinting, Copy&Paste, Cloning.
 - Supports a simple "chute" loader that is available early in the game (configurable).
 

@@ -105,7 +105,11 @@ local function create_entity(params)
 
     local energy_source = params.energy_source or {
         type = 'electric',
+        buffer_capacity = '0kJ',
         usage_priority = 'secondary-input',
+        drain = '1kW',
+        render_no_power_icon = false,
+        render_no_network_icon = true,
     }
 
     -- This is the entity that is used to represent the miniloader.
@@ -129,6 +133,7 @@ local function create_entity(params)
         rotation_speed = 0.5,
         insert_position = { 0, 0 },
         pickup_position = { 0, 0 },
+
         platform_picture = {
             sheets = {
                 -- Base
@@ -169,8 +174,8 @@ local function create_entity(params)
         hand_open_shadow = util.empty_sprite(),
         hand_closed_shadow = util.empty_sprite(),
         energy_source = energy_source,
-        energy_per_movement = '10kJ',
-        energy_per_rotation = '10kJ',
+        energy_per_movement = '2kW',
+        energy_per_rotation = '2kW',
         allow_custom_vectors = true,
         draw_held_item = false,
         use_easter_egg = false,
@@ -247,9 +252,7 @@ local function create_entity(params)
     hidden_inserter.hidden = true
     hidden_inserter.hidden_in_factoriopedia = true
     hidden_inserter.platform_picture = util.empty_sprite()
-    hidden_inserter.energy_source = { type = 'void' }
     hidden_inserter.icons = { util.empty_icon() }
-    -- hidden_inserter.collision_box = { { 0, 0 }, { 0, 0 } }
     hidden_inserter.collision_mask = collision_mask_util.new_mask()
     hidden_inserter.selection_box = { { 0, 0 }, { 0, 0 } }
     hidden_inserter.flags = {

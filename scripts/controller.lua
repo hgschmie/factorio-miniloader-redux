@@ -59,10 +59,8 @@ for direction in pairs(Controller.outside_positions) do
         pos = pos + step
     end
 
-    local x = v and shift or 0
-    local y = v and 0 or shift
-    Controller.inside_positions[direction][1] = Position { x = x, y = y }
-    Controller.inside_positions[direction][2] = Position { x = v and -x or x, y = v and y or -y }
+    Controller.inside_positions[direction][1] = Controller.outside_positions[direction][1]
+    Controller.inside_positions[direction][2] = Controller.outside_positions[direction][2]
 
     count = count + 1
 end
@@ -330,16 +328,12 @@ function Controller:destroy(entity_id)
 
     ml_entity.main = nil
 
-    if Is.Valid(ml_entity.loader) then
-        ml_entity.loader.destroy()
-        ml_entity.loader = nil
-    end
+    if Is.Valid(ml_entity.loader) then ml_entity.loader.destroy() end
+    ml_entity.loader = nil
 
     if ml_entity.inserters then
         for i = 2, #ml_entity.inserters do
-            if Is.Valid(ml_entity.inserters[i]) then
-                ml_entity.inserters[i].destroy()
-            end
+            if Is.Valid(ml_entity.inserters[i]) then ml_entity.inserters[i].destroy() end
             ml_entity.inserters[i] = nil
         end
     end
@@ -464,14 +458,14 @@ local function draw_position(ml_entity, position, color, index)
     local area = position:expand_to_area(0.1)
     rendering.draw_rectangle {
         color = color,
-        surface = ml_entity.loader.surface,
+        surface = ml_entity.main.surface,
         left_top = area.left_top,
         right_bottom = area.right_bottom,
         time_to_live = const.debug_lifetime,
     }
     rendering.draw_text {
         text = tostring(index),
-        surface = ml_entity.loader.surface,
+        surface = ml_entity.main.surface,
         target = position,
         color = color,
         scale = 0.5,
@@ -497,18 +491,20 @@ function Controller:reconfigure(ml_entity, cfg)
     assert(direction)
 
     -- reorient loader
-    ml_entity.loader.loader_type = tostring(config.loader_type)
-    ml_entity.loader.direction = compute_loader_direction(config)
-    if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
-        -- loader was moved
-        ml_entity.loader.destroy()
-        ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
+    if Is.Valid(ml_entity.loader) then
+        ml_entity.loader.loader_type = tostring(config.loader_type)
+        ml_entity.loader.direction = compute_loader_direction(config)
+        if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
+            -- miniloader was moved
+            ml_entity.loader.destroy()
+            ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
+        end
     end
 
     -- connect inserters and loader
 
     local back_position = Position(ml_entity.main.position):translate(direction, -1)
-    local front_position = Position(ml_entity.loader.position):translate(direction, 0.2)
+    local front_position = Position(ml_entity.main.position):translate(direction, 0.2)
     local inside_target = ml_entity.loader
 
     if Framework.settings:runtime_setting('debug_mode') then
