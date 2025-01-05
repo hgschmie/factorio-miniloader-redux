@@ -59,9 +59,8 @@ for direction in pairs(Controller.outside_positions) do
         pos = pos + step
     end
 
-    Controller.inside_positions[direction][1] = Controller.outside_positions[direction][1]
-    Controller.inside_positions[direction][2] = Controller.outside_positions[direction][2]
-
+    Controller.inside_positions[direction][1] = Controller.outside_positions[direction][5]
+    Controller.inside_positions[direction][2] = Controller.outside_positions[direction][6]
     count = count + 1
 end
 
