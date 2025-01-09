@@ -13,8 +13,7 @@ require 'sound-util'
 local const = require('lib.constants')
 
 
---
--- similar to the existing miniloader module, this uses an inserter as the "main" entity.
+-- similar to the original miniloader module, this uses an inserter as the "main" entity.
 -- unlike the miniloader, it manages all other entities fully. It also uses different inserter entities for
 -- primary and hidden inserters which allows for correct power stats and blueprints.
 
@@ -93,7 +92,10 @@ local function create_entity(params)
     local inserter_name = const.inserter_name(entity_name)
 
     local items_per_second = math.floor(params.speed * 480 * 100 + 0.5) / 100
+
     local description = { '',
+        { 'entity-description.' .. entity_name },
+        "\n",
         '[font=default-semibold][color=255,230,192]',
         { 'description.belt-speed' },
         ':[/color][/font] ',
@@ -103,15 +105,18 @@ local function create_entity(params)
         { 'per-second-suffix' }
     }
 
-    local drain = tostring((params.speed * 480) * 4) .. 'kW'
+    local drain = '0.0000001W'
+    local consumption = tostring(params.speed * 1200 * (params.bulk and 1.5 or 1)) .. 'kW'
 
-    local energy_source = params.energy_source or {
+    local electric_energy = params.energy_source or {
         type = 'electric',
         buffer_capacity = '0kJ',
         usage_priority = 'secondary-input',
-        render_no_power_icon = false,
+        render_no_power_icon = true,
         render_no_network_icon = true,
     }
+
+    local void_energy = { type = 'void', }
 
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
@@ -130,8 +135,8 @@ local function create_entity(params)
         hidden_in_factoriopedia = false,
 
         -- InserterPrototype
-        extension_speed = 1,
-        rotation_speed = 0.5,
+        extension_speed = params.speed * 8,
+        rotation_speed = params.speed * 4,
         insert_position = { 0, 0 },
         pickup_position = { 0, 0 },
 
@@ -174,9 +179,9 @@ local function create_entity(params)
         hand_base_shadow = util.empty_sprite(),
         hand_open_shadow = util.empty_sprite(),
         hand_closed_shadow = util.empty_sprite(),
-        energy_source = energy_source,
-        energy_per_movement = drain,
-        energy_per_rotation = drain,
+        energy_source = electric_energy,
+        energy_per_movement = consumption,
+        energy_per_rotation = consumption,
         allow_custom_vectors = true,
         draw_held_item = false,
         use_easter_egg = false,
@@ -229,7 +234,7 @@ local function create_entity(params)
             },
         },
 
-        collision_box = { { -0.2, -0.2 }, { 0.2, 0.2 } },
+        collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
         collision_mask = collision_mask_util.get_default_mask('inserter'),
         selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
         flags = { 'placeable-neutral', 'placeable-player', 'player-creation' },
@@ -248,12 +253,9 @@ local function create_entity(params)
 
     local hidden_inserter = util.copy(inserter)
     hidden_inserter.name = inserter_name
-    hidden_inserter.localised_name = nil
-    hidden_inserter.localised_description = nil
     hidden_inserter.hidden = true
     hidden_inserter.hidden_in_factoriopedia = true
     hidden_inserter.platform_picture = util.empty_sprite()
-    hidden_inserter.icons = { util.empty_icon() }
     hidden_inserter.collision_mask = collision_mask_util.new_mask()
     hidden_inserter.selection_box = { { 0, 0 }, { 0, 0 } }
     hidden_inserter.flags = {
@@ -374,17 +376,18 @@ local function create_entity(params)
         },
         filter_count = params.nerf_mode and 0 or 5,
         structure_render_layer = 'object',
-        container_distance = 1,
+        container_distance = 0,
         allow_rail_interaction = false,
         allow_container_interaction = false,
         per_lane_filters = false,
-        energy_source = {
-            type = 'void',
-        },
+        energy_source = void_energy,
+        energy_per_item = drain,
 
-        energy_per_item = '.0000001J',
         circuit_wire_max_distance = default_circuit_wire_max_distance,
         circuit_connector = loader_connector_definitions,
+
+        -- EntityWitHealthPrototype
+        max_health = 10,
 
         -- TransportBeltConnectablePrototype
         belt_animation_set = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
@@ -404,9 +407,9 @@ local function create_entity(params)
             },
         },
 
-        collision_box = { { -0.3, -0.3, }, { 0.3, 0.3 } },
+        collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
         collision_mask = { layers = { transport_belt = true, } },
-        selection_box = { { 0, 0 }, { 0, 0 } },
+        selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
         flags = {
             'placeable-neutral',
             'placeable-player',

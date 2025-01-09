@@ -3,4 +3,5 @@
 ------------------------------------------------------------------------
 
 require('lib.init')('data')
+
 require('framework.other-mods').data()

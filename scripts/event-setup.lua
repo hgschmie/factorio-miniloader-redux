@@ -7,6 +7,7 @@ local Position = require('stdlib.area.position')
 local Event = require('stdlib.event.event')
 local Is = require('stdlib.utils.is')
 local Player = require('stdlib.event.player')
+local table = require('stdlib.utils.table')
 
 local tools = require('framework.tools')
 
@@ -199,6 +200,18 @@ local function onConfigurationChanged(changed)
     if Framework.settings:startup_setting('migrate_loaders') then
         migration:migrate_miniloaders()
         migration:migrate_game_blueprints()
+    end
+
+    local keys = table.keys(This.MiniLoader.entities())
+
+    for _, idx in pairs(keys) do
+        local ml_entity = This.MiniLoader:getEntity(idx)
+        assert(ml_entity)
+        local main = ml_entity.main
+        This.MiniLoader:destroy(idx)
+        if (Is.Valid(main)) then
+            This.MiniLoader:create(main)
+        end
     end
 end
 

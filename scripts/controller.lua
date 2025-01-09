@@ -61,6 +61,7 @@ for direction in pairs(Controller.outside_positions) do
 
     Controller.inside_positions[direction][1] = Controller.outside_positions[direction][5]
     Controller.inside_positions[direction][2] = Controller.outside_positions[direction][6]
+
     count = count + 1
 end
 
@@ -180,7 +181,12 @@ local function create_loader(main, config)
     loader.destructible = false
     loader.operable = false
 
-    script.register_on_object_destroyed(loader)
+    local main_wire_connectors = main.get_wire_connectors(true)
+    local loader_wire_connectors = loader.get_wire_connectors(true)
+
+    for wire_connector_id, wire_connector in pairs(loader_wire_connectors) do
+        wire_connector.connect_to(main_wire_connectors[wire_connector_id], false, defines.wire_origin.script)
+    end
 
     return loader
 end
@@ -211,7 +217,6 @@ local function create_inserters(main, loader, config)
 
         inserter.destructible = false
         inserter.operable = false
-        script.register_on_object_destroyed(inserter)
 
         local inserter_wire_connectors = inserter.get_wire_connectors(true)
 
@@ -308,7 +313,7 @@ function Controller:create(main, tags)
 
     local ml_entity = self:setup(main, tags)
 
-    self:syncInserterConfig(ml_entity)
+    self:readConfigFromEntity(ml_entity.main, ml_entity)
     self:reconfigure(ml_entity)
 
     return ml_entity
@@ -326,6 +331,7 @@ function Controller:destroy(entity_id)
     self:setEntity(entity_id, nil)
 
     ml_entity.main = nil
+    ml_entity.inserters[1] = nil -- do not add to the loop below, game needs to manage the main inserter
 
     if Is.Valid(ml_entity.loader) then ml_entity.loader.destroy() end
     ml_entity.loader = nil
@@ -339,64 +345,111 @@ function Controller:destroy(entity_id)
 end
 
 ------------------------------------------------------------------------
--- sync inserter control behavior
+-- sync control behavior
 ------------------------------------------------------------------------
+
+-- GUI updates the loader, loader config is synced to the inserters
+-- entity creation / resurrection uses the primary inserter. config is synced from the inserter to the loader
+-- all meet at ml_entity.config
 
 local control_attributes = {
     'circuit_set_filters',
-    'circuit_read_hand_contents',
-    'circuit_hand_read_mode',
-    'circuit_set_stack_size',
-    'circuit_stack_control_signal',
     'circuit_enable_disable',
     'circuit_condition',
     'connect_to_logistic_network',
     'logistic_condition',
 }
 
-local entity_attributes = {
-    'inserter_stack_size_override',
+local EMPTY_LOADER_CONFIG = {
+    circuit_set_filters = false,
+    circuit_enable_disable = false,
+    circuit_condition = { constant = 0, comparator = '<', fulfilled = false },
+    connect_to_logistic_network = false,
+    logistic_condition = { constant = 0, comparator = '<', fulfilled = false },
+    loader_filter_mode = 'none',
+    filters = {},
+    circuit_read_transfers = false,
 }
 
-local filter_attributes = {
-    'use_filters',
-    'inserter_filter_mode',
-}
-
-
+---@param entity LuaEntity Loader or Inserter
 ---@param ml_entity miniloader.Data
----@param inserter LuaEntity?
-function Controller:syncInserterConfig(ml_entity, inserter)
-    inserter = inserter or ml_entity.main
-
-    local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
+function Controller:readConfigFromEntity(entity, ml_entity)
+    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
     assert(control)
 
     if not control.valid then return end
 
-    local inserter_config = {
-        filters = {},
-    }
+    local inserter_config = ml_entity.config.inserter_config
 
+    -- copy control attributes
     for _, attribute in pairs(control_attributes) do
         inserter_config[attribute] = control[attribute]
     end
 
-    for _, attribute in pairs(entity_attributes) do
-        inserter_config[attribute] = inserter[attribute]
+    if entity.type == 'inserter' then
+        if entity.filter_slot_count > 0 then
+            inserter_config.loader_filter_mode = entity.use_filters and entity.inserter_filter_mode or 'none'
+
+            for i = 1, entity.filter_slot_count, 1 do
+                inserter_config.filters[i] = entity.get_filter(i)
+            end
+        else
+            inserter_config.loader_filter_mode = 'none'
+        end
+    else
+        inserter_config.loader_filter_mode = entity.loader_filter_mode
+
+        for i = 1, entity.filter_slot_count, 1 do
+            inserter_config.filters[i] = entity.get_filter(i)
+        end
+    end
+end
+
+---@param inserter_config table<string, any?>
+---@param entity LuaEntity Loader or Inserter
+local function write_config_to_entity(inserter_config, entity)
+    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
+    assert(control)
+
+    if not control.valid then return end
+
+    -- copy control attributes
+    for _, attribute in pairs(control_attributes) do
+        control[attribute] = inserter_config[attribute]
     end
 
-    if inserter.filter_slot_count > 0 then
-        for _, attribute in pairs(filter_attributes) do
-            inserter_config[attribute] = inserter[attribute]
+    if entity.type == 'inserter' then
+        if entity.filter_slot_count > 0 then
+            if inserter_config.loader_filter_mode and inserter_config.loader_filter_mode ~= 'none' then
+                entity.use_filters = true
+                entity.inserter_filter_mode = inserter_config.loader_filter_mode
+            else
+                entity.use_filters = false
+            end
+
+            for i = 1, entity.filter_slot_count, 1 do
+                entity.set_filter(i, inserter_config.filters[i])
+            end
         end
 
-        for i = 1, inserter.filter_slot_count, 1 do
-            inserter_config.filters[i] = inserter.get_filter(i)
+        entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 1
+
+        local inserter_control = control --[[@as LuaInserterControlBehavior]]
+        inserter_control.circuit_read_hand_contents = false
+        inserter_control.circuit_set_stack_size = false
+    else
+        entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
+
+        for i = 1, entity.filter_slot_count, 1 do
+            entity.set_filter(i, inserter_config.filters[i])
         end
     end
+end
 
-    ml_entity.config.inserter_config = inserter_config
+---@param ml_entity miniloader.Data
+---@param entity LuaEntity Loader or Inserter
+function Controller:writeConfigToEntity(ml_entity, entity)
+    write_config_to_entity(ml_entity.config.inserter_config, entity)
 end
 
 ---@param ml_entity miniloader.Data
@@ -404,31 +457,7 @@ end
 function Controller:resyncInserters(ml_entity, skip_main)
     for _, inserter in pairs(ml_entity.inserters) do
         if not (skip_main and inserter.unit_number == ml_entity.main.unit_number) then
-            for _, attribute in pairs(entity_attributes) do
-                inserter[attribute] = ml_entity.config.inserter_config[attribute]
-            end
-
-            if inserter.filter_slot_count > 0 then
-                for _, attribute in pairs(filter_attributes) do
-                    inserter[attribute] = ml_entity.config.inserter_config[attribute]
-                end
-
-                for i = 1, inserter.filter_slot_count, 1 do
-                    inserter.set_filter(i, ml_entity.config.inserter_config.filters[i])
-                end
-            else
-                -- hack to nerf the chute loader. No filters, then only one item at a time.
-                inserter.inserter_stack_size_override = 1
-            end
-
-            local control = inserter.get_or_create_control_behavior() --[[@as LuaInserterControlBehavior ]]
-            assert(control)
-
-            if control.valid then
-                for _, attribute in pairs(control_attributes) do
-                    control[attribute] = ml_entity.config.inserter_config[attribute]
-                end
-            end
+            self:writeConfigToEntity(ml_entity, inserter)
         end
     end
 end
@@ -454,7 +483,7 @@ local function draw_position(ml_entity, position, color, index)
         color = { r = 0.3, g = 0.3, b = 0.3 }
     end
 
-    local area = position:expand_to_area(0.1)
+    local area = Position(position):expand_to_area(0.1)
     rendering.draw_rectangle {
         color = color,
         surface = ml_entity.main.surface,
@@ -500,27 +529,23 @@ function Controller:reconfigure(ml_entity, cfg)
         end
     end
 
-    -- connect inserters and loader
+    -- connect loader to belt if needed
+    ml_entity.loader.update_connections()
 
+    -- connect inserters and loader
     local back_position = Position(ml_entity.main.position):translate(direction, -1)
-    local front_position = Position(ml_entity.main.position):translate(direction, 0.2)
+    local front_position = Position(ml_entity.main.position)
     local inside_target = ml_entity.loader
 
     if Framework.settings:runtime_setting('debug_mode') then
-        for x = 1, table_size(self.outside_positions[direction]), 1 do
+        for x = table_size(ml_entity.inserters) + 1, table_size(self.outside_positions[direction]), 1 do
             local outside_position = back_position + self.outside_positions[direction][one_mod(x, 8)]
-            local inside_position = front_position + self.inside_positions[direction][one_mod(x, 2)]
-
-            local pickup_position = outside_position
-            local drop_position = inside_position
 
             if config.loader_type == const.loader_direction.input then
-                pickup_position = inside_position
-                drop_position = outside_position
+                draw_position(ml_entity, outside_position, { r = 0.4, g = 0.1, b = 0.1 }, x)
+            else
+                draw_position(ml_entity, outside_position, { r = 0.1, g = 0.4, b = 0.1 }, x)
             end
-
-            draw_position(ml_entity, drop_position, { r = 0.4, g = 0.1, b = 0.1 }, x)
-            draw_position(ml_entity, pickup_position, { r = 0.1, g = 0.4, b = 0.1 }, x)
         end
     end
 
@@ -541,6 +566,7 @@ function Controller:reconfigure(ml_entity, cfg)
             inserter.pickup_target = inside_target
             inserter.drop_target = nil
         else
+            -- inserter gets items, loader sends them down the belt
             pickup_position = outside_position
             drop_position = inside_position
 
@@ -558,6 +584,9 @@ function Controller:reconfigure(ml_entity, cfg)
     end
 
     self:resyncInserters(ml_entity)
+
+    -- clear out loader configuration
+    write_config_to_entity(EMPTY_LOADER_CONFIG, ml_entity.loader)
 end
 
 ------------------------------------------------------------------------
