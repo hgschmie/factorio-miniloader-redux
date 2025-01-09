@@ -24,12 +24,10 @@ local FrameworkGhostManager = {
 function FrameworkGhostManager:state()
     local storage = Framework.runtime:storage()
 
-    if not storage.ghost_manager then
-        ---@type FrameworkGhostManagerState
-        storage.ghost_manager = {
-            ghost_entities = {},
-        }
-    end
+    ---@type FrameworkGhostManagerState
+    storage.ghost_manager = storage.ghost_manager or {
+        ghost_entities = {},
+    }
 
     return storage.ghost_manager
 end
