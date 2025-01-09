@@ -180,7 +180,7 @@ local function create_loader(main, config)
     assert(loader)
 
     loader.destructible = false
-    loader.operable = false
+    loader.operable = true
 
     local main_wire_connectors = main.get_wire_connectors(true)
     local loader_wire_connectors = loader.get_wire_connectors(true)
