@@ -1,7 +1,11 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.3.1
-Date: ????
+Version: 0.4.0
+Date: 2025-01-09
   Changes:
+    - Use the loader GUI which is more appropriate for the miniloader
+  Bugfixes:
+    - When the loader has no power, do not continue to run at half speed
+    - Fix event registration problem when running in multiplayer mode. Reported by @Kodiakfireknight on the mod discussions
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2025-01-05
