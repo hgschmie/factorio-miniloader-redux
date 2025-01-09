@@ -20,18 +20,25 @@ end
 ---@param player_index integer
 ---@param ml_entity miniloader.Data
 local function set_player_gui(player_index, ml_entity)
-    storage.ml_entity.open_guis[player_index] = ml_entity
+    storage.ml_data.open_guis[player_index] = ml_entity
 end
 
 ---@param player_index integer
 local function clear_player_gui(player_index)
-    storage.ml_entity.open_guis[player_index] = nil
+    storage.ml_data.open_guis[player_index] = nil
 end
 
 ---@param player_index integer
 ---@return miniloader.Data?
 local function get_player_gui(player_index)
-    return storage.ml_entity.open_guis[player_index]
+    return storage.ml_data.open_guis[player_index]
+end
+
+local function on_load()
+    for player_index in pairs(get_guis()) do
+        game.players[player_index].opened = nil
+        clear_player_gui(player_index)
+    end
 end
 
 local function sync_open_guis()
@@ -87,4 +94,5 @@ local ml_loader_filter = tools.create_event_entity_matcher('name', const.support
 Event.register(defines.events.on_gui_opened, onGuiOpened, ml_entity_filter)
 Event.register(defines.events.on_gui_closed, onGuiClosed, ml_loader_filter)
 
+Event.on_load(on_load)
 Event.on_nth_tick(TICK_INTERVAL, sync_open_guis)

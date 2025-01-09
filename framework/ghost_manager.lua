@@ -186,5 +186,4 @@ end
 Event.register(defines.events.on_object_destroyed, onObjectDestroyed)
 Event.on_nth_tick(TICK_INTERVAL, onTick)
 
-
 return FrameworkGhostManager

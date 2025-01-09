@@ -15,10 +15,13 @@ local This = {
 
     MiniLoader = require('scripts.controller'),
     Snapping = require('scripts.snapping'),
-    Gui = nil,
 }
 
 Framework.settings:add_defaults(require('scripts.settings'))
+
+if script then
+    require('scripts.gui')
+end
 
 ----------------------------------------------------------------------------------------------------
 
