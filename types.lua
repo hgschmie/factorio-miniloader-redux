@@ -39,6 +39,7 @@
 ---@field VERSION integer
 ---@field count integer
 ---@field by_main table<number, miniloader.Data>
+---@field open_guis table<integer, miniloader.Data>
 
 ---@class miniloader.Config
 ---@field enabled boolean

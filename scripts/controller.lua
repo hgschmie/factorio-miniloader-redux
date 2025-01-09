@@ -107,6 +107,7 @@ function Controller:init()
         VERSION = const.CURRENT_VERSION,
         count = 0,
         by_main = {},
+        open_guis = {},
     }
 end
 

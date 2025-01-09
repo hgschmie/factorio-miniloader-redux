@@ -7,6 +7,10 @@ local const = require('lib.constants')
 
 if storage.ml_data and storage.ml_data.VERSION >= const.CURRENT_VERSION then return end
 
+-- add gui reference
+storage.ml_data.open_guis = storage.ml_data.open_guis or {}
+
+-- rebuild all miniloaders
 local keys = table.keys(This.MiniLoader:entities())
 
 for _, idx in pairs(keys) do

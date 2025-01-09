@@ -7,7 +7,6 @@
 ---@field other_mods table<string, string>
 ---@field MiniLoader miniloader.Controller
 ---@field Snapping miniloader.Snapping
----@field Gui miniloader.Gui?
 local This = {
     other_mods = {
         ['PickerDollies'] = 'picker-dollies',
@@ -20,10 +19,6 @@ local This = {
 }
 
 Framework.settings:add_defaults(require('scripts.settings'))
-
-if script then
-    This.Gui = require('scripts.gui')
-end
 
 ----------------------------------------------------------------------------------------------------
 
