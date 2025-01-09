@@ -31,7 +31,7 @@ local table = require('stdlib.utils.table')
 --_@field order string
 local Constants = {
     -- the current version that is the result of the latest migration
-    CURRENT_VERSION = 1,
+    CURRENT_VERSION = 2,
 
     prefix = 'hps__ml-',
     name = 'miniloader',

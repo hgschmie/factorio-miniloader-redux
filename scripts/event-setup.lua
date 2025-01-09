@@ -7,7 +7,6 @@ local Position = require('stdlib.area.position')
 local Event = require('stdlib.event.event')
 local Is = require('stdlib.utils.is')
 local Player = require('stdlib.event.player')
-local table = require('stdlib.utils.table')
 
 local tools = require('framework.tools')
 
@@ -184,8 +183,7 @@ end
 -- Configuration changes (runtime and startup)
 --------------------------------------------------------------------------------
 
----@param changed ConfigurationChangedData?
-local function onConfigurationChanged(changed)
+local function onConfigurationChanged()
     This.MiniLoader:init()
 
     -- enable recipes if researched
@@ -201,23 +199,6 @@ local function onConfigurationChanged(changed)
         migration:migrate_miniloaders()
         migration:migrate_game_blueprints()
     end
-
-    local keys = table.keys(This.MiniLoader.entities())
-
-    for _, idx in pairs(keys) do
-        local ml_entity = This.MiniLoader:getEntity(idx)
-        assert(ml_entity)
-        local main = ml_entity.main
-        This.MiniLoader:destroy(idx)
-        if (Is.Valid(main)) then
-            This.MiniLoader:create(main)
-        end
-    end
-end
-
----@param changed EventData.on_runtime_mod_setting_changed
-local function onRuntimeConfigurationChanged(changed)
-    migration:migrate_game_blueprints()
 end
 
 --------------------------------------------------------------------------------
@@ -235,7 +216,6 @@ Event.on_load(onLoadMiniloaders)
 
 -- Configuration changes (runtime and startup)
 Event.on_configuration_changed(onConfigurationChanged)
-Event.register(defines.events.on_runtime_mod_setting_changed, onRuntimeConfigurationChanged)
 
 -- entity destroy (can't filter on that)
 Event.register(defines.events.on_object_destroyed, onObjectDestroyed)

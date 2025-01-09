@@ -1,0 +1,22 @@
+require('lib.init')('runtime')
+
+local Is = require('stdlib.utils.is')
+local table = require('stdlib.utils.table')
+
+local const = require('lib.constants')
+
+if storage.ml_data and storage.ml_data.VERSION >= const.CURRENT_VERSION then return end
+
+local keys = table.keys(This.MiniLoader:entities())
+
+for _, idx in pairs(keys) do
+    local ml_entity = This.MiniLoader:getEntity(idx)
+    assert(ml_entity)
+    local main = ml_entity.main
+    This.MiniLoader:destroy(idx)
+    if (Is.Valid(main)) then
+        This.MiniLoader:create(main)
+    end
+end
+
+storage.ml_data.VERSION = const.CURRENT_VERSION
