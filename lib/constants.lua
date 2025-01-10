@@ -118,13 +118,26 @@ Constants.miniloader_type_names = {
 
 Constants.miniloader_types = table.array_to_dictionary(Constants.miniloader_type_names, true)
 
-Constants.snapping_type_names = {
+-- supported types for snapping. Entities that are in front of the loader are considered for changing input/output direction
+---@type string[]
+Constants.forward_snapping_type_names = {
     'lane-splitter', 'linked-belt', 'loader', 'loader-1x1', 'splitter', 'underground-belt', 'transport-belt'
 }
 
--- supported types for snapping
+-- supported types for snapping. Entities that are in front of the loader will cause the loader to "flip around"
+---@type string[]
+Constants.backward_snapping_type_names = {
+    -- all the stuff that a loader can send things into
+    'agricultural-tower', 'ammo-turret', 'artillery-turret', 'assembling-machine', 'boiler', 'burner-generator',
+    'cargo-landing-pad', 'container', 'furnace', 'infinity-container', 'lab', 'linked-container', 'logistic-container',
+    'reactor', 'roboport', 'rocket-silo'
+}
+
+---@type string[]
+Constants.snapping_type_names = table.array_combine(Constants.forward_snapping_type_names, Constants.backward_snapping_type_names)
+
 ---@type table<string, true>
-Constants.snapping_types = table.array_to_dictionary(Constants.snapping_type_names, true)
+Constants.forward_snapping_types = table.array_to_dictionary(Constants.forward_snapping_type_names, true)
 
 ---@enum miniloader.LoaderDirection
 ---@type table<miniloader.LoaderDirection, string>

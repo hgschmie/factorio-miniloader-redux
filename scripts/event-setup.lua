@@ -7,6 +7,7 @@ local Position = require('stdlib.area.position')
 local Event = require('stdlib.event.event')
 local Is = require('stdlib.utils.is')
 local Player = require('stdlib.event.player')
+local table = require('stdlib.utils.table')
 
 local tools = require('framework.tools')
 
@@ -206,9 +207,9 @@ end
 --------------------------------------------------------------------------------
 
 local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
-local ml_inserter_filter = tools.create_event_entity_matcher('name', const.supported_inserter_names)
-local ml_loader_filter = tools.create_event_entity_matcher('name', const.supported_loader_names)
+local ml_internal_entity_filter = tools.create_event_entity_matcher('name', table.array_combine(const.supported_inserter_names, const.supported_loader_names))
 local snap_entity_filter = tools.create_event_entity_matcher('type', const.snapping_type_names)
+local forward_snap_entity_filter = tools.create_event_entity_matcher('type', const.forward_snapping_type_names)
 
 -- mod init code
 Event.on_init(onInitMiniloaders)
@@ -229,15 +230,14 @@ tools.event_register(tools.DELETION_EVENTS, onEntityDeleted, ml_entity_filter)
 
 -- other entities
 tools.event_register(tools.CREATION_EVENTS, onSnappableEntityCreated, snap_entity_filter)
-Event.register(defines.events.on_player_rotated_entity, onSnappableEntityRotated, snap_entity_filter)
+Event.register(defines.events.on_player_rotated_entity, onSnappableEntityRotated, forward_snap_entity_filter)
 
 -- entity rotation
 Event.register(defines.events.on_player_rotated_entity, onEntityRotated, ml_entity_filter)
 
 -- Entity cloning
 Event.register(defines.events.on_entity_cloned, onEntityCloned, ml_entity_filter)
-Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_inserter_filter)
-Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_loader_filter)
+Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_internal_entity_filter)
 
 -- Entity settings pasting
 Event.register(defines.events.on_entity_settings_pasted, onEntitySettingsPasted, ml_entity_filter)

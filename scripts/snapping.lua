@@ -72,7 +72,6 @@ function Snapping:compute_loader_direction(config)
     return config.loader_type == const.loader_direction.output and config.direction or Direction.opposite(config.direction)
 end
 
-
 -- set loader direction according to the entity in front. Unlike other snapping code,
 -- this only considers the entity in front of the loader
 --
@@ -84,16 +83,16 @@ end
 ---@param ml_entity miniloader.Data
 ---@param entity LuaEntity
 ---
-function Snapping:snap_loader_to_target(ml_entity, entity)
-    if not const.snapping_types[entity.type] then return end
+function Snapping:forward_snap_loader_to_target(ml_entity, entity)
+    if not const.forward_snapping_types[entity.type] then return end
 
     if not self:are_aligned(ml_entity.main, entity) then
         if entity.type ~= 'transport-belt' then return end
 
-        -- if the loader points at a transport belt, make it output to the belt
+        -- if the loader points at a non-aligned transport belt, make it output to the belt
         return self:to_loader_type(ml_entity, const.loader_direction.output)
     else
-        -- is the thing that we point at some sort of directional object
+        -- is the thing, that we point at, some sort of directional object?
         local entity_loader_type = get_loader_type(entity)
         if entity_loader_type then return self:to_loader_type(ml_entity, self:reverse_loader_type(entity_loader_type)) end
 
@@ -169,15 +168,20 @@ end
 function Snapping:snapToNeighbor(ml_entity)
     if not Is.Valid(ml_entity.main) then return end
     local neighbor = find_neighbor_entity(ml_entity)
-    if neighbor then
-        return self:snap_loader_to_target(ml_entity, neighbor)
-    end
+    if not neighbor then return end
 
-    -- now look at back unit, if no front unit found
-    -- neighbor = find_neighbor_entity(loader, Direction.opposite(loader.direction))
-    -- if neighbor and (not entity or (entity.unit_number == neighbor.unit_number)) then
-    --     return snap_loader_to_target(loader, neighbor)
-    -- end
+    if const.forward_snapping_types[neighbor.type] then
+        self:forward_snap_loader_to_target(ml_entity, neighbor)
+    else
+        -- it is a thing we should be loading/unloading from but the belt points at it. flip the loader
+        ml_entity.config.direction = Direction.opposite(ml_entity.config.direction)
+
+        -- now that we flipped the loader, check forward snap again.
+        neighbor = find_neighbor_entity(ml_entity)
+        if not (neighbor and const.forward_snapping_types[neighbor.type]) then return end
+
+        self:forward_snap_loader_to_target(ml_entity, neighbor)
+    end
 end
 
 function Snapping:updateNeighborLoaders(entity)
@@ -194,7 +198,6 @@ end
 -- called when entity was rotated or non loader was built
 ---@param entity LuaEntity
 function Snapping:updateLoaders(entity)
-    if not const.snapping_types[entity.type] then return end
     self:updateNeighborLoaders(entity)
 
     if entity.type == 'underground-belt' then
