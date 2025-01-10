@@ -1,7 +1,10 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1
-Date: ????
+Date: 2025-01-10
   Changes:
+    - Make snap logic smarter to flip loader around when a chest is in front of the loader (report by @LouisFahrenheit on the mod discussions)
+  Bugfixes:
+    - drop/pickup items at the very front of the loader, ensures that it does not "buffer" additional items
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 2025-01-09
