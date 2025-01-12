@@ -2,11 +2,12 @@
 --------------------------------------------------------------------------------
 -- event setup for the mod
 --------------------------------------------------------------------------------
+assert(script)
 
 local Position = require('stdlib.area.position')
 local Event = require('stdlib.event.event')
-local Is = require('stdlib.utils.is')
 local Player = require('stdlib.event.player')
+local Is = require('stdlib.utils.is')
 local table = require('stdlib.utils.table')
 
 local tools = require('framework.tools')
@@ -15,17 +16,6 @@ local const = require('lib.constants')
 
 local migration = require('scripts.migration')
 
-
---------------------------------------------------------------------------------
--- mod init/load code
---------------------------------------------------------------------------------
-
-local function onInitMiniloaders()
-    This.MiniLoader:init()
-end
-
-local function onLoadMiniloaders()
-end
 
 --------------------------------------------------------------------------------
 -- entity create / delete
@@ -206,38 +196,56 @@ end
 -- event registration
 --------------------------------------------------------------------------------
 
-local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
-local ml_internal_entity_filter = tools.create_event_entity_matcher('name', table.array_combine(const.supported_inserter_names, const.supported_loader_names))
-local snap_entity_filter = tools.create_event_entity_matcher('type', const.snapping_type_names)
-local forward_snap_entity_filter = tools.create_event_entity_matcher('type', const.forward_snapping_type_names)
+local function register_events()
+    local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
+    local ml_internal_entity_filter = tools.create_event_entity_matcher('name', table.array_combine(const.supported_inserter_names, const.supported_loader_names))
+    local snap_entity_filter = tools.create_event_entity_matcher('type', const.snapping_type_names)
+    local forward_snap_entity_filter = tools.create_event_entity_matcher('type', const.forward_snapping_type_names)
+
+    -- Configuration changes (runtime and startup)
+    Event.on_configuration_changed(onConfigurationChanged)
+
+    -- entity destroy (can't filter on that)
+    Event.register(defines.events.on_object_destroyed, onObjectDestroyed)
+
+    -- manage blueprinting and copy/paste
+    Framework.blueprint:register_callback(const.supported_type_names, onBlueprintCallback)
+
+    -- entity create / delete
+    tools.event_register(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)
+    tools.event_register(tools.DELETION_EVENTS, onEntityDeleted, ml_entity_filter)
+
+    -- other entities
+    tools.event_register(tools.CREATION_EVENTS, onSnappableEntityCreated, snap_entity_filter)
+    Event.register(defines.events.on_player_rotated_entity, onSnappableEntityRotated, forward_snap_entity_filter)
+
+    -- entity rotation
+    Event.register(defines.events.on_player_rotated_entity, onEntityRotated, ml_entity_filter)
+
+    -- Entity cloning
+    Event.register(defines.events.on_entity_cloned, onEntityCloned, ml_entity_filter)
+    Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_internal_entity_filter)
+
+    -- Entity settings pasting
+    Event.register(defines.events.on_entity_settings_pasted, onEntitySettingsPasted, ml_entity_filter)
+end
+
+--------------------------------------------------------------------------------
+-- mod init/load code
+--------------------------------------------------------------------------------
+
+local function onInitMiniloaders()
+    This.MiniLoader:init()
+    register_events()
+end
+
+local function onLoadMiniloaders()
+    register_events()
+end
+
+-- setup player management
+Player.register_events(true)
 
 -- mod init code
 Event.on_init(onInitMiniloaders)
 Event.on_load(onLoadMiniloaders)
-
--- Configuration changes (runtime and startup)
-Event.on_configuration_changed(onConfigurationChanged)
-
--- entity destroy (can't filter on that)
-Event.register(defines.events.on_object_destroyed, onObjectDestroyed)
-
--- manage blueprinting and copy/paste
-Framework.blueprint:register_callback(const.supported_type_names, onBlueprintCallback)
-
--- entity create / delete
-tools.event_register(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)
-tools.event_register(tools.DELETION_EVENTS, onEntityDeleted, ml_entity_filter)
-
--- other entities
-tools.event_register(tools.CREATION_EVENTS, onSnappableEntityCreated, snap_entity_filter)
-Event.register(defines.events.on_player_rotated_entity, onSnappableEntityRotated, forward_snap_entity_filter)
-
--- entity rotation
-Event.register(defines.events.on_player_rotated_entity, onEntityRotated, ml_entity_filter)
-
--- Entity cloning
-Event.register(defines.events.on_entity_cloned, onEntityCloned, ml_entity_filter)
-Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_internal_entity_filter)
-
--- Entity settings pasting
-Event.register(defines.events.on_entity_settings_pasted, onEntitySettingsPasted, ml_entity_filter)

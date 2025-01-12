@@ -3,32 +3,22 @@
 --- Initialize this mod's globals
 ----------------------------------------------------------------------------------------------------
 
----@class InvSensorModThis
+---@class MiniLoaderMod
 ---@field other_mods table<string, string>
 ---@field MiniLoader miniloader.Controller
 ---@field Snapping miniloader.Snapping
-local This = {
+This = {
     other_mods = {
         ['PickerDollies'] = 'picker-dollies',
         ['even-pickier-dollies'] = 'picker-dollies',
     },
-
-    MiniLoader = require('scripts.controller'),
-    Snapping = require('scripts.snapping'),
 }
 
-Framework.settings:add_defaults(require('scripts.settings'))
+Framework.settings:add_defaults(require('lib.settings'))
+
 
 if script then
+    This.MiniLoader = require('scripts.controller')
+    This.Snapping = require('scripts.snapping')
     require('scripts.gui')
-end
-
-----------------------------------------------------------------------------------------------------
-
-return function(stage)
-    if This['this_' .. stage] then
-        This['this_' .. stage](This)
-    end
-
-    return This
 end

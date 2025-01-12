@@ -3,12 +3,11 @@
 ------------------------------------------------------------------------
 
 local const = require('lib.constants')
-local collision_mask_util = require('collision-mask-util')
 
 require 'circuit-connector-generated-definitions'
 require 'circuit-connector-sprites'
 
-require('lib.init')('data')
+require('lib.init')
 
 local function create_miniloader_entity(name)
     local source_inserter = data.raw['inserter'][const:name_from_prefix('')]
@@ -52,4 +51,4 @@ if Framework.settings:startup_setting('migrate_loaders') then
     end
 end
 
-require('framework.other-mods').data_final_fixes()
+Framework.post_data_final_fixes_stage()

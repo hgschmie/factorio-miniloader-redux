@@ -1,4 +1,4 @@
-require('lib.init')('runtime')
+require('lib.init')
 
 local Is = require('stdlib.utils.is')
 local table = require('stdlib.utils.table')

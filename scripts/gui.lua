@@ -2,9 +2,11 @@
 ------------------------------------------------------------------------
 -- GUI code
 ------------------------------------------------------------------------
+assert(script)
 
 local Is = require('stdlib.utils.is')
 local Event = require('stdlib.event.event')
+local Player = require('stdlib.event.player')
 
 local tools = require('framework.tools')
 
@@ -34,9 +36,10 @@ local function get_player_gui(player_index)
     return storage.ml_data.open_guis[player_index]
 end
 
-local function on_load()
+local function close_guis()
     for player_index in pairs(get_guis()) do
-        game.players[player_index].opened = nil
+        local player = Player.get(player_index)
+        if player then player.opened = nil end
         clear_player_gui(player_index)
     end
 end
@@ -52,6 +55,10 @@ local function sync_open_guis()
         end
     end
 end
+
+--------------------------------------------------------------------------------
+-- Event management
+--------------------------------------------------------------------------------
 
 ---@param event EventData.on_gui_opened
 local function onGuiOpened(event)
@@ -87,12 +94,32 @@ local function onGuiClosed(event)
     This.MiniLoader:reconfigure(ml_entity)
 end
 
-local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
-local ml_loader_filter = tools.create_event_entity_matcher('name', const.supported_loader_names)
+--------------------------------------------------------------------------------
+-- event registration
+--------------------------------------------------------------------------------
 
--- Gui updates / sync inserters
-Event.register(defines.events.on_gui_opened, onGuiOpened, ml_entity_filter)
-Event.register(defines.events.on_gui_closed, onGuiClosed, ml_loader_filter)
+local function register_events()
+    local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
+    local ml_loader_filter = tools.create_event_entity_matcher('name', const.supported_loader_names)
 
+    -- Gui updates / sync inserters
+    Event.register(defines.events.on_gui_opened, onGuiOpened, ml_entity_filter)
+    Event.register(defines.events.on_gui_closed, onGuiClosed, ml_loader_filter)
+    Event.on_nth_tick(TICK_INTERVAL, sync_open_guis)
+end
+
+--------------------------------------------------------------------------------
+-- mod init/load code
+--------------------------------------------------------------------------------
+
+local function on_load()
+    close_guis()
+    register_events()
+end
+
+local function on_init()
+    register_events()
+end
+
+Event.on_init(on_init)
 Event.on_load(on_load)
-Event.on_nth_tick(TICK_INTERVAL, sync_open_guis)

@@ -2,6 +2,7 @@
 ------------------------------------------------------------------------
 -- snapping logic
 ------------------------------------------------------------------------
+assert(script)
 
 local Is = require('stdlib.utils.is')
 local Area = require('stdlib.area.area')

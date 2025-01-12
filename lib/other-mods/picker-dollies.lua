@@ -3,7 +3,6 @@
 -- and Picker Dollies (https://mods.factorio.com/mod/PickerDollies) support
 --------------------------------------------------------------------------------
 
-local const = require('lib.constants')
 local Is = require('stdlib.utils.is')
 
 local PickerDolliesSupport = {}
