@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.0
-Date: ????
+Date: 2025-01-12
   Bugfixes:
     - Fix some more multiplayer issues, it works in a local LAN game, so it should also work in server games.
 ---------------------------------------------------------------------------------------------------
