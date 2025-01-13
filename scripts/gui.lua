@@ -113,7 +113,6 @@ end
 --------------------------------------------------------------------------------
 
 local function on_load()
-    close_guis()
     register_events()
 end
 

@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.1
-Date: ????
-  Changes:
+Date: 2025-01-13
+  Bugfixes:
+    - Agh. Don't call 'close_guis()' from on_load, as the game object is not available. Crashes the mod
+      in multiplayer mode. Again.
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.0
 Date: 2025-01-12
