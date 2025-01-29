@@ -187,9 +187,9 @@ local function onConfigurationChanged()
         end
     end
 
-    if Framework.settings:startup_setting('migrate_loaders') then
-        migration:migrate_miniloaders()
-        migration:migrate_game_blueprints()
+    if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
+        migration:migrateMiniloaders()
+        migration:migrateBlueprints()
     end
 end
 

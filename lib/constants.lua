@@ -169,6 +169,8 @@ Constants.debug_lifetime = 10 -- how long debug info is shown
 --------------------------------------------------------------------------------
 -- migrations
 --------------------------------------------------------------------------------
+
+---@return table<string, string>
 function Constants:migrations()
     -- entities that can be migrated from the old 1.1 miniloader.
     local migrations = {

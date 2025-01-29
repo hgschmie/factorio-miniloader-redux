@@ -8,30 +8,28 @@ local util = require('util')
 
 local Position = require('stdlib.area.position')
 local Is = require('stdlib.utils.is')
+local table = require('stdlib.utils.table')
 
 local const = require('lib.constants')
 
----@class miniloader.Migrations
----@field ml_entities LuaEntityPrototype[]
----@field migrations table<string, LuaEntityPrototype>
----@field blueprint_migrations table<string, LuaEntityPrototype>
----@field stats table<string, integer>
-local Migrations = {
+if not Framework.settings:startup_setting(const.settings_names.migrate_loaders) then return nil end
+
+---@class miniloader.Migration
+---@field ml_entities string[]
+---@field migrations table<string, string>
+---@field stats table<string, number>
+local Migration = {
     ml_entities = {},
     migrations = {},
-    blueprint_migrations = {},
     stats = {},
 }
 
-
 for prefix, migration in pairs(const:migrations()) do
     local name = prefix .. 'miniloader-inserter'
-    local blueprint_name = prefix .. 'miniloader'
     local entity = prototypes.entity[name]
     if entity then
-        table.insert(Migrations.ml_entities, entity)
-        Migrations.migrations[name] = migration
-        Migrations.blueprint_migrations[blueprint_name] = migration
+        table.insert(Migration.ml_entities, entity)
+        Migration.migrations[name] = migration
     end
 end
 
@@ -50,20 +48,20 @@ end
 
 ---@param surface LuaSurface
 ---@param loader LuaEntity
-local function migrate_loader(surface, loader)
+function Migration:migrateLoader(surface, loader)
     if not Is.Valid(loader) then return end
     local entities_to_delete = surface.find_entities(Position(loader.position):expand_to_area(0.5))
 
     for _, entity_to_delete in pairs(entities_to_delete) do
         -- remove anything that can not migrated. This kills the loader and the container
-        if not Migrations.migrations[entity_to_delete.name] then
+        if not self.migrations[entity_to_delete.name] then
             entity_to_delete.destroy()
         end
     end
 
     -- create new main entity in the same spot
     local main = surface.create_entity {
-        name = Migrations.migrations[loader.name],
+        name = self.migrations[loader.name],
         position = loader.position,
         direction = loader.direction,
         quality = loader.quality,
@@ -79,7 +77,7 @@ local function migrate_loader(surface, loader)
     local ml_entity = This.MiniLoader:setup(main)
 
     -- pull the config out of the loader that is migrating
-    This.MiniLoader:syncInserterConfig(ml_entity, loader)
+    This.MiniLoader:readConfigFromEntity(loader, ml_entity)
 
     copy_wire_connections(loader, main)
 
@@ -87,7 +85,7 @@ local function migrate_loader(surface, loader)
     -- inserters and reorients loader and inserters
     This.MiniLoader:reconfigure(ml_entity)
 
-    Migrations.stats[loader.name] = (Migrations.stats[loader.name] or 0) + 1
+    self.stats[loader.name] = (self.stats[loader.name] or 0) + 1
 
     -- kill everything else that was found in this spot. This removes
     -- all of the old inserters
@@ -98,24 +96,24 @@ local function migrate_loader(surface, loader)
     end
 end
 
-function Migrations:migrate_miniloaders()
+function Migration:migrateMiniloaders()
     for _, surface in pairs(game.surfaces) do
-        Migrations.stats = {}
+        self.stats = {}
 
         local loaders = surface.find_entities_filtered {
-            name = Migrations.ml_entities,
+            name = self.ml_entities,
         }
 
         for _, loader in pairs(loaders) do
-            migrate_loader(surface, loader)
+            self:migrateLoader(surface, loader)
         end
 
         local stats = ''
         local total = 0
-        for name, count in pairs(Migrations.stats) do
+        for name, count in pairs(self.stats) do
             stats = stats .. ('%s: %s'):format(name, count)
             total = total + count
-            if next(Migrations.stats, name) then
+            if next(self.stats, name) then
                 stats = stats .. ', '
             end
         end
@@ -125,48 +123,107 @@ function Migrations:migrate_miniloaders()
     end
 end
 
----@param blueprint LuaRecord
-local function migrate_blueprint(blueprint)
-    if blueprint.type == 'blueprint-book' then
-        for _, nested_blueprint in pairs(blueprint.contents) do
-            migrate_blueprint(nested_blueprint)
-        end
-        return
-    end
+---------------------------------------------------------------------------
 
-    if blueprint.type ~= 'blueprint' then return end
+---@param blueprint_entity BlueprintEntity
+---@return BlueprintEntity?
+local function create_entity(blueprint_entity)
+    local new_entity = util.copy(blueprint_entity)
+    new_entity.name = Migration.migrations[blueprint_entity.name]
+    return new_entity
+end
 
-    for _, default_icon in pairs(blueprint.default_icons) do
-        if (default_icon.signal.type == nil or default_icon.signal.type == 'item') and Migrations.blueprint_migrations[default_icon.signal.name] then
-            default_icon.signal.name = Migrations.blueprint_migrations[default_icon.signal.name]
-        end
-    end
+---------------------------------------------------------------------------
 
+local BlueprintMigrator = {}
+
+---------------------------------------------------------------------------
+
+---@param blueprint_entity BlueprintEntity
+---@return BlueprintEntity?
+function BlueprintMigrator:migrateBlueprintEntity(blueprint_entity)
+    if not Migration.migrations[blueprint_entity.name] then return nil end
+
+    return create_entity(blueprint_entity)
+end
+
+---@param blueprint_entities (BlueprintEntity[])?
+---@return boolean modified
+function BlueprintMigrator:migrateBlueprintEntities(blueprint_entities)
     local dirty = false
 
-    local blueprint_entities = blueprint.get_blueprint_entities()
-    if not blueprint_entities then return end
+    if not blueprint_entities then return dirty end
 
-    for i = 1, blueprint.get_blueprint_entity_count() do
+    for i = 1, #blueprint_entities, 1 do
         local blueprint_entity = blueprint_entities[i]
 
-        if Migrations.migrations[blueprint_entity.name] then
-            local new_entity = util.copy(blueprint_entity)
-            new_entity.name = Migrations.migrations[blueprint_entity.name]
-            blueprint_entities[i] = new_entity
-            dirty = true
+        if Migration.migrations[blueprint_entity.name] then
+            local new_entity = self:migrateBlueprintEntity(blueprint_entity)
+            if new_entity then
+                blueprint_entities[i] = new_entity
+                dirty = true
+            end
         end
     end
 
-    if dirty then
-        blueprint.set_blueprint_entities(blueprint_entities)
+    return dirty
+end
+
+---@param migration_object (LuaItemStack|LuaRecord)?
+---@return boolean
+function BlueprintMigrator:executeMigration(migration_object)
+    if not (migration_object and migration_object.valid) then return false end
+
+    local blueprint_entities = util.copy(migration_object.get_blueprint_entities())
+    if (self:migrateBlueprintEntities(blueprint_entities)) then
+        migration_object.set_blueprint_entities(blueprint_entities)
+        return true
+    end
+
+    return false
+end
+
+---@param inventory LuaInventory?
+function BlueprintMigrator:processInventory(inventory)
+    if not (inventory and inventory.valid) then return end
+    for i = 1, #inventory, 1 do
+        if inventory[i] then
+            if inventory[i].is_blueprint then
+                self:executeMigration(inventory[i])
+            elseif inventory[i].is_blueprint_book then
+                local nested_inventory = inventory[i].get_inventory(defines.inventory.item_main)
+                self:processInventory(nested_inventory)
+            end
+        end
     end
 end
 
-function Migrations:migrate_game_blueprints()
-    for _, blueprint in pairs(game.blueprints) do
-        migrate_blueprint(blueprint)
+---@param record LuaRecord
+function BlueprintMigrator:processRecord(record)
+    if not (record.valid and record.valid_for_write) then return end
+
+    if record.type == 'blueprint' then
+        self:executeMigration(record)
+    elseif record.type == 'blueprint-book' then
+        for _, nested_record in pairs(record.contents) do
+            self:processRecord(nested_record)
+        end
     end
 end
 
-return Migrations
+---------------------------------------------------------------------------
+
+function Migration:migrateBlueprints()
+    -- migrate game blueprints
+    for _, record in pairs(game.blueprints) do
+        BlueprintMigrator:processRecord(record)
+    end
+
+    -- migrate blueprints players have in their inventory
+    for _, player in pairs(game.players) do
+        local inventory = player.get_main_inventory()
+        BlueprintMigrator:processInventory(inventory)
+    end
+end
+
+return Migration
