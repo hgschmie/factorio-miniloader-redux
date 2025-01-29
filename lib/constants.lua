@@ -150,12 +150,19 @@ Constants.loader_direction = {
 -- settings
 --------------------------------------------------------------------------------
 
-Constants.settings = {
-    loader_snapping = Constants:with_prefix('loader_snapping'),
-    chute_loader = Constants:with_prefix('chute_loader'),
-    migrate_loaders = Constants:with_prefix('migrate_loaders'),
-    migrate_player_blueprints = Constants:with_prefix('migrate_player_blueprints')
+Constants.settings_keys = {
+    'loader_snapping',
+    'chute_loader',
+    'migrate_loaders',
 }
+
+Constants.settings_names = {}
+Constants.settings = {}
+
+for _, key in pairs(Constants.settings_keys) do
+    Constants.settings_names[key] = key
+    Constants.settings[key] = Constants:with_prefix(key)
+end
 
 Constants.debug_lifetime = 10 -- how long debug info is shown
 
@@ -173,7 +180,7 @@ function Constants:migrations()
         ['express-filter-'] = self:with_prefix('express-miniloader'),
     }
 
-    if Framework.settings:startup_setting('chute_loader') then
+    if Framework.settings:startup_setting(Constants.settings_names.chute_loader) then
         migrations['chute-'] = self:with_prefix('chute-miniloader')
         migrations['chute-filter-'] = self:with_prefix('chute-miniloader')
     end

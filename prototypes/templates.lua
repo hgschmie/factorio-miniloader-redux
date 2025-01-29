@@ -117,7 +117,7 @@ local templates = {
     -- gravity assisted chute loader
     ['chute'] = {
         condition = function()
-            return Framework.settings:startup_setting('chute_loader') and true or false
+            return Framework.settings:startup_setting(const.settings_names.chute_loader) and true or false
         end,
         data = function()
             return {

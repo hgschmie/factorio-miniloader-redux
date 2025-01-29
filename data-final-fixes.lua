@@ -2,12 +2,12 @@
 -- data phase 3
 ------------------------------------------------------------------------
 
+require('lib.init')
+
 local const = require('lib.constants')
 
 require 'circuit-connector-generated-definitions'
 require 'circuit-connector-sprites'
-
-require('lib.init')
 
 local function create_miniloader_entity(name)
     local source_inserter = data.raw['inserter'][const:name_from_prefix('')]
@@ -40,7 +40,7 @@ local function create_miniloader_entity(name)
     data:extend { loader_inserter }
 end
 
-if Framework.settings:startup_setting('migrate_loaders') then
+if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
     for prefix in pairs(const:migrations()) do
         local ml_name = prefix .. 'miniloader-inserter'
         if not data.raw['inserter'][ml_name] then

@@ -53,8 +53,9 @@ end
 -- Entity snapping
 --------------------------------------------------------------------------------
 
+---@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.script_raised_revive | EventData.script_raised_built
 local function onSnappableEntityCreated(event)
-    if not Framework.settings:runtime_setting('loader_snapping') then return end
+    if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
 
     local entity = event and event.entity
     if not Is.Valid(entity) then return end
@@ -66,7 +67,7 @@ local function onSnappableEntityCreated(event)
 end
 
 local function onSnappableEntityRotated(event)
-    if not Framework.settings:runtime_setting('loader_snapping') then return end
+    if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
 
     local entity = event and event.entity
     if not Is.Valid(entity) then return end
