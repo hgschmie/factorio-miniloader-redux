@@ -48,7 +48,7 @@ Default value is "off".
 
 ### Migrate Factorio 1.1 Miniloaders (Startup)
 
-This option needs to be enabled before opening a 1.1 saved game in Factorio 2.0. It is *not* necessary to have the old Miniloader module installed (which is not 2.0 compatible). When opening the game, all existing Miniloaders will be migrated to Miniloader (Redux) and all blueprints in the game library that reference the old miniloaders will be automatically updated as well (The player library can not be updated as it is read-only to mods).
+This option needs to be enabled before opening a 1.1 saved game in Factorio 2.0. It is *not* necessary to have the old Miniloader module installed (which is not 2.0 compatible). When opening the game, all existing Miniloaders will be migrated to Miniloader (Redux) and all blueprints in the game library and in players' main inventory, that reference the old miniloaders will be automatically updated as well (The player library can not be updated as it is read-only to mods).
 
 - Miniloader, Filter Miniloader -> Miniloader
 - Fast Miniloader, Fast Filter Miniloader -> Fast Miniloader
