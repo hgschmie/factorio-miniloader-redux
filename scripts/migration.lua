@@ -15,7 +15,7 @@ local const = require('lib.constants')
 if not Framework.settings:startup_setting(const.settings_names.migrate_loaders) then return nil end
 
 ---@class miniloader.Migration
----@field ml_entities string[]
+---@field ml_entities LuaEntityPrototype[]
 ---@field migrations table<string, string>
 ---@field stats table<string, number>
 local Migration = {
