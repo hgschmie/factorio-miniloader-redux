@@ -188,8 +188,10 @@ local function onConfigurationChanged()
     end
 
     if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
+        assert(migration)
         migration:migrateMiniloaders()
         migration:migrateBlueprints()
+        migration:migrateTechnologies()
     end
 end
 

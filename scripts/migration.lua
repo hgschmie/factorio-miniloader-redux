@@ -81,7 +81,7 @@ function Migration:migrateLoader(surface, loader)
 
     copy_wire_connections(loader, main)
 
-    -- reconfigure the loaer. This syncs the configuration across all the
+    -- reconfigure the loader. This syncs the configuration across all the
     -- inserters and reorients loader and inserters
     This.MiniLoader:reconfigure(ml_entity)
 
@@ -223,6 +223,17 @@ function Migration:migrateBlueprints()
     for _, player in pairs(game.players) do
         local inventory = player.get_main_inventory()
         BlueprintMigrator:processInventory(inventory)
+    end
+end
+
+function Migration:migrateTechnologies()
+    for _, force in pairs(game.forces) do
+        for prefix, migration in pairs(const:migrations()) do
+            local technology_name = prefix .. 'miniloader'
+            if force.technologies[technology_name] then
+                force.technologies[migration].researched = force.technologies[technology_name].researched
+            end
+        end
     end
 end
 

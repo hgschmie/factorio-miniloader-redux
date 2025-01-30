@@ -4,6 +4,8 @@
 
 require('lib.init')
 
+local util = require('util')
+
 local const = require('lib.constants')
 
 require 'circuit-connector-generated-definitions'
@@ -40,6 +42,22 @@ local function create_miniloader_entity(name)
     data:extend { loader_inserter }
 end
 
+local function create_technology(technology_name)
+    local technology = {
+        type = 'technology',
+        name = technology_name,
+        icons = { util.empty_icon() },
+        visible_when_disabled = false,
+        research_trigger = {
+            type = 'craft-item',
+            item = 'iron-plate',
+            count = 50
+        }
+    }
+
+    data:extend { technology }
+end
+
 if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
     for prefix in pairs(const:migrations()) do
         local ml_name = prefix .. 'miniloader-inserter'
@@ -48,6 +66,13 @@ if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
         end
         -- patch up all entities to support filters.
         data.raw['inserter'][ml_name].filter_count = 5
+
+        if not (prefix:match('chute') or prefix:match('filter')) then
+            local technology_name = prefix .. 'miniloader'
+            if not data.raw['technology'][technology_name] then
+                create_technology(technology_name)
+            end
+        end
     end
 end
 

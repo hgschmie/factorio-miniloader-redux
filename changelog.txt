@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.3
-Date: ????
+Date: 2025-01-30
   Changes:
+    - When migrating old loaders, also activate technology if the old technology had been researched.
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.2
 Date: 2025-01-29
