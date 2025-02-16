@@ -34,10 +34,9 @@ local function onEntityCreated(event)
         tags = tags or entity_ghost.tags
     end
 
-    -- register entity for destruction
-    script.register_on_object_destroyed(entity)
+    local config = tags and tags[const.config_tag_name]
 
-    This.MiniLoader:create(entity, tags)
+    This.MiniLoader:create(entity, config)
 end
 
 ---@param event EventData.on_player_mined_entity | EventData.on_robot_mined_entity | EventData.on_entity_died | EventData.script_raised_destroy
@@ -157,9 +156,7 @@ local function onEntityCloned(event)
         end
     end
 
-    local tags = { ml_config = src_data.config } -- clone the config from the src to the destination
-
-    This.MiniLoader:create(event.destination, tags)
+    This.MiniLoader:create(event.destination, src_data.config)
 end
 
 ---@param event EventData.on_entity_cloned

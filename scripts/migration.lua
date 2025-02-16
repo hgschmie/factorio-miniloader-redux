@@ -35,15 +35,19 @@ end
 
 ---@param src LuaEntity
 ---@param dst LuaEntity
+---@return boolean A wire connection was found
 local function copy_wire_connections(src, dst)
+    local has_wire = false
     for wire_connector_id, wire_connector in pairs(src.get_wire_connectors(true)) do
         local dst_connector = dst.get_wire_connector(wire_connector_id, true)
         for _, connection in pairs(wire_connector.connections) do
             if connection.origin == defines.wire_origin.player then
+                has_wire = true
                 dst_connector.connect_to(connection.target, false, connection.origin)
             end
         end
     end
+    return has_wire
 end
 
 ---@param surface LuaSurface
@@ -52,9 +56,13 @@ function Migration:migrateLoader(surface, loader)
     if not Is.Valid(loader) then return end
     local entities_to_delete = surface.find_entities(Position(loader.position):expand_to_area(0.5))
 
+    ---@type miniloader.LoaderDirection
+    local loader_type = const.loader_direction.input
+
     for _, entity_to_delete in pairs(entities_to_delete) do
         -- remove anything that can not migrated. This kills the loader and the container
         if not self.migrations[entity_to_delete.name] then
+            if entity_to_delete.type == 'loader-1x1' then loader_type = const.loader_direction[entity_to_delete.loader_type] end
             entity_to_delete.destroy()
         end
     end
@@ -79,7 +87,10 @@ function Migration:migrateLoader(surface, loader)
     -- pull the config out of the loader that is migrating
     This.MiniLoader:readConfigFromEntity(loader, ml_entity)
 
-    copy_wire_connections(loader, main)
+    local has_wires = copy_wire_connections(loader, main)
+    -- fix up config
+    if not has_wires then ml_entity.config.inserter_config.circuit_enable_disable = false end
+    if loader_type then ml_entity.config.loader_type = loader_type end
 
     -- reconfigure the loader. This syncs the configuration across all the
     -- inserters and reorients loader and inserters

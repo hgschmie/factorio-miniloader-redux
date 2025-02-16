@@ -275,15 +275,15 @@ end
 ------------------------------------------------------------------------
 
 ---@param main LuaEntity
----@param tags Tags?
+---@param config miniloader.Config?
 ---@return miniloader.Data
-function Controller:setup(main, tags)
+function Controller:setup(main, config)
     local entity_id = main.unit_number --[[@as integer]]
 
     assert(self:getEntity(entity_id) == nil)
 
     -- if tags were passed in and they contain a config, use that.
-    local config = create_config(tags and tags['ml_config'] --[[@as miniloader.Config]])
+    config = create_config(config)
     config.status = main.status
     config.direction = main.direction -- miniloader entity always points in inserter direction
 
@@ -300,20 +300,20 @@ function Controller:setup(main, tags)
 
     self:setEntity(entity_id, ml_entity)
 
-    This.Snapping:snapToNeighbor(ml_entity)
-
     return ml_entity
 end
 
 --- Creates a new entity from the main entity, registers with the mod
 --- and configures it.
 ---@param main LuaEntity
----@param tags Tags?
+---@param config miniloader.Config?
 ---@return miniloader.Data?
-function Controller:create(main, tags)
+function Controller:create(main, config)
     if not Is.Valid(main) then return nil end
 
     local ml_entity = self:setup(main, tags)
+
+    This.Snapping:snapToNeighbor(ml_entity)
 
     self:readConfigFromEntity(ml_entity.main, ml_entity)
     self:reconfigure(ml_entity)
