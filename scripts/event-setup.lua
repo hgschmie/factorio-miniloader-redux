@@ -12,8 +12,6 @@ local Matchers = require('framework.matchers')
 local Is = require('stdlib.utils.is')
 local table = require('stdlib.utils.table')
 
-local tools = require('framework.tools')
-
 local const = require('lib.constants')
 
 local migration = require('scripts.migration')
@@ -198,8 +196,8 @@ local function register_events()
     local match_all_main_entities = Matchers:matchEventEntityName( const.supported_type_names)
 
     local match_internal_entities = Matchers:matchEventEntityName(table.array_combine(const.supported_inserter_names, const.supported_loader_names))
-    local match_snap_entities = Matchers:matchEventEntityByAttribute(Matchers.TYPE_EXTRACTOR, const.snapping_type_names)
-    local match_forward_snap_entities = Matchers:matchEventEntityByAttribute(Matchers.TYPE_EXTRACTOR, const.forward_snapping_type_names)
+    local match_snap_entities = Matchers:matchEventEntity('type', const.snapping_type_names)
+    local match_forward_snap_entities = Matchers:matchEventEntity('type', const.forward_snapping_type_names)
 
     -- entity create / delete
     Event.register(Matchers.CREATION_EVENTS, on_entity_created, match_all_main_entities)

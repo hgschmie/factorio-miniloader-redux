@@ -8,7 +8,7 @@ local Is = require('stdlib.utils.is')
 local Event = require('stdlib.event.event')
 local Player = require('stdlib.event.player')
 
-local tools = require('framework.tools')
+local Matchers = require('framework.matchers')
 
 local const = require('lib.constants')
 
@@ -99,8 +99,8 @@ end
 --------------------------------------------------------------------------------
 
 local function register_events()
-    local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
-    local ml_loader_filter = tools.create_event_entity_matcher('name', const.supported_loader_names)
+    local ml_entity_filter = Matchers:matchEventEntityName(const.supported_type_names)
+    local ml_loader_filter = Matchers:matchEventEntityName(const.supported_loader_names)
 
     -- Gui updates / sync inserters
     Event.register(defines.events.on_gui_opened, onGuiOpened, ml_entity_filter)

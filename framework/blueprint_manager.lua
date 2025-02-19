@@ -54,7 +54,7 @@ function FrameworkBlueprintManager:augmentBlueprint(blueprint, entity_map, conte
     -- have changed as the player can manipulate the blueprint.
 
     for idx, entity in pairs(blueprint_entities) do
-        local key = tools:createEntityKeyFromBlueprintEntity(entity, 0) -- override surface index to 0
+        local key = tools:createEntityKeyFromBlueprintEntity(entity) -- override surface index to 0
         if entity_map[key] then
             local callback = self.callbacks[entity.name]
             if callback then
