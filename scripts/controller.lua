@@ -237,8 +237,9 @@ end
 ------------------------------------------------------------------------
 
 ---@param ml_entity miniloader.Data
-function Controller:rotate(ml_entity)
-    if ml_entity.config.loader_type == const.loader_direction.output then
+---@param reverse boolean
+function Controller:rotate(ml_entity, reverse)
+    if ml_entity.config.loader_type == (reverse and const.loader_direction.input or const.loader_direction.output) then
         ml_entity.config.direction = Direction.opposite(ml_entity.config.direction)
     end
     ml_entity.config.loader_type = This.Snapping:reverse_loader_type(ml_entity.config.loader_type)

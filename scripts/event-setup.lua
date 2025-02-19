@@ -3,14 +3,13 @@
 --------------------------------------------------------------------------------
 assert(script)
 
+local Direction = require('stdlib.area.direction')
 local Event = require('stdlib.event.event')
 local Position = require('stdlib.area.position')
 local Player = require('stdlib.event.player')
+local table = require('stdlib.utils.table')
 
 local Matchers = require('framework.matchers')
-
-local Is = require('stdlib.utils.is')
-local table = require('stdlib.utils.table')
 
 local const = require('lib.constants')
 
@@ -153,7 +152,7 @@ local function on_snappable_entity_created(event)
     if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
 
     local entity = event and event.entity
-    if not Is.Valid(entity) then return end
+    if not (entity and entity.valid) then return end
 
     -- if this is an actual miniloader, don't snap it
     if const.supported_types[entity.name] then return end
@@ -165,8 +164,8 @@ local function on_snappable_entity_rotated(event)
     if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
 
     local entity = event and event.entity
-    if not Is.Valid(entity) then return end
-    assert(entity)
+    if not (entity and entity.valid) then return end
+
 
     -- if this is an actual miniloader, don't snap it
     if const.supported_types[entity.name] then return end
@@ -180,12 +179,16 @@ end
 
 ---@param event EventData.on_player_rotated_entity
 local function on_entity_rotated(event)
+    local entity = event.entity
+    if not (entity and entity.valid) then return end
+
     -- main entity rotated?
-    if not Is.Valid(event.entity) then return end
-    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
+    local ml_entity = This.MiniLoader:getEntity(entity.unit_number)
     if not ml_entity then return end
 
-    This.MiniLoader:rotate(ml_entity)
+    local reverse = Direction.next(event.previous_direction) ~= entity.direction
+
+    This.MiniLoader:rotate(ml_entity, reverse)
 end
 
 --------------------------------------------------------------------------------

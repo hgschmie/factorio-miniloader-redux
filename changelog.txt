@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.5.5
+Version: 0.6.0
 Date: ????
-  Changes:
+  Bugfixes:
+    - Allow blueprinting when selecting contents for an existing blueprint
+    - Support forward and backwards rotation
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.4
 Date: 2025-02-16
