@@ -259,15 +259,17 @@ end
 -- blueprinting
 ------------------------------------------------------------------------
 
+--- Serializes the configuration suitable for blueprinting and tombstone management.
+---
 ---@param entity LuaEntity
----@param idx integer
----@param blueprint LuaItemStack
----@param context table<string, any>
-function Controller:blueprint_callback(entity, idx, blueprint, context)
+---@return table<string, any>?
+function Controller:serializeConfiguration(entity)
     local ml_entity = self:getEntity(entity.unit_number)
     if not ml_entity then return end
 
-    blueprint.set_blueprint_entity_tag(idx, 'ml_config', ml_entity.config)
+    return {
+        [const.config_tag_name] = ml_entity.config,
+    }
 end
 
 ------------------------------------------------------------------------
@@ -311,7 +313,7 @@ end
 function Controller:create(main, config)
     if not Is.Valid(main) then return nil end
 
-    local ml_entity = self:setup(main, tags)
+    local ml_entity = self:setup(main, config)
 
     This.Snapping:snapToNeighbor(ml_entity)
 
@@ -323,12 +325,13 @@ end
 
 --- Destroys a Miniloader and all its sub-entities
 ---@param entity_id integer? main unit number (== entity id)
+---@return boolean True if entity was destroyed
 function Controller:destroy(entity_id)
-    if not (entity_id and Is.Number(entity_id)) then return end
+    if not (entity_id and Is.Number(entity_id)) then return false end
     assert(entity_id)
 
     local ml_entity = self:getEntity(entity_id)
-    if not ml_entity then return end
+    if not ml_entity then return false end
 
     self:setEntity(entity_id, nil)
 
@@ -344,6 +347,8 @@ function Controller:destroy(entity_id)
             ml_entity.inserters[i] = nil
         end
     end
+
+    return true
 end
 
 ------------------------------------------------------------------------

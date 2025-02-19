@@ -1,12 +1,14 @@
----@meta
 --------------------------------------------------------------------------------
 -- event setup for the mod
 --------------------------------------------------------------------------------
 assert(script)
 
-local Position = require('stdlib.area.position')
 local Event = require('stdlib.event.event')
+local Position = require('stdlib.area.position')
 local Player = require('stdlib.event.player')
+
+local Matchers = require('framework.matchers')
+
 local Is = require('stdlib.utils.is')
 local table = require('stdlib.utils.table')
 
@@ -16,66 +18,35 @@ local const = require('lib.constants')
 
 local migration = require('scripts.migration')
 
-
 --------------------------------------------------------------------------------
 -- entity create / delete
 --------------------------------------------------------------------------------
 
----@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.script_raised_revive | EventData.script_raised_built
-local function onEntityCreated(event)
+---@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.on_space_platform_built_entity | EventData.script_raised_revive | EventData.script_raised_built
+local function on_entity_created(event)
     local entity = event and event.entity
+    if not entity then return end
 
-    local player_index = event.player_index
     local tags = event.tags
 
-    local entity_ghost = Framework.ghost_manager:findMatchingGhost(entity)
+    local entity_ghost = Framework.ghost_manager:findGhostForEntity(entity)
     if entity_ghost then
-        player_index = player_index or entity_ghost.player_index
+        Framework.ghost_manager:deleteGhost(entity.unit_number)
         tags = tags or entity_ghost.tags
     end
 
-    local config = tags and tags[const.config_tag_name]
+    local config = tags and tags[const.config_tag_name] --[[@as miniloader.Config]]
 
     This.MiniLoader:create(entity, config)
 end
 
----@param event EventData.on_player_mined_entity | EventData.on_robot_mined_entity | EventData.on_entity_died | EventData.script_raised_destroy
-local function onEntityDeleted(event)
+---@param event EventData.on_player_mined_entity | EventData.on_robot_mined_entity | EventData.on_space_platform_mined_entity | EventData.script_raised_destroy
+local function on_entity_deleted(event)
     local entity = event and event.entity
+    if not (entity and entity.valid) then return end
+    assert(entity.unit_number)
 
-    local unit_number = entity.unit_number
-
-    This.MiniLoader:destroy(unit_number)
-end
-
---------------------------------------------------------------------------------
--- Entity snapping
---------------------------------------------------------------------------------
-
----@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.script_raised_revive | EventData.script_raised_built
-local function onSnappableEntityCreated(event)
-    if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
-
-    local entity = event and event.entity
-    if not Is.Valid(entity) then return end
-
-    -- if this is an actual miniloader, don't snap it
-    if const.supported_types[entity.name] then return end
-
-    This.Snapping:updateLoaders(entity)
-end
-
-local function onSnappableEntityRotated(event)
-    if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
-
-    local entity = event and event.entity
-    if not Is.Valid(entity) then return end
-    assert(entity)
-
-    -- if this is an actual miniloader, don't snap it
-    if const.supported_types[entity.name] then return end
-
-    This.Snapping:updateLoaders(entity)
+    This.MiniLoader:destroy(entity.unit_number)
 end
 
 --------------------------------------------------------------------------------
@@ -83,57 +54,9 @@ end
 --------------------------------------------------------------------------------
 
 ---@param event EventData.on_object_destroyed
-local function onObjectDestroyed(event)
-    -- clear out references if applicable
-    if not This.MiniLoader:getEntity(event.useful_id) then return end
-
+local function on_object_destroyed(event)
+    -- main entity destroyed
     This.MiniLoader:destroy(event.useful_id)
-end
-
---------------------------------------------------------------------------------
--- Entity rotation
---------------------------------------------------------------------------------
-
----@param event EventData.on_player_rotated_entity
-local function onEntityRotated(event)
-    -- main entity rotated?
-    if not Is.Valid(event.entity) then return end
-    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
-    if not ml_entity then return end
-
-    This.MiniLoader:rotate(ml_entity)
-end
-
---------------------------------------------------------------------------------
--- Blueprinting
---------------------------------------------------------------------------------
-
----@param entity LuaEntity
----@param idx integer
----@param blueprint LuaItemStack
----@param context table<string, any>
-local function onBlueprintCallback(entity, idx, blueprint, context)
-    if not Is.Valid(entity) then return end
-
-    This.MiniLoader:blueprint_callback(entity, idx, blueprint, context)
-end
-
---------------------------------------------------------------------------------
--- Entity settings pasting
---------------------------------------------------------------------------------
-
----@param event EventData.on_entity_settings_pasted
-local function onEntitySettingsPasted(event)
-    local player = Player.get(event.player_index)
-
-    if not (Is.Valid(player) and player.force == event.source.force and player.force == event.destination.force) then return end
-
-    local src_entity = This.MiniLoader:getEntity(event.source.unit_number)
-    local dst_entity = This.MiniLoader:getEntity(event.destination.unit_number)
-
-    if not (src_entity and dst_entity) then return end
-
-    This.MiniLoader:reconfigure(dst_entity, src_entity.config)
 end
 
 --------------------------------------------------------------------------------
@@ -141,8 +64,8 @@ end
 --------------------------------------------------------------------------------
 
 ---@param event EventData.on_entity_cloned
-local function onEntityCloned(event)
-    if not (Is.Valid(event.source) and Is.Valid(event.destination)) then return end
+local function on_entity_cloned(event)
+    if not (event and event.source and event.source.valid and event.destination and event.destination.valid) then return end
 
     local src_data = This.MiniLoader:getEntity(event.source.unit_number)
     if not src_data then return end
@@ -160,8 +83,8 @@ local function onEntityCloned(event)
 end
 
 ---@param event EventData.on_entity_cloned
-local function onInternalEntityCloned(event)
-    if not (Is.Valid(event.source) and Is.Valid(event.destination)) then return end
+local function on_internal_entity_cloned(event)
+    if not (event.source and event.source.valid and event.destination and event.destination.valid) then return end
 
     -- delete the destination entity, it is not needed as the internal structure of the
     -- miniloader is recreated when the main entity is cloned
@@ -169,10 +92,41 @@ local function onInternalEntityCloned(event)
 end
 
 --------------------------------------------------------------------------------
--- Configuration changes (runtime and startup)
+-- Entity settings pasting
 --------------------------------------------------------------------------------
 
-local function onConfigurationChanged()
+---@param event EventData.on_entity_settings_pasted
+local function on_entity_settings_pasted(event)
+    if not (event and event.source and event.source.valid and event.destination and event.destination.valid) then return end
+
+    local player = Player.get(event.player_index)
+    if not (player and player.valid and player.force == event.source.force and player.force == event.destination.force) then return end
+
+    local src_entity = This.MiniLoader:getEntity(event.source.unit_number)
+    local dst_entity = This.MiniLoader:getEntity(event.destination.unit_number)
+
+    if not (src_entity and dst_entity) then return end
+
+    This.MiniLoader:reconfigure(dst_entity, src_entity.config)
+end
+
+--------------------------------------------------------------------------------
+-- serialization for Blueprinting and Tombstones
+--------------------------------------------------------------------------------
+
+---@param entity LuaEntity
+---@return table<string, any>?
+local function serialize_config(entity)
+    if not entity and entity.valid then return end
+
+    return This.MiniLoader:serializeConfiguration(entity)
+end
+
+--------------------------------------------------------------------------------
+-- Configuration changes (startup)
+--------------------------------------------------------------------------------
+
+local function on_configuration_changed()
     This.MiniLoader:init()
 
     -- enable recipes if researched
@@ -193,59 +147,114 @@ local function onConfigurationChanged()
 end
 
 --------------------------------------------------------------------------------
--- event registration
+-- Entity snapping
+--------------------------------------------------------------------------------
+
+---@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.script_raised_revive | EventData.script_raised_built
+local function on_snappable_entity_created(event)
+    if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
+
+    local entity = event and event.entity
+    if not Is.Valid(entity) then return end
+
+    -- if this is an actual miniloader, don't snap it
+    if const.supported_types[entity.name] then return end
+
+    This.Snapping:updateLoaders(entity)
+end
+
+local function on_snappable_entity_rotated(event)
+    if not Framework.settings:runtime_setting(const.settings_names.loader_snapping) then return end
+
+    local entity = event and event.entity
+    if not Is.Valid(entity) then return end
+    assert(entity)
+
+    -- if this is an actual miniloader, don't snap it
+    if const.supported_types[entity.name] then return end
+
+    This.Snapping:updateLoaders(entity)
+end
+
+--------------------------------------------------------------------------------
+-- Entity rotation
+--------------------------------------------------------------------------------
+
+---@param event EventData.on_player_rotated_entity
+local function on_entity_rotated(event)
+    -- main entity rotated?
+    if not Is.Valid(event.entity) then return end
+    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
+    if not ml_entity then return end
+
+    This.MiniLoader:rotate(ml_entity)
+end
+
+--------------------------------------------------------------------------------
+-- event registration and management
 --------------------------------------------------------------------------------
 
 local function register_events()
-    local ml_entity_filter = tools.create_event_entity_matcher('name', const.supported_type_names)
-    local ml_internal_entity_filter = tools.create_event_entity_matcher('name', table.array_combine(const.supported_inserter_names, const.supported_loader_names))
-    local snap_entity_filter = tools.create_event_entity_matcher('type', const.snapping_type_names)
-    local forward_snap_entity_filter = tools.create_event_entity_matcher('type', const.forward_snapping_type_names)
+    local match_all_main_entities = Matchers:matchEventEntityName( const.supported_type_names)
 
-    -- Configuration changes (runtime and startup)
-    Event.on_configuration_changed(onConfigurationChanged)
-
-    -- entity destroy (can't filter on that)
-    Event.register(defines.events.on_object_destroyed, onObjectDestroyed)
-
-    -- manage blueprinting and copy/paste
-    Framework.blueprint:register_callback(const.supported_type_names, onBlueprintCallback)
+    local match_internal_entities = Matchers:matchEventEntityName(table.array_combine(const.supported_inserter_names, const.supported_loader_names))
+    local match_snap_entities = Matchers:matchEventEntityByAttribute(Matchers.TYPE_EXTRACTOR, const.snapping_type_names)
+    local match_forward_snap_entities = Matchers:matchEventEntityByAttribute(Matchers.TYPE_EXTRACTOR, const.forward_snapping_type_names)
 
     -- entity create / delete
-    tools.event_register(tools.CREATION_EVENTS, onEntityCreated, ml_entity_filter)
-    tools.event_register(tools.DELETION_EVENTS, onEntityDeleted, ml_entity_filter)
+    Event.register(Matchers.CREATION_EVENTS, on_entity_created, match_all_main_entities)
+    Event.register(Matchers.DELETION_EVENTS, on_entity_deleted, match_all_main_entities)
 
     -- other entities
-    tools.event_register(tools.CREATION_EVENTS, onSnappableEntityCreated, snap_entity_filter)
-    Event.register(defines.events.on_player_rotated_entity, onSnappableEntityRotated, forward_snap_entity_filter)
+    Event.register(Matchers.CREATION_EVENTS, on_snappable_entity_created, match_snap_entities)
 
-    -- entity rotation
-    Event.register(defines.events.on_player_rotated_entity, onEntityRotated, ml_entity_filter)
+    -- manage ghost building (robot building)
+    Framework.ghost_manager:registerForName(const.supported_type_names)
+
+    -- entity destroy (can't filter on that)
+    Event.register(defines.events.on_object_destroyed, on_object_destroyed)
+
+    -- Configuration changes (startup)
+    Event.on_configuration_changed(on_configuration_changed)
+
+    -- manage blueprinting and copy/paste
+    Framework.blueprint:registerCallback(const.supported_type_names, serialize_config)
+
+    -- manage tombstones for undo/redo and dead entities
+    Framework.tombstone:registerCallback(const.supported_type_names, {
+        create_tombstone = serialize_config,
+        apply_tombstone = Framework.ghost_manager.mapTombstoneToGhostTags,
+    })
 
     -- Entity cloning
-    Event.register(defines.events.on_entity_cloned, onEntityCloned, ml_entity_filter)
-    Event.register(defines.events.on_entity_cloned, onInternalEntityCloned, ml_internal_entity_filter)
+    Event.register(defines.events.on_entity_cloned, on_entity_cloned, match_all_main_entities)
+    Event.register(defines.events.on_entity_cloned, on_internal_entity_cloned, match_internal_entities)
 
     -- Entity settings pasting
-    Event.register(defines.events.on_entity_settings_pasted, onEntitySettingsPasted, ml_entity_filter)
+    Event.register(defines.events.on_entity_settings_pasted, on_entity_settings_pasted, match_all_main_entities)
+
+
+    -- entity rotation
+    Event.register(defines.events.on_player_rotated_entity, on_entity_rotated, match_all_main_entities)
+    Event.register(defines.events.on_player_rotated_entity, on_snappable_entity_rotated, match_forward_snap_entities)
+
 end
 
 --------------------------------------------------------------------------------
 -- mod init/load code
 --------------------------------------------------------------------------------
 
-local function onInitMiniloaders()
+local function on_init()
     This.MiniLoader:init()
     register_events()
 end
 
-local function onLoadMiniloaders()
+local function on_load()
     register_events()
 end
 
 -- setup player management
 Player.register_events(true)
 
--- mod init code
-Event.on_init(onInitMiniloaders)
-Event.on_load(onLoadMiniloaders)
+Event.on_init(on_init)
+Event.on_load(on_load)
