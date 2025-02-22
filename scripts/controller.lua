@@ -446,10 +446,12 @@ local function write_config_to_entity(inserter_config, entity)
         inserter_control.circuit_read_hand_contents = false
         inserter_control.circuit_set_stack_size = false
     else
-        entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
+        if entity.filter_slot_count > 0 then
+            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
 
-        for i = 1, entity.filter_slot_count, 1 do
-            entity.set_filter(i, inserter_config.filters[i])
+            for i = 1, entity.filter_slot_count, 1 do
+                entity.set_filter(i, inserter_config.filters[i])
+            end
         end
     end
 end

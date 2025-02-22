@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.1
-Date: ????
-  Changes:
+Date: 2025-02-21
+  Bugfixes:
+    - fix crash is the loader entities do not support filters for whatever reason (#4, reported by @fuskgangg, thank you!)
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.0
 Date: 2025-02-19
