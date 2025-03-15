@@ -3,6 +3,7 @@
 -- Item generation code
 ------------------------------------------------------------------------
 
+local meld = require('meld')
 local util = require('util')
 local collision_mask_util = require('collision-mask-util')
 
@@ -90,12 +91,13 @@ local function create_entity(params)
     local entity_name = params.name
     local loader_name = const.loader_name(entity_name)
     local inserter_name = const.inserter_name(entity_name)
+    local loader_tier = params.loader_tier or params.prefix
 
     local items_per_second = math.floor(params.speed * 480 * 100 + 0.5) / 100
 
     local description = { '',
         { 'entity-description.' .. entity_name },
-        "\n",
+        '\n',
         '[font=default-semibold][color=255,230,192]',
         { 'description.belt-speed' },
         ':[/color][/font] ',
@@ -208,7 +210,7 @@ local function create_entity(params)
             offsets = { { 0, 1 } },
             damage_type_filters = 'fire'
         },
-        dying_explosion = add_tier_prefix(params.loader_tier, 'underground-belt-explosion'),
+        dying_explosion = add_tier_prefix(loader_tier, 'underground-belt-explosion'),
         resistances = {
             {
                 type = 'fire',
@@ -219,7 +221,7 @@ local function create_entity(params)
                 percent = 30
             }
         },
-        remnants = 'medium-small-remnants',
+        corpse = add_tier_prefix(loader_tier, 'underground-belt-remnants'),
 
         -- EntityPrototype
         icons = {
@@ -251,32 +253,31 @@ local function create_entity(params)
         fast_replaceable_group = 'mini-loader',
     }
 
-    local hidden_inserter = util.copy(inserter)
-    hidden_inserter.name = inserter_name
-    hidden_inserter.hidden = true
-    hidden_inserter.hidden_in_factoriopedia = true
-    hidden_inserter.platform_picture = util.empty_sprite()
-    hidden_inserter.collision_mask = collision_mask_util.new_mask()
-    hidden_inserter.selection_box = { { 0, 0 }, { 0, 0 } }
-    hidden_inserter.flags = {
-        'placeable-neutral',
-        'placeable-player',
-        'not-on-map',
-        'not-deconstructable',
-        'not-blueprintable',
-        'hide-alt-info',
-        'not-flammable',
-        'not-upgradable',
-        'not-in-kill-statistics',
-        'not-in-made-in',
-    }
-
-    hidden_inserter.minable = nil
-    hidden_inserter.selection_priority = 0
-    hidden_inserter.allow_copy_paste = false
-    hidden_inserter.selectable_in_game = false
-    hidden_inserter.fast_replaceable_group = nil
-    hidden_inserter.collision_mask = collision_mask_util.new_mask()
+    local hidden_inserter = meld(util.copy(inserter), {
+        name = inserter_name,
+        hidden = true,
+        hidden_in_factoriopedia = true,
+        platform_picture = util.empty_sprite(),
+        collision_mask = collision_mask_util.new_mask(),
+        selection_box = { { 0, 0 }, { 0, 0 } },
+        flags = {
+            'placeable-neutral',
+            'placeable-player',
+            'not-on-map',
+            'not-deconstructable',
+            'not-blueprintable',
+            'hide-alt-info',
+            'not-flammable',
+            'not-upgradable',
+            'not-in-kill-statistics',
+            'not-in-made-in',
+        },
+        minable = meld.delete(),
+        selection_priority = 0,
+        allow_copy_paste = false,
+        selectable_in_game = false,
+        fast_replaceable_group = nil,
+    })
 
     local loader = {
         -- Prototype Base
@@ -429,8 +430,6 @@ local function create_entity(params)
     }
 
     -- hack to get the belt color right
-    local loader_tier = params.loader_tier or params.prefix
-
     if loader_tier and loader_tier:len() > 0 then
         local belt_source = data.raw['underground-belt'][add_tier_prefix(loader_tier, 'underground-belt')]
         if belt_source then
