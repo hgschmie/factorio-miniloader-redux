@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.2
 Date: ????
-  Changes:
+  Bugfixes:
+    - fix assertion failed crash with ghost constructed entities (reported by @lnleo on the mod forums, thank you)
+    - fix corpse and explosion graphics for the miniloaders
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.1
 Date: 2025-02-22

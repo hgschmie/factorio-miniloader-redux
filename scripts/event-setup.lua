@@ -45,6 +45,13 @@ local function on_entity_deleted(event)
     This.MiniLoader:destroy(entity.unit_number)
 end
 
+---@param event EventData.on_post_entity_died
+local function on_entity_died(event)
+    if not (event.unit_number) then return end
+
+    This.MiniLoader:destroy(event.unit_number)
+end
+
 --------------------------------------------------------------------------------
 -- Entity destruction
 --------------------------------------------------------------------------------
@@ -203,7 +210,10 @@ local function register_events()
 
     -- entity create / delete
     Event.register(Matchers.CREATION_EVENTS, on_entity_created, match_all_main_entities)
+    -- deletion events can not include on_entity_died because then the tombstone manager would not work.
     Event.register(Matchers.DELETION_EVENTS, on_entity_deleted, match_all_main_entities)
+    -- register post_died to deal with dead entities
+    Event.register(defines.events.on_post_entity_died, on_entity_died)
 
     -- other entities
     Event.register(Matchers.CREATION_EVENTS, on_snappable_entity_created, match_snap_entities)
