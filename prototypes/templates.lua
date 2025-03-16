@@ -110,6 +110,7 @@ local templates = {
                 prerequisites = { 'logistics-3', 'stack-inserter', const:name_from_prefix('turbo'), },
                 bulk = true,
                 upgrade_from = const:name_from_prefix('turbo'),
+                loader_tier = 'turbo', -- use turbo animations, explosion etc.
             }
         end,
     },
