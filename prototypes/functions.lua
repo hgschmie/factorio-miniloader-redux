@@ -255,12 +255,14 @@ local function create_entity(params)
 
     local hidden_inserter = meld(util.copy(inserter), {
         name = inserter_name,
+        icons = meld.delete(),
+        icon = '__core__/graphics/empty.png',
         hidden = true,
         hidden_in_factoriopedia = true,
-        platform_picture = util.empty_sprite(),
-        collision_mask = collision_mask_util.new_mask(),
+        platform_picture = meld.overwrite(util.empty_sprite()),
+        collision_mask = meld.overwrite(collision_mask_util.new_mask()),
         selection_box = { { 0, 0 }, { 0, 0 } },
-        flags = {
+        flags = meld.overwrite {
             'placeable-neutral',
             'placeable-player',
             'not-on-map',
@@ -276,7 +278,7 @@ local function create_entity(params)
         selection_priority = 0,
         allow_copy_paste = false,
         selectable_in_game = false,
-        fast_replaceable_group = nil,
+        fast_replaceable_group = meld.delete(),
     })
 
     local loader = {
@@ -424,7 +426,7 @@ local function create_entity(params)
             'not-in-made-in',
         },
         minable = nil,
-        selection_priority = 45,
+        selection_priority = 0,
         allow_copy_paste = false,
         selectable_in_game = false,
     }
