@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.4
-Date: ????
+Date: 2025-03-20
   Bugfixes:
     - fix the entity template code, this fixes the crash when fast-replacing (reported by @Krutonium on the mod forums)
 ---------------------------------------------------------------------------------------------------
