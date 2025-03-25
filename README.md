@@ -15,7 +15,6 @@ The genius of the 1x1 Miniloader module is that it checks all the boxes. Hence M
 ![Extended rotation](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/extended_rotation.gif)
 ![Moving Miniloaders](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/picker-dollies.gif)
 
-
 ## Features
 
 - 1x1 compact size.
@@ -63,6 +62,38 @@ Default value is "off".
 Show pickup, dropoff positions for the internal inserters and the area scanned when placing loaders or other entities when loader snapping is enabled. Useful for troubleshooting / but reporting but should not be needed otherwise.
 
 Default value is "off".
+
+## Console commands
+
+### /inspect-miniloaders - Inspect miniloader status
+
+There are a number of spurious bug reports from users where the miniloader module crashes with
+
+```text
+Error while running event miniloader-redux::on_built_entity (ID 6)
+miniloader-redux/scripts/controller.lua:181: assertion failed!
+stack traceback:
+[C]: in function 'assert'
+miniloader-redux/scripts/controller.lua:181: in function 'create_loader'
+```
+
+This should only happen if a miniloader was not cleaned out correctly and some of the internal (invisible) entities have remainted. In that case, the `/inspect-miniloaders` command can scan all miniloaders and remove such remnants. When the command completes, it will report:
+
+```text
+[Inspect Miniloaders] Invalid entities detected: MiniLoaders: 0 / Internal Loaders: 0 / Internal Inserters: 0.
+[Inspect Miniloaders] Invalid entities removed: Entities: 0, MiniLoaders: 0 / Internal Loaders: 0 / Internal Inserters: 0.
+```
+
+The first line lists all entities that were discovered but are invalid. Such entities have been marked for deconstruction or are otherwise invalid. This line should normally have all 0 values.
+
+The second line lists the number of inconsistent entities that were removed. A non-zero value here means, that there *might* be miniloaders removed from the current game. The last three numbers are orphaned internal entities.
+
+If the error above occurs, please run the command when reloading the game.
+
+Please file a bug [on github](https://github.com/hgschmie/factorio-miniloader-redux/issues/) when
+
+- running the command reports all '0' values in the second line (especially the "Internal Loader" value)
+- The command reports all '0' values but the crash still occurs.
 
 ## Planned features
 

@@ -2,6 +2,7 @@
 Version: 0.6.5
 Date: ????
   Changes:
+    - Add /inspect-miniloaders console command
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.4
 Date: 2025-03-20
