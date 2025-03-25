@@ -10,6 +10,9 @@ local const = require('lib.constants')
 
 --------------------------------------------------------------------------------
 
+---@class miniloader.Console
+local Console = {}
+
 ---@param unit_number integer
 ---@param ml_entity miniloader.Data
 local function check_valid(unit_number, ml_entity)
@@ -105,7 +108,7 @@ local function inspect_miniloaders(data)
     game.print { const:locale('command_inspect_miniloaders_removed'), removed.miniloader, removed.loader, removed.inserter, removed.entity }
 end
 
-local function register_commands()
+function Console:register_commands()
     commands.add_command('inspect-miniloaders', { const:locale('command_inspect_miniloaders') }, inspect_miniloaders)
 end
 
@@ -114,12 +117,14 @@ end
 --------------------------------------------------------------------------------
 
 local function on_init()
-    register_commands()
+    Console:register_commands()
 end
 
 local function on_load()
-    register_commands()
+    Console:register_commands()
 end
 
 Event.on_init(on_init)
 Event.on_load(on_load)
+
+return Console
