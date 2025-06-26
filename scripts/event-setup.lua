@@ -206,7 +206,7 @@ end
 --------------------------------------------------------------------------------
 
 local function register_events()
-    local match_all_main_entities = Matchers:matchEventEntityName( const.supported_type_names)
+    local match_all_main_entities = Matchers:matchEventEntityName(const.supported_type_names)
 
     local match_internal_entities = Matchers:matchEventEntityName(table.array_combine(const.supported_inserter_names, const.supported_loader_names))
     local match_snap_entities = Matchers:matchEventEntity('type', const.snapping_type_names)
@@ -251,7 +251,6 @@ local function register_events()
     -- entity rotation
     Event.register(defines.events.on_player_rotated_entity, on_entity_rotated, match_all_main_entities)
     Event.register(defines.events.on_player_rotated_entity, on_snappable_entity_rotated, match_forward_snap_entities)
-
 end
 
 --------------------------------------------------------------------------------
