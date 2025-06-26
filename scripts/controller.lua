@@ -260,6 +260,27 @@ end
 -- blueprinting
 ------------------------------------------------------------------------
 
+--- in very rare cases, some entries in the filter array end up having string
+--- keys. try to convert them to number keys, if there would be a conflict, drop
+--- the key that comes second
+---@param ml_entity miniloader.Data
+function Controller:sanitizeConfiguration(ml_entity)
+    local filters = {}
+    for key, value in pairs(ml_entity.config.inserter_config.filters) do
+        if type(key) == 'number' then
+            filters[key] = value
+        elseif type(key) == 'string' then
+            local new_key = tonumber(key)
+            if new_key then
+                filters[new_key] = filters[new_key] or value
+            end
+        end
+    end
+    if table_size(ml_entity.config.inserter_config.filters) ~= table_size(filters) then
+        ml_entity.config.inserter_config.filters = filters
+    end
+end
+
 --- Serializes the configuration suitable for blueprinting and tombstone management.
 ---
 ---@param entity LuaEntity
@@ -267,6 +288,8 @@ end
 function Controller:serializeConfiguration(entity)
     local ml_entity = self:getEntity(entity.unit_number)
     if not ml_entity then return end
+
+    self:sanitizeConfiguration(ml_entity)
 
     return {
         [const.config_tag_name] = ml_entity.config,
