@@ -451,15 +451,15 @@ local function write_config_to_entity(inserter_config, entity)
 
     if entity.type == 'inserter' then
         if entity.filter_slot_count > 0 then
+            for i = 1, entity.filter_slot_count, 1 do
+                entity.set_filter(i, inserter_config.filters[i])
+            end
+
             if inserter_config.loader_filter_mode and inserter_config.loader_filter_mode ~= 'none' then
                 entity.use_filters = true
                 entity.inserter_filter_mode = inserter_config.loader_filter_mode
             else
                 entity.use_filters = false
-            end
-
-            for i = 1, entity.filter_slot_count, 1 do
-                entity.set_filter(i, inserter_config.filters[i])
             end
         end
 
@@ -470,11 +470,11 @@ local function write_config_to_entity(inserter_config, entity)
         inserter_control.circuit_set_stack_size = false
     else
         if entity.filter_slot_count > 0 then
-            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
-
             for i = 1, entity.filter_slot_count, 1 do
                 entity.set_filter(i, inserter_config.filters[i])
             end
+
+            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
         end
     end
 end
