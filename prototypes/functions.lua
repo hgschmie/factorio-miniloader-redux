@@ -43,6 +43,73 @@ local inserter_connector_definitions = circuit_connector_definitions.create_vect
     }
 )
 
+local function icon_gfx(tint, variant)
+    local name = (variant and variant:len() > 0) and (variant .. '-') or ''
+
+    return {
+        {
+            icon = const:png('item/' .. name .. 'icon-base'),
+            icon_size = 64,
+        },
+        {
+            icon = const:png('item/icon-mask'),
+            icon_size = 64,
+            tint = tint,
+        },
+    }
+end
+
+local function entity_sheets_gfx(tint, variant, offset)
+    local name = (variant and variant:len() > 0) and (variant .. '-') or ''
+    return {
+        -- Base
+        {
+            filename = const:png('entity/' .. name .. 'miniloader-structure-base'),
+            height = 192,
+            priority = 'extra-high',
+            scale = 0.5,
+            width = 192,
+            y = offset or 0,
+        },
+        -- Mask
+        {
+            filename = const:png('entity/miniloader-structure-mask'),
+            height = 192,
+            priority = 'extra-high',
+            scale = 0.5,
+            width = 192,
+            y = offset or 0,
+            tint = tint,
+        },
+        -- Shadow
+        {
+            filename = const:png('entity/miniloader-structure-shadow'),
+            draw_as_shadow = true,
+            height = 192,
+            priority = 'extra-high',
+            scale = 0.5,
+            width = 192,
+            y = offset or 0,
+        }
+    }
+end
+
+local function technology_gfx(tint, variant)
+    local name = (variant and variant:len() > 0) and (variant .. '-') or ''
+
+    return {
+    {
+        icon = const:png('technology/' .. name .. 'technology-base'),
+        icon_size = 128,
+    },
+    {
+        icon = const:png('technology/technology-mask'),
+        icon_size = 128,
+    },
+}
+end
+
+
 ---@param prefix string?
 ---@param name string
 local function add_tier_prefix(prefix, name)
@@ -68,17 +135,7 @@ local function create_item(params)
         -- ItemPrototype
         stack_size = stack_size,
         weight = 1000 / stack_size * kg,
-        icons = {
-            {
-                icon = const:png('item/icon-base'),
-                icon_size = 64,
-            },
-            {
-                icon = const:png('item/icon-mask'),
-                icon_size = 64,
-                tint = params.tint,
-            },
-        },
+        icons = icon_gfx(params.tint, params.variant),
 
         place_result = params.name,
     }
@@ -92,6 +149,7 @@ local function create_entity(params)
     local loader_name = const.loader_name(entity_name)
     local inserter_name = const.inserter_name(entity_name)
     local loader_tier = params.loader_tier or params.prefix
+    local belt_tier = params.belt_tier or params.prefix
 
     local items_per_second = math.floor(params.speed * 480 * 100 + 0.5) / 100
 
@@ -123,7 +181,6 @@ local function create_entity(params)
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
     -- - it has four different pictures
-    -- - it has no wire connections
 
     local inserter = {
         -- Prototype Base
@@ -143,37 +200,7 @@ local function create_entity(params)
         pickup_position = { 0, 0 },
 
         platform_picture = {
-            sheets = {
-                -- Base
-                {
-                    filename = const:png('entity/miniloader-structure-base'),
-                    height = 192,
-                    priority = 'extra-high',
-                    scale = 0.5,
-                    width = 192,
-                    y = 0,
-                },
-                -- Mask
-                {
-                    filename = const:png('entity/miniloader-structure-mask'),
-                    height = 192,
-                    priority = 'extra-high',
-                    scale = 0.5,
-                    width = 192,
-                    y = 0,
-                    tint = params.tint,
-                },
-                -- Shadow
-                {
-                    filename = const:png('entity/miniloader-structure-shadow'),
-                    draw_as_shadow = true,
-                    height = 192,
-                    priority = 'extra-high',
-                    scale = 0.5,
-                    width = 192,
-                    y = 0,
-                }
-            }
+            sheets = entity_sheets_gfx(params.tint, params.variant),
         },
         hand_base_picture = util.empty_sprite(),
         hand_open_picture = util.empty_sprite(),
@@ -224,17 +251,7 @@ local function create_entity(params)
         corpse = add_tier_prefix(loader_tier, 'underground-belt-remnants'),
 
         -- EntityPrototype
-        icons = {
-            {
-                icon = const:png('item/icon-base'),
-                icon_size = 64,
-            },
-            {
-                icon = const:png('item/icon-mask'),
-                icon_size = 64,
-                tint = params.tint,
-            },
-        },
+        icons = icon_gfx(params.tint, params.variant),
 
         collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
         collision_mask = collision_mask_util.get_default_mask('inserter'),
@@ -293,70 +310,10 @@ local function create_entity(params)
         -- LoaderPrototype
         structure = {
             direction_in = {
-                sheets = {
-                    -- Base
-                    {
-                        filename = const:png('entity/miniloader-structure-base'),
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 0,
-                    },
-                    -- Mask
-                    {
-                        filename = const:png('entity/miniloader-structure-mask'),
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 0,
-                        tint = params.tint,
-                    },
-                    -- Shadow
-                    {
-                        filename = const:png('entity/miniloader-structure-shadow'),
-                        draw_as_shadow = true,
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 0,
-                    }
-                }
+                sheets = entity_sheets_gfx(params.tint, params.variant)
             },
             direction_out = {
-                sheets = {
-                    -- Base
-                    {
-                        filename = const:png('entity/miniloader-structure-base'),
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 192,
-                    },
-                    -- Mask
-                    {
-                        filename = const:png('entity/miniloader-structure-mask'),
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 192,
-                        tint = params.tint,
-                    },
-                    -- Shadow
-                    {
-                        filename = const:png('entity/miniloader-structure-shadow'),
-                        height = 192,
-                        priority = 'extra-high',
-                        scale = 0.5,
-                        width = 192,
-                        y = 192,
-                        draw_as_shadow = true,
-                    }
-                }
+                sheets = entity_sheets_gfx(params.tint, params.variant, 192),
             },
             back_patch = {
                 sheet = {
@@ -398,17 +355,7 @@ local function create_entity(params)
         speed = params.speed,
 
         -- EntityPrototype
-        icons = {
-            {
-                icon = const:png('item/icon-base'),
-                icon_size = 64,
-            },
-            {
-                icon = const:png('item/icon-mask'),
-                icon_size = 64,
-                tint = params.tint,
-            },
-        },
+        icons = icon_gfx(params.tint, params.variant),
 
         collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
         collision_mask = { layers = { transport_belt = true, } },
@@ -432,8 +379,8 @@ local function create_entity(params)
     }
 
     -- hack to get the belt color right
-    if loader_tier and loader_tier:len() > 0 then
-        local belt_source = data.raw['underground-belt'][add_tier_prefix(loader_tier, 'underground-belt')]
+    if belt_tier and belt_tier:len() > 0 then
+        local belt_source = data.raw['underground-belt'][add_tier_prefix(belt_tier, 'underground-belt')]
         if belt_source then
             loader.belt_animation_set = util.copy(belt_source.belt_animation_set)
         end
@@ -442,23 +389,12 @@ local function create_entity(params)
     data:extend { inserter, hidden_inserter, loader }
 end
 
-local technology_icons = {
-    {
-        icon = const:png('technology/technology-base'),
-        icon_size = 128,
-    },
-    {
-        icon = const:png('technology/technology-mask'),
-        icon_size = 128,
-    },
-}
-
 local function create_recipe(params)
     local recipe = {
         type = 'recipe',
         name = params.name,
         localised_name = params.localised_name,
-        ingredients = params.ingredients,
+        ingredients = params.ingredients(),
         enabled = false,
         results = {
             {
@@ -473,8 +409,8 @@ local function create_recipe(params)
         type = 'technology',
         name = params.name,
         order = params.order,
-        icons = util.copy(technology_icons),
-        prerequisites = params.prerequisites,
+        icons = technology_gfx(params.tint, params.variant),
+        prerequisites = params.prerequisites(),
         research_trigger = params.research_trigger,
         visible_when_disabled = false,
         effects = {

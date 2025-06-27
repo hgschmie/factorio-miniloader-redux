@@ -24,10 +24,6 @@ for prefix, loader_definition in pairs(templates.loaders) do
         params.prefix = prefix
         params.name = const:name_from_prefix(params.prefix)
         params.localised_name = params.localised_name and params.localised_name or { 'entity-name.' .. params.name }
-
-        params.ingredients = util.copy(loader_definition.ingredients())
-        params.prerequisites = util.copy(loader_definition.prerequisites())
-
         if params.upgrade_from then
             upgrades[params.upgrade_from] = params.name
         end

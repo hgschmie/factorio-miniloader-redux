@@ -27,7 +27,15 @@ The genius of the 1x1 Miniloader module is that it checks all the boxes. Hence M
 
 There are three available tiers in the base game ("Vanilla", Fast and Express) and five when playing Space Age (additionally Turbo and Stack). I made a conscious decision to not support any additional tiers or enable stacking in the base game. The mod tries to follow the "spirit" of the game and there are other options (such as Loader Modernized) that work fine if this is not wanted.
 
+Starting with version 0.7.0, Miniloader supports
+
+* [Matt's Logistics](https://mods.factorio.com/mod/matts-logistics) belt tiers with miniloaders. Activated if the module is detected.
+
 I am open to support additional tiers from other mods (such as Bob's mods). As I don't play those myself, I have not added them but doing so is pretty straightforward (look at `scripts/templates.lua`).
+
+## How you can help
+
+I am not a graphics person. E.g. Matt's Logistics belts have a different tint and I convinced ChatGPT to recolor the existing graphics with a different tint that somewhat matches the belts. But getting better graphics would be greatly appreciated.
 
 ## Config options
 
