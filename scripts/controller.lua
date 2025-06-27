@@ -297,85 +297,6 @@ function Controller:serializeConfiguration(entity)
 end
 
 ------------------------------------------------------------------------
--- create/destroy
-------------------------------------------------------------------------
-
----@param main LuaEntity
----@param config miniloader.Config?
----@return miniloader.Data
-function Controller:setup(main, config)
-    local entity_id = main.unit_number --[[@as integer]]
-
-    assert(self:getEntity(entity_id) == nil)
-
-    -- if tags were passed in and they contain a config, use that.
-    config = create_config(config)
-    config.status = main.status
-    config.direction = main.direction -- miniloader entity always points in inserter direction
-
-    local loader = create_loader(main, config)
-    local inserters = create_inserters(main, loader, config)
-
-    ---@type miniloader.Data
-    local ml_entity = {
-        main = main,
-        loader = loader,
-        inserters = inserters,
-        config = util.copy(config),
-    }
-
-    self:setEntity(entity_id, ml_entity)
-
-    return ml_entity
-end
-
---- Creates a new entity from the main entity, registers with the mod
---- and configures it.
----@param main LuaEntity
----@param config miniloader.Config?
----@return miniloader.Data?
-function Controller:create(main, config)
-    if not Is.Valid(main) then return nil end
-
-    local ml_entity = self:setup(main, config)
-
-    This.Snapping:snapToNeighbor(ml_entity)
-
-    self:readConfigFromEntity(ml_entity.main, ml_entity)
-    self:reconfigure(ml_entity)
-
-    return ml_entity
-end
-
---- Destroys a Miniloader and all its sub-entities
----@param entity_id integer? main unit number (== entity id)
----@return boolean True if entity was destroyed
-function Controller:destroy(entity_id)
-    if not (entity_id and Is.Number(entity_id)) then return false end
-    assert(entity_id)
-
-    local ml_entity = self:getEntity(entity_id)
-    if not ml_entity then return false end
-
-    self:setEntity(entity_id, nil)
-
-    ml_entity.main = nil
-    ml_entity.inserters[1] = nil -- do not add to the loop below, game needs to manage the main inserter
-
-    if Is.Valid(ml_entity.loader) then ml_entity.loader.destroy() end
-    ml_entity.loader = nil
-
-    if ml_entity.inserters then
-        for i = 2, #ml_entity.inserters do
-            if Is.Valid(ml_entity.inserters[i]) then ml_entity.inserters[i].destroy() end
-            ml_entity.inserters[i] = nil
-        end
-    end
-
-    return true
-end
-
-------------------------------------------------------------------------
 -- sync control behavior
 ------------------------------------------------------------------------
 
@@ -404,7 +325,7 @@ local EMPTY_LOADER_CONFIG = {
 
 ---@param entity LuaEntity Loader or Inserter
 ---@param ml_entity miniloader.Data
-function Controller:readConfigFromEntity(entity, ml_entity)
+local function read_config_from_entity(entity, ml_entity)
     local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
     assert(control)
 
@@ -480,19 +401,92 @@ local function write_config_to_entity(inserter_config, entity)
 end
 
 ---@param ml_entity miniloader.Data
----@param entity LuaEntity Loader or Inserter
-function Controller:writeConfigToEntity(ml_entity, entity)
-    write_config_to_entity(ml_entity.config.inserter_config, entity)
-end
-
----@param ml_entity miniloader.Data
 ---@param skip_main boolean?
-function Controller:resyncInserters(ml_entity, skip_main)
+local function resync_inserters(ml_entity, skip_main)
     for _, inserter in pairs(ml_entity.inserters) do
         if not (skip_main and inserter.unit_number == ml_entity.main.unit_number) then
-            self:writeConfigToEntity(ml_entity, inserter)
+            write_config_to_entity(ml_entity.config.inserter_config, inserter)
         end
     end
+end
+
+------------------------------------------------------------------------
+-- create/destroy
+------------------------------------------------------------------------
+
+---@param main LuaEntity
+---@param config miniloader.Config?
+---@return miniloader.Data
+function Controller:setup(main, config)
+    local entity_id = main.unit_number --[[@as integer]]
+
+    assert(self:getEntity(entity_id) == nil)
+
+    -- if tags were passed in and they contain a config, use that.
+    config = create_config(config)
+    config.status = main.status
+    config.direction = main.direction -- miniloader entity always points in inserter direction
+
+    local loader = create_loader(main, config)
+    local inserters = create_inserters(main, loader, config)
+
+    ---@type miniloader.Data
+    local ml_entity = {
+        main = main,
+        loader = loader,
+        inserters = inserters,
+        config = util.copy(config),
+    }
+
+    self:setEntity(entity_id, ml_entity)
+
+    return ml_entity
+end
+
+--- Creates a new entity from the main entity, registers with the mod
+--- and configures it.
+---@param main LuaEntity
+---@param config miniloader.Config?
+---@return miniloader.Data?
+function Controller:create(main, config)
+    if not Is.Valid(main) then return nil end
+
+    local ml_entity = self:setup(main, config)
+
+    This.Snapping:snapToNeighbor(ml_entity)
+
+    read_config_from_entity(ml_entity.main, ml_entity)
+    self:reconfigure(ml_entity)
+
+    return ml_entity
+end
+
+--- Destroys a Miniloader and all its sub-entities
+---@param entity_id integer? main unit number (== entity id)
+---@return boolean True if entity was destroyed
+function Controller:destroy(entity_id)
+    if not (entity_id and Is.Number(entity_id)) then return false end
+    assert(entity_id)
+
+    local ml_entity = self:getEntity(entity_id)
+    if not ml_entity then return false end
+
+    self:setEntity(entity_id, nil)
+
+    ml_entity.main = nil
+    ml_entity.inserters[1] = nil -- do not add to the loop below, game needs to manage the main inserter
+
+    if Is.Valid(ml_entity.loader) then ml_entity.loader.destroy() end
+    ml_entity.loader = nil
+
+    if ml_entity.inserters then
+        for i = 2, #ml_entity.inserters do
+            if Is.Valid(ml_entity.inserters[i]) then ml_entity.inserters[i].destroy() end
+            ml_entity.inserters[i] = nil
+        end
+    end
+
+    return true
 end
 
 ------------------------------------------------------------------------
@@ -616,7 +610,7 @@ function Controller:reconfigure(ml_entity, cfg)
         end
     end
 
-    self:resyncInserters(ml_entity)
+    resync_inserters(ml_entity)
 
     -- clear out loader configuration
     write_config_to_entity(EMPTY_LOADER_CONFIG, ml_entity.loader)
