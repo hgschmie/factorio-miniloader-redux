@@ -360,6 +360,8 @@ end
 ---@param inserter_config table<string, any?>
 ---@param entity LuaEntity Loader or Inserter
 local function write_config_to_entity(inserter_config, entity)
+    if not (entity and entity.valid) then return end
+
     local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
     assert(control)
 
@@ -455,7 +457,7 @@ function Controller:create(main, config)
 
     This.Snapping:snapToNeighbor(ml_entity)
 
-    read_config_from_entity(ml_entity.main, ml_entity)
+    read_config_from_entity(main, ml_entity)
     self:reconfigure(ml_entity)
 
     return ml_entity
