@@ -297,122 +297,6 @@ function Controller:serializeConfiguration(entity)
 end
 
 ------------------------------------------------------------------------
--- sync control behavior
-------------------------------------------------------------------------
-
--- GUI updates the loader, loader config is synced to the inserters
--- entity creation / resurrection uses the primary inserter. config is synced from the inserter to the loader
--- all meet at ml_entity.config
-
-local control_attributes = {
-    'circuit_set_filters',
-    'circuit_enable_disable',
-    'circuit_condition',
-    'connect_to_logistic_network',
-    'logistic_condition',
-}
-
-local EMPTY_LOADER_CONFIG = {
-    circuit_set_filters = false,
-    circuit_enable_disable = false,
-    circuit_condition = { constant = 0, comparator = '<', fulfilled = false },
-    connect_to_logistic_network = false,
-    logistic_condition = { constant = 0, comparator = '<', fulfilled = false },
-    loader_filter_mode = 'none',
-    filters = {},
-    circuit_read_transfers = false,
-}
-
----@param entity LuaEntity Loader or Inserter
----@param ml_entity miniloader.Data
-local function read_config_from_entity(entity, ml_entity)
-    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
-    assert(control)
-
-    if not control.valid then return end
-
-    local inserter_config = ml_entity.config.inserter_config
-
-    -- copy control attributes
-    for _, attribute in pairs(control_attributes) do
-        inserter_config[attribute] = control[attribute]
-    end
-
-    if entity.type == 'inserter' then
-        if entity.filter_slot_count > 0 then
-            inserter_config.loader_filter_mode = entity.use_filters and entity.inserter_filter_mode or 'none'
-
-            for i = 1, entity.filter_slot_count, 1 do
-                inserter_config.filters[i] = entity.get_filter(i)
-            end
-        else
-            inserter_config.loader_filter_mode = 'none'
-        end
-    else
-        inserter_config.loader_filter_mode = entity.loader_filter_mode
-
-        for i = 1, entity.filter_slot_count, 1 do
-            inserter_config.filters[i] = entity.get_filter(i)
-        end
-    end
-end
-
----@param inserter_config table<string, any?>
----@param entity LuaEntity Loader or Inserter
-local function write_config_to_entity(inserter_config, entity)
-    if not (entity and entity.valid) then return end
-
-    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
-    assert(control)
-
-    if not control.valid then return end
-
-    -- copy control attributes
-    for _, attribute in pairs(control_attributes) do
-        control[attribute] = inserter_config[attribute]
-    end
-
-    if entity.type == 'inserter' then
-        if entity.filter_slot_count > 0 then
-            for i = 1, entity.filter_slot_count, 1 do
-                entity.set_filter(i, inserter_config.filters[i])
-            end
-
-            if inserter_config.loader_filter_mode and inserter_config.loader_filter_mode ~= 'none' then
-                entity.use_filters = true
-                entity.inserter_filter_mode = inserter_config.loader_filter_mode
-            else
-                entity.use_filters = false
-            end
-        end
-
-        entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 1
-
-        local inserter_control = control --[[@as LuaInserterControlBehavior]]
-        inserter_control.circuit_read_hand_contents = false
-        inserter_control.circuit_set_stack_size = false
-    else
-        if entity.filter_slot_count > 0 then
-            for i = 1, entity.filter_slot_count, 1 do
-                entity.set_filter(i, inserter_config.filters[i])
-            end
-
-            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
-        end
-    end
-end
-
----@param ml_entity miniloader.Data
----@param skip_main boolean?
-local function resync_inserters(ml_entity, skip_main)
-    for _, inserter in pairs(ml_entity.inserters) do
-        if not (skip_main and inserter.unit_number == ml_entity.main.unit_number) then
-            write_config_to_entity(ml_entity.config.inserter_config, inserter)
-        end
-    end
-end
-
-------------------------------------------------------------------------
 -- create/destroy
 ------------------------------------------------------------------------
 
@@ -457,7 +341,7 @@ function Controller:create(main, config)
 
     This.Snapping:snapToNeighbor(ml_entity)
 
-    read_config_from_entity(main, ml_entity)
+    self:readConfigFromEntity(main, ml_entity)
     self:reconfigure(ml_entity)
 
     return ml_entity
@@ -489,6 +373,122 @@ function Controller:destroy(entity_id)
     end
 
     return true
+end
+
+------------------------------------------------------------------------
+-- sync control behavior
+------------------------------------------------------------------------
+
+-- GUI updates the loader, loader config is synced to the inserters
+-- entity creation / resurrection uses the primary inserter. config is synced from the inserter to the loader
+-- all meet at ml_entity.config
+
+local control_attributes = {
+    'circuit_set_filters',
+    'circuit_enable_disable',
+    'circuit_condition',
+    'connect_to_logistic_network',
+    'logistic_condition',
+}
+
+local EMPTY_LOADER_CONFIG = {
+    circuit_set_filters = false,
+    circuit_enable_disable = false,
+    circuit_condition = { constant = 0, comparator = '<', fulfilled = false },
+    connect_to_logistic_network = false,
+    logistic_condition = { constant = 0, comparator = '<', fulfilled = false },
+    loader_filter_mode = 'none',
+    filters = {},
+    circuit_read_transfers = false,
+}
+
+---@param entity LuaEntity Loader or Inserter
+---@param ml_entity miniloader.Data
+function Controller:readConfigFromEntity(entity, ml_entity)
+    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
+    assert(control)
+
+    if not control.valid then return end
+
+    local inserter_config = ml_entity.config.inserter_config
+
+    -- copy control attributes
+    for _, attribute in pairs(control_attributes) do
+        inserter_config[attribute] = control[attribute]
+    end
+
+    if entity.type == 'inserter' then
+        if entity.filter_slot_count > 0 then
+            inserter_config.loader_filter_mode = entity.use_filters and entity.inserter_filter_mode or 'none'
+
+            for i = 1, entity.filter_slot_count, 1 do
+                inserter_config.filters[i] = entity.get_filter(i)
+            end
+        else
+            inserter_config.loader_filter_mode = 'none'
+        end
+    else
+        inserter_config.loader_filter_mode = entity.loader_filter_mode
+
+        for i = 1, entity.filter_slot_count, 1 do
+            inserter_config.filters[i] = entity.get_filter(i)
+        end
+    end
+end
+
+---@param inserter_config table<string, any?>
+---@param entity LuaEntity Loader or Inserter
+function Controller:writeConfigToEntity(inserter_config, entity)
+    if not (entity and entity.valid) then return end
+
+    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
+    assert(control)
+
+    if not control.valid then return end
+
+    -- copy control attributes
+    for _, attribute in pairs(control_attributes) do
+        control[attribute] = inserter_config[attribute]
+    end
+
+    if entity.type == 'inserter' then
+        if entity.filter_slot_count > 0 then
+            for i = 1, entity.filter_slot_count, 1 do
+                entity.set_filter(i, inserter_config.filters[i])
+            end
+
+            if inserter_config.loader_filter_mode and inserter_config.loader_filter_mode ~= 'none' then
+                entity.use_filters = true
+                entity.inserter_filter_mode = inserter_config.loader_filter_mode
+            else
+                entity.use_filters = false
+            end
+        end
+
+        entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 1
+
+        local inserter_control = control --[[@as LuaInserterControlBehavior]]
+        inserter_control.circuit_read_hand_contents = false
+        inserter_control.circuit_set_stack_size = false
+    else
+        if entity.filter_slot_count > 0 then
+            for i = 1, entity.filter_slot_count, 1 do
+                entity.set_filter(i, inserter_config.filters[i])
+            end
+
+            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
+        end
+    end
+end
+
+---@param ml_entity miniloader.Data
+---@param skip_main boolean?
+function Controller:resyncInserters(ml_entity, skip_main)
+    for _, inserter in pairs(ml_entity.inserters) do
+        if not (skip_main and inserter.unit_number == ml_entity.main.unit_number) then
+            self:writeConfigToEntity(ml_entity.config.inserter_config, inserter)
+        end
+    end
 end
 
 ------------------------------------------------------------------------
@@ -612,10 +612,10 @@ function Controller:reconfigure(ml_entity, cfg)
         end
     end
 
-    resync_inserters(ml_entity)
+    self:resyncInserters(ml_entity)
 
     -- clear out loader configuration
-    write_config_to_entity(EMPTY_LOADER_CONFIG, ml_entity.loader)
+    self:writeConfigToEntity(EMPTY_LOADER_CONFIG, ml_entity.loader)
 end
 
 ------------------------------------------------------------------------

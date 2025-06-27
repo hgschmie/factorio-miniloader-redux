@@ -76,7 +76,7 @@ local function onGuiOpened(event)
         return
     end
 
-    This.MiniLoader:writeConfigToEntity(ml_entity, ml_entity.loader)
+    This.MiniLoader:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
     game.players[event.player_index].opened = ml_entity.loader
 end
 
