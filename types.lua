@@ -10,6 +10,8 @@
 ---@class miniloader.LoaderDefinition
 ---@field condition (fun():boolean)?
 ---@field data fun():miniloader.LoaderTemplate
+---@field ingredients fun():data.IngredientPrototype[] Ingredients to make the loader
+---@field prerequisites fun():data.TechnologyID[]? Technology prerequisites to make the miniloader
 
 ---@class miniloader.LoaderTemplate
 ---@field prefix string? Prefix for the loader. Set by code from the template key

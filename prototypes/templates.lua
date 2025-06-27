@@ -4,13 +4,35 @@
 ------------------------------------------------------------------------
 
 local util = require('util')
-
 local const = require('lib.constants')
 
+local template = {}
+
+local supported_mods = {
+    ['space-age'] = 'space_age',
+}
+
+local game_mode = {}
+for mod_name, name in pairs(supported_mods) do
+    if mods[mod_name] then
+        game_mode[name] = true
+    end
+end
+
+---@param data table<string, any>
+local function select_data(data)
+    for _, mode in pairs(game_mode) do
+        if data[mode] then return data[mode] end
+    end
+    return data.base
+end
+
+
 ---@type table<string, miniloader.LoaderDefinition>
-local templates = {
+template.loaders = {
     -- regular miniloader, base game
     [''] = {
+        condition = function() return true end,
         data = function()
             return {
                 order = 'd[a]-b',
@@ -18,18 +40,28 @@ local templates = {
                 stack_size = 50,
                 tint = util.color('ffc340d9'),
                 speed = data.raw['transport-belt']['transport-belt'].speed,
-                ingredients = {
+                upgrade_from = const:name_from_prefix('chute'),
+            }
+        end,
+        ingredients = function()
+            return select_data({
+                base = {
                     { type = 'item', name = 'underground-belt', amount = 1 },
                     { type = 'item', name = 'steel-plate',      amount = 4 },
                     { type = 'item', name = 'inserter',         amount = 4 },
                 },
-                prerequisites = { 'logistics', 'steel-processing', 'electronics' },
-                upgrade_from = const:name_from_prefix('chute'),
-            }
+            })
+        end,
+        prerequisites = function()
+            return select_data({
+                base = { 'logistics', 'steel-processing', 'electronics' },
+                space_age = {},
+            })
         end,
     },
     -- fast miniloader, base game
     ['fast'] = {
+        condition = function() return true end,
         data = function()
             return {
                 order = 'd[a]-c',
@@ -37,18 +69,28 @@ local templates = {
                 stack_size = 50,
                 tint = util.color('e31717d9'),
                 speed = data.raw['transport-belt']['fast-transport-belt'].speed,
-                ingredients = {
+                upgrade_from = const:name_from_prefix(''),
+            }
+        end,
+        ingredients = function()
+            return select_data({
+                base = {
                     { type = 'item', name = const:name_from_prefix(''), amount = 1 },
                     { type = 'item', name = 'fast-underground-belt',    amount = 1 },
                     { type = 'item', name = 'fast-inserter',            amount = 2 },
                 },
-                prerequisites = { 'logistics-2', const:name_from_prefix(''), },
-                upgrade_from = const:name_from_prefix(''),
-            }
+            })
+        end,
+        prerequisites = function()
+            return select_data({
+                base = { 'logistics-2', const:name_from_prefix(''), },
+                space_age = {},
+            })
         end,
     },
     -- express miniloader, base game
     ['express'] = {
+        condition = function() return true end,
         data = function()
             return {
                 order = 'd[a]-d',
@@ -56,21 +98,30 @@ local templates = {
                 stack_size = 50,
                 tint = util.color('43c0fad9'),
                 speed = data.raw['transport-belt']['express-transport-belt'].speed,
-                ingredients = {
+                upgrade_from = const:name_from_prefix('fast'),
+            }
+        end,
+        ingredients = function()
+            return select_data({
+                base = {
                     { type = 'item', name = const:name_from_prefix('fast'), amount = 1 },
                     { type = 'item', name = 'express-underground-belt',     amount = 1 },
                     { type = 'item', name = 'fast-inserter',                amount = 4 },
                 },
-                prerequisites = { 'logistics-3', const:name_from_prefix('fast'), },
-                upgrade_from = const:name_from_prefix('fast'),
-            }
+            })
+        end,
+        prerequisites = function()
+            return select_data({
+                base = { 'logistics-3', const:name_from_prefix('fast'), },
+                space_age = {},
+            })
         end,
     },
 
     -- turbo miniloader, space age game
     ['turbo'] = {
         condition = function()
-            return mods['space-age'] and true or false
+            return game_mode.space_age and true or false
         end,
         data = function()
             return {
@@ -79,21 +130,29 @@ local templates = {
                 stack_size = 50,
                 tint = util.color('A8D550d9'),
                 speed = data.raw['transport-belt']['turbo-transport-belt'].speed,
-                ingredients = {
+                upgrade_from = const:name_from_prefix('express'),
+            }
+        end,
+        ingredients = function()
+            return select_data({
+                base = {
                     { type = 'item', name = const:name_from_prefix('express'), amount = 1 },
                     { type = 'item', name = 'turbo-underground-belt',          amount = 1 },
                     { type = 'item', name = 'bulk-inserter',                   amount = 4 },
                 },
-                prerequisites = { 'logistics-3', 'metallurgic-science-pack', const:name_from_prefix('express'), },
-                upgrade_from = const:name_from_prefix('express'),
-            }
+            })
+        end,
+        prerequisites = function()
+            return select_data({
+                base = { 'turbo-transport-belt', 'metallurgic-science-pack', const:name_from_prefix('express'), },
+            })
         end,
     },
 
     -- stack miniloader, space age game
     ['stack'] = {
         condition = function()
-            return mods['space-age'] and true or false
+            return game_mode.space_age and true or false
         end,
         data = function()
             return {
@@ -102,16 +161,24 @@ local templates = {
                 stack_size = 50,
                 tint = util.color('ffffffd9'),
                 speed = data.raw['transport-belt']['turbo-transport-belt'].speed,
-                ingredients = {
-                    { type = 'item', name = const:name_from_prefix('turbo'), amount = 1 },
-                    { type = 'item', name = 'turbo-underground-belt',        amount = 1 },
-                    { type = 'item', name = 'stack-inserter',                amount = 2 },
-                },
-                prerequisites = { 'logistics-3', 'stack-inserter', const:name_from_prefix('turbo'), },
                 bulk = true,
                 upgrade_from = const:name_from_prefix('turbo'),
                 loader_tier = 'turbo', -- use turbo animations, explosion etc.
             }
+        end,
+        ingredients = function()
+            return select_data({
+                base = {
+                    { type = 'item', name = const:name_from_prefix('turbo'), amount = 1 },
+                    { type = 'item', name = 'turbo-underground-belt',        amount = 1 },
+                    { type = 'item', name = 'stack-inserter',                amount = 2 },
+                },
+            })
+        end,
+        prerequisites = function()
+            return select_data({
+                base = { 'logistics-3', 'stack-inserter', const:name_from_prefix('turbo'), },
+            })
         end,
     },
 
@@ -128,12 +195,6 @@ local templates = {
                 tint = util.color('999999d9'),
                 speed = data.raw['transport-belt']['transport-belt'].speed / 4,
                 energy_source = { type = 'void' },
-                ingredients = {
-                    { type = 'item', name = 'transport-belt',  amount = 1 },
-                    { type = 'item', name = 'iron-plate',      amount = 4 },
-                    { type = 'item', name = 'burner-inserter', amount = 2 },
-                },
-                prerequisites = { 'logistics' },
                 research_trigger = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 100,
                 },
@@ -141,7 +202,24 @@ local templates = {
                 nerf_mode = true,
             }
         end,
+        ingredients = function()
+            return select_data({
+                base = {
+                    { type = 'item', name = 'transport-belt',  amount = 1 },
+                    { type = 'item', name = 'iron-plate',      amount = 4 },
+                    { type = 'item', name = 'burner-inserter', amount = 2 },
+                },
+            })
+        end,
+        prerequisites = function()
+            return select_data({
+                base = { 'logistics' },
+                space_age = {},
+            })
+        end,
     },
 }
 
-return { templates }
+template.game_mode = game_mode
+
+return template

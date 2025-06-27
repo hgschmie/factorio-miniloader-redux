@@ -489,6 +489,7 @@ local function create_recipe(params)
     technology.icons[2].tint = params.tint
 
     if not (technology.unit or technology.research_trigger) then
+        assert(technology.prerequisites[1])
         local main_prereq = data.raw['technology'][technology.prerequisites[1]]
 
         if main_prereq.unit then
