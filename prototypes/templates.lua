@@ -11,6 +11,7 @@ local template = {}
 local supported_mods = {
     ['space-age'] = 'space_age',
     ['matts-logistics'] = 'matt',
+    ['Krastorio2'] = 'krastorio',
 }
 
 local game_mode = {}
@@ -278,7 +279,7 @@ template.loaders = {
             local previous = 'ultra-fast'
 
             return {
-                order = 'd[b]-a',
+                order = 'd[b]-b',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('c34722'),
@@ -311,7 +312,7 @@ template.loaders = {
             local previous = 'extreme-fast'
 
             return {
-                order = 'd[b]-a',
+                order = 'd[b]-c',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('5a17c2'),
@@ -344,7 +345,7 @@ template.loaders = {
             local previous = 'ultra-express'
 
             return {
-                order = 'd[b]-a',
+                order = 'd[b]-d',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('1146d4'),
@@ -377,7 +378,7 @@ template.loaders = {
             local previous = 'extreme-express'
 
             return {
-                order = 'd[b]-a',
+                order = 'd[b]-e',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('a6a6a6'),
@@ -397,6 +398,75 @@ template.loaders = {
                 prerequisites = function()
                     return select_data {
                         matt = { 'logistics-8', const:name_from_prefix(previous), },
+                    }
+                end,
+            }
+        end,
+    },
+
+    -- =================================================
+    -- == Krastorio 2
+    -- =================================================
+
+    ['kr-advanced'] = {
+        condition = function()
+            return game_mode.krastorio and true or false
+        end,
+        data = function()
+            local previous = 'express'
+
+            return {
+                order = 'd[c]-a',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('22ec17'),
+                speed = data.raw['transport-belt']['kr-advanced-transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                loader_tier = 'express',
+                ingredients = function()
+                    return select_data {
+                        krastorio = {
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
+                            { type = 'item', name = 'kr-advanced-underground-belt',   amount = 1 },
+                            { type = 'item', name = 'kr-rare-metals',                 amount = 10 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        krastorio = { 'kr-logistic-4', const:name_from_prefix(previous), },
+                    }
+                end,
+            }
+        end,
+    },
+    ['kr-superior'] = {
+        condition = function()
+            return game_mode.krastorio and true or false
+        end,
+        data = function()
+            local previous = 'kr-advanced'
+
+            return {
+                order = 'd[c]-b',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('d201f7'),
+                speed = data.raw['transport-belt']['kr-superior-transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                loader_tier = 'express',
+                ingredients = function()
+                    return select_data {
+                        krastorio = {
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
+                            { type = 'item', name = 'kr-superior-underground-belt',   amount = 1 },
+                            { type = 'item', name = 'kr-imersium-gear-wheel',         amount = 10 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        krastorio = { 'kr-logistic-5', const:name_from_prefix(previous), },
                     }
                 end,
             }

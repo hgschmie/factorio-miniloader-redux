@@ -3,6 +3,7 @@ Version: 0.6.6
 Date: ????
   Changes:
     - add support for Matt's Logistics belt tiers
+    - add support for Krastorio 2 belt tiers
   Bugfixes:
     - fix an extremely rare crash where the filter config gets corrupted and blueprinting a miniloader
       causes a duplicate key error

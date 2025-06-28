@@ -30,6 +30,7 @@ There are three available tiers in the base game ("Vanilla", Fast and Express) a
 Starting with version 0.7.0, Miniloader supports
 
 * [Matt's Logistics](https://mods.factorio.com/mod/matts-logistics) belt tiers with miniloaders. Activated if the module is detected.
+* [Krastorio 2](https://mods.factorio.com/mod/Krastorio2) belt tiers with miniloaders. Activated if the module is detected.
 
 I am open to support additional tiers from other mods (such as Bob's mods). As I don't play those myself, I have not added them but doing so is pretty straightforward (look at `scripts/templates.lua`).
 
