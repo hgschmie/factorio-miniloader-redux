@@ -32,11 +32,15 @@ Starting with version 0.7.0, Miniloader supports
 * [Matt's Logistics](https://mods.factorio.com/mod/matts-logistics) belt tiers with miniloaders. Activated if the module is detected.
 * [Krastorio 2](https://mods.factorio.com/mod/Krastorio2) belt tiers with miniloaders. Activated if the module is detected.
 
-I am open to support additional tiers from other mods (such as Bob's mods). As I don't play those myself, I have not added them but doing so is pretty straightforward (look at `scripts/templates.lua`).
+The miniloaders are activated if the corresponding module is detected.
+
+I am open to support additional tiers from other mods from PRs (see below).
 
 ## How you can help
 
 I am not a graphics person. E.g. Matt's Logistics belts have a different tint and I convinced ChatGPT to recolor the existing graphics with a different tint that somewhat matches the belts. But getting better graphics would be greatly appreciated.
+
+See [adding more miniloaders for other mods](https://github.com/hgschmie/factorio-miniloader-redux/blob/ADD_NEW_LOADERS.md) for details on how to add loaders for other belt tiers.
 
 ## Config options
 

@@ -12,7 +12,7 @@ require 'circuit-connector-generated-definitions'
 require 'circuit-connector-sprites'
 
 local function create_miniloader_entity(name)
-    local source_inserter = data.raw['inserter'][const:name_from_prefix('')]
+    local source_inserter = data.raw['inserter'][const:with_prefix(const.name)]
     assert(source_inserter)
 
     local loader_inserter = {

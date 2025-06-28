@@ -19,10 +19,11 @@ local upgrades = {}
 for prefix, loader_definition in pairs(templates.loaders) do
     assert(loader_definition.condition)
     if (loader_definition.condition()) then
+        local dash_prefix = functions.compute_dash_prefix(prefix)
         ---@type miniloader.LoaderTemplate
-        local params = util.copy(loader_definition.data())
+        local params = util.copy(loader_definition.data(dash_prefix))
         params.prefix = prefix
-        params.name = const:name_from_prefix(params.prefix)
+        params.name = const:with_prefix(dash_prefix .. const.name)
         params.localised_name = params.localised_name and params.localised_name or { 'entity-name.' .. params.name }
         if params.upgrade_from then
             upgrades[params.upgrade_from] = params.name

@@ -43,8 +43,14 @@ local inserter_connector_definitions = circuit_connector_definitions.create_vect
     }
 )
 
+--- Either returns '' or '<name>-'
+local function compute_dash_prefix(name)
+    if not (name and name:len() > 0) then return '' end
+    return name .. '-'
+end
+
 local function icon_gfx(tint, variant)
-    local name = (variant and variant:len() > 0) and (variant .. '-') or ''
+    local name = compute_dash_prefix(variant)
 
     return {
         {
@@ -60,7 +66,8 @@ local function icon_gfx(tint, variant)
 end
 
 local function entity_sheets_gfx(tint, variant, offset)
-    local name = (variant and variant:len() > 0) and (variant .. '-') or ''
+    local name = compute_dash_prefix(variant)
+
     return {
         -- Base
         {
@@ -95,29 +102,26 @@ local function entity_sheets_gfx(tint, variant, offset)
 end
 
 local function technology_gfx(tint, variant)
-    local name = (variant and variant:len() > 0) and (variant .. '-') or ''
+    local name = compute_dash_prefix(variant)
 
     return {
-    {
-        icon = const:png('technology/' .. name .. 'technology-base'),
-        icon_size = 128,
-    },
-    {
-        icon = const:png('technology/technology-mask'),
-        icon_size = 128,
-    },
-}
+        {
+            icon = const:png('technology/' .. name .. 'technology-base'),
+            icon_size = 128,
+        },
+        {
+            icon = const:png('technology/technology-mask'),
+            icon_size = 128,
+            tint = tint,
+        },
+    }
 end
 
 
 ---@param prefix string?
 ---@param name string
 local function add_tier_prefix(prefix, name)
-    if prefix and prefix:len() > 0 then
-        return prefix .. '-' .. name
-    else
-        return name
-    end
+    return compute_dash_prefix(prefix) .. name
 end
 
 ---@param params miniloader.LoaderTemplate
@@ -135,7 +139,7 @@ local function create_item(params)
         -- ItemPrototype
         stack_size = stack_size,
         weight = 1000 / stack_size * kg,
-        icons = icon_gfx(params.tint, params.variant),
+        icons = icon_gfx(params.tint, params.entity_gfx),
 
         place_result = params.name,
     }
@@ -148,8 +152,8 @@ local function create_entity(params)
     local entity_name = params.name
     local loader_name = const.loader_name(entity_name)
     local inserter_name = const.inserter_name(entity_name)
-    local loader_tier = params.loader_tier or params.prefix
-    local belt_tier = params.belt_tier or params.prefix
+    local loader_gfx = params.loader_gfx or params.prefix
+    local belt_gfx = params.belt_gfx or params.prefix
 
     local items_per_second = math.floor(params.speed * 480 * 100 + 0.5) / 100
 
@@ -166,15 +170,21 @@ local function create_entity(params)
     }
 
     local drain = '0.0000001W'
-    local consumption = tostring(params.speed * 1200 * (params.bulk and 1.5 or 1)) .. 'kW'
 
-    local electric_energy = params.energy_source or {
-        type = 'electric',
-        buffer_capacity = '0kJ',
-        usage_priority = 'secondary-input',
-        render_no_power_icon = true,
-        render_no_network_icon = true,
-    }
+    local primary_energy, consumption
+    if params.energy_source then
+        primary_energy, consumption = params.energy_source()
+    else
+        primary_energy = {
+            type = 'electric',
+            buffer_capacity = '0kJ',
+            usage_priority = 'secondary-input',
+            render_no_power_icon = true,
+            render_no_network_icon = true,
+        }
+
+        consumption = tostring(params.speed * 1200 * (params.bulk and 1.5 or 1)) .. 'kW'
+    end
 
     local void_energy = { type = 'void', }
 
@@ -200,7 +210,7 @@ local function create_entity(params)
         pickup_position = { 0, 0 },
 
         platform_picture = {
-            sheets = entity_sheets_gfx(params.tint, params.variant),
+            sheets = entity_sheets_gfx(params.tint, params.entity_gfx),
         },
         hand_base_picture = util.empty_sprite(),
         hand_open_picture = util.empty_sprite(),
@@ -208,7 +218,7 @@ local function create_entity(params)
         hand_base_shadow = util.empty_sprite(),
         hand_open_shadow = util.empty_sprite(),
         hand_closed_shadow = util.empty_sprite(),
-        energy_source = electric_energy,
+        energy_source = primary_energy,
         energy_per_movement = consumption,
         energy_per_rotation = consumption,
         allow_custom_vectors = true,
@@ -237,7 +247,7 @@ local function create_entity(params)
             offsets = { { 0, 1 } },
             damage_type_filters = 'fire'
         },
-        dying_explosion = add_tier_prefix(loader_tier, 'underground-belt-explosion'),
+        dying_explosion = compute_dash_prefix(loader_gfx) .. 'underground-belt-explosion',
         resistances = {
             {
                 type = 'fire',
@@ -248,10 +258,10 @@ local function create_entity(params)
                 percent = 30
             }
         },
-        corpse = add_tier_prefix(loader_tier, 'underground-belt-remnants'),
+        corpse = compute_dash_prefix(loader_gfx) .. 'underground-belt-remnants',
 
         -- EntityPrototype
-        icons = icon_gfx(params.tint, params.variant),
+        icons = icon_gfx(params.tint, params.entity_gfx),
 
         collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
         collision_mask = collision_mask_util.get_default_mask('inserter'),
@@ -272,8 +282,6 @@ local function create_entity(params)
 
     local hidden_inserter = meld(util.copy(inserter), {
         name = inserter_name,
-        icons = meld.delete(),
-        icon = '__core__/graphics/empty.png',
         hidden = true,
         hidden_in_factoriopedia = true,
         platform_picture = meld.overwrite(util.empty_sprite()),
@@ -310,10 +318,10 @@ local function create_entity(params)
         -- LoaderPrototype
         structure = {
             direction_in = {
-                sheets = entity_sheets_gfx(params.tint, params.variant)
+                sheets = entity_sheets_gfx(params.tint, params.entity_gfx)
             },
             direction_out = {
-                sheets = entity_sheets_gfx(params.tint, params.variant, 192),
+                sheets = entity_sheets_gfx(params.tint, params.entity_gfx, 192),
             },
             back_patch = {
                 sheet = {
@@ -355,7 +363,7 @@ local function create_entity(params)
         speed = params.speed,
 
         -- EntityPrototype
-        icons = icon_gfx(params.tint, params.variant),
+        icons = icon_gfx(params.tint, params.entity_gfx),
 
         collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
         collision_mask = { layers = { transport_belt = true, } },
@@ -379,8 +387,8 @@ local function create_entity(params)
     }
 
     -- hack to get the belt color right
-    if belt_tier and belt_tier:len() > 0 then
-        local belt_source = data.raw['underground-belt'][add_tier_prefix(belt_tier, 'underground-belt')]
+    if belt_gfx and belt_gfx:len() > 0 then
+        local belt_source = data.raw['underground-belt'][compute_dash_prefix(belt_gfx) .. 'underground-belt']
         if belt_source then
             loader.belt_animation_set = util.copy(belt_source.belt_animation_set)
         end
@@ -409,7 +417,7 @@ local function create_recipe(params)
         type = 'technology',
         name = params.name,
         order = params.order,
-        icons = technology_gfx(params.tint, params.variant),
+        icons = technology_gfx(params.tint, params.entity_gfx),
         prerequisites = params.prerequisites(),
         research_trigger = params.research_trigger,
         visible_when_disabled = false,
@@ -442,4 +450,5 @@ return {
     create_item = create_item,
     create_entity = create_entity,
     create_recipe = create_recipe,
+    compute_dash_prefix = compute_dash_prefix,
 }

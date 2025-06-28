@@ -9,6 +9,7 @@ local const = require('lib.constants')
 local template = {}
 
 local supported_mods = {
+    ['base'] = 'base',
     ['space-age'] = 'space_age',
     ['matts-logistics'] = 'matt',
     ['Krastorio2'] = 'krastorio',
@@ -18,18 +19,43 @@ local game_mode = {}
 for mod_name, name in pairs(supported_mods) do
     if mods[mod_name] then
         game_mode[name] = true
+    else
+        game_mode[name] = false
     end
 end
 
-local space_age = game_mode.space_age and true or false
+local function check_base()
+    return game_mode.base
+end
+
+local function check_space_age()
+    return game_mode.space_age
+end
+
+local function check_chute()
+    return Framework.settings:startup_setting(const.settings_names.chute_loader) == true
+end
+
+local function check_matt()
+    return game_mode.matt
+end
+
+local function check_krastorio()
+    return game_mode.krastorio
+end
+
+local function energy_void()
+    return { type = 'void' }, '0W'
+end
+
 -- highest available loader tier in the base / space age game
-local max_loader = space_age and 'turbo' or 'express'
+local max_loader = game_mode.space_age and 'turbo' or 'express'
 
 ---@param data table<string, any>
 local function select_data(data)
     for name in pairs(game_mode) do
         -- mod + space age?
-        if space_age then
+        if game_mode.space_age then
             local sa_name = name .. '_space_age'
             if data[sa_name] then return data[sa_name] end
         end
@@ -44,20 +70,21 @@ local function select_data(data)
     return data.base
 end
 
-
 ---@type table<string, miniloader.LoaderDefinition>
 template.loaders = {
     -- regular miniloader, base game
     [''] = {
-        condition = function() return true end,
+        condition = check_base,
         data = function()
+            local previous = 'chute'
+
             return {
-                order = 'd[a]-b',
+                order = 'd[a]-m',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('ffc340d9'),
                 speed = data.raw['transport-belt']['transport-belt'].speed,
-                upgrade_from = const:name_from_prefix('chute'),
+                upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
                         base = {
@@ -77,21 +104,23 @@ template.loaders = {
     },
     -- fast miniloader, base game
     ['fast'] = {
-        condition = function() return true end,
-        data = function()
+        condition = check_base,
+        data = function(dash_prefix)
+            local previous = ''
+
             return {
-                order = 'd[a]-c',
+                order = 'd[a]-n',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('e31717d9'),
-                speed = data.raw['transport-belt']['fast-transport-belt'].speed,
-                upgrade_from = const:name_from_prefix(''),
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
                         base = {
-                            { type = 'item', name = const:name_from_prefix(''), amount = 1 },
-                            { type = 'item', name = 'fast-underground-belt',    amount = 1 },
-                            { type = 'item', name = 'fast-inserter',            amount = 2 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'inserter',         amount = 2 },
                         },
                     }
                 end,
@@ -105,21 +134,23 @@ template.loaders = {
     },
     -- express miniloader, base game
     ['express'] = {
-        condition = function() return true end,
-        data = function()
+        condition = check_base,
+        data = function(dash_prefix)
+            local previous = 'fast'
+
             return {
-                order = 'd[a]-d',
+                order = 'd[a]-o',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('43c0fad9'),
-                speed = data.raw['transport-belt']['express-transport-belt'].speed,
-                upgrade_from = const:name_from_prefix('fast'),
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
                         base = {
-                            { type = 'item', name = const:name_from_prefix('fast'), amount = 1 },
-                            { type = 'item', name = 'express-underground-belt',     amount = 1 },
-                            { type = 'item', name = 'fast-inserter',                amount = 4 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -134,23 +165,23 @@ template.loaders = {
 
     -- turbo miniloader, space age game
     ['turbo'] = {
-        condition = function()
-            return game_mode.space_age and true or false
-        end,
-        data = function()
+        condition = check_space_age,
+        data = function(dash_prefix)
+            local previous = 'express'
+
             return {
-                order = 'd[a]-e',
+                order = 'd[a]-p',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('A8D550d9'),
-                speed = data.raw['transport-belt']['turbo-transport-belt'].speed,
-                upgrade_from = const:name_from_prefix('express'),
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
                         base = {
-                            { type = 'item', name = const:name_from_prefix('express'), amount = 1 },
-                            { type = 'item', name = 'turbo-underground-belt',          amount = 1 },
-                            { type = 'item', name = 'bulk-inserter',                   amount = 4 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -165,26 +196,26 @@ template.loaders = {
 
     -- stack miniloader, space age game
     ['stack'] = {
-        condition = function()
-            return game_mode.space_age and true or false
-        end,
+        condition = check_space_age,
         data = function()
+            local previous = 'turbo'
+
             return {
-                order = 'd[a]-f',
+                order = 'd[a]-t',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('ffffffd9'),
                 speed = data.raw['transport-belt']['turbo-transport-belt'].speed,
                 bulk = true,
-                upgrade_from = const:name_from_prefix('turbo'),
-                loader_tier = 'turbo', -- use turbo animations, explosion etc.
-                belt_tier = 'turbo',
+                upgrade_from = const:name_from_prefix(previous),
+                loader_gfx = 'turbo', -- use turbo animations, explosion etc.
+                belt_gfx = 'turbo',
                 ingredients = function()
                     return select_data {
                         base = {
-                            { type = 'item', name = const:name_from_prefix('turbo'), amount = 1 },
-                            { type = 'item', name = 'turbo-underground-belt',        amount = 1 },
-                            { type = 'item', name = 'stack-inserter',                amount = 2 },
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
+                            { type = 'item', name = 'turbo-underground-belt',         amount = 1 },
+                            { type = 'item', name = 'stack-inserter',                 amount = 2 },
                         },
                     }
                 end,
@@ -199,22 +230,22 @@ template.loaders = {
 
     -- gravity assisted chute loader
     ['chute'] = {
-        condition = function()
-            return Framework.settings:startup_setting(const.settings_names.chute_loader) and true or false
-        end,
+        condition = check_chute,
         data = function()
+            local gfx = ''
+
             return {
-                order = 'd[a]-a',
+                order = 'd[a]-h',
                 subgroup = 'belt',
                 stack_size = 50,
-                tint = util.color('999999d9'),
+                tint = util.color('b7410e'),
                 speed = data.raw['transport-belt']['transport-belt'].speed / 4,
-                energy_source = { type = 'void' },
+                energy_source = energy_void,
                 research_trigger = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 100,
                 },
-                loader_tier = '', -- use basic belt animation
-                belt_tier = '',
+                loader_gfx = '',
+                belt_gfx = gfx,
                 nerf_mode = true,
                 ingredients = function()
                     return select_data {
@@ -226,8 +257,9 @@ template.loaders = {
                     }
                 end,
                 prerequisites = function()
+                    local technology = 'logistics'
                     return select_data {
-                        base = { 'logistics' },
+                        base = { technology },
                     }
                 end,
             }
@@ -239,27 +271,25 @@ template.loaders = {
     -- =================================================
 
     ['ultra-fast'] = {
-        condition = function()
-            return game_mode.matt and true or false
-        end,
-        data = function()
-            local previous = space_age and 'turbo' or 'express'
+        condition = check_matt,
+        data = function(dash_prefix)
+            local previous = game_mode.space_age and 'turbo' or 'express'
 
             return {
                 order = 'd[b]-a',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('2ac217'),
-                speed = data.raw['transport-belt']['ultra-fast-transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_tier = max_loader, -- animations, explosion etc.
-                variant = 'matt',
+                loader_gfx = max_loader, -- animations, explosion etc.
+                entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
                         matt = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 2 },
-                            { type = 'item', name = previous .. '-underground-belt',  amount = 2 },
-                            { type = 'item', name = 'bulk-inserter',                  amount = 4 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 4 },
                         },
                     }
                 end,
@@ -272,10 +302,8 @@ template.loaders = {
         end,
     },
     ['extreme-fast'] = {
-        condition = function()
-            return game_mode.matt and true or false
-        end,
-        data = function()
+        condition = check_matt,
+        data = function(dash_prefix)
             local previous = 'ultra-fast'
 
             return {
@@ -283,16 +311,16 @@ template.loaders = {
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('c34722'),
-                speed = data.raw['transport-belt']['extreme-fast-transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_tier = max_loader, -- animations, explosion etc.
-                variant = 'matt',
+                loader_gfx = max_loader, -- animations, explosion etc.
+                entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
                         matt = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 2 },
-                            { type = 'item', name = previous .. '-underground-belt',  amount = 2 },
-                            { type = 'item', name = 'bulk-inserter',                  amount = 8 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 2 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -305,10 +333,8 @@ template.loaders = {
         end,
     },
     ['ultra-express'] = {
-        condition = function()
-            return game_mode.matt and true or false
-        end,
-        data = function()
+        condition = check_matt,
+        data = function(dash_prefix)
             local previous = 'extreme-fast'
 
             return {
@@ -316,16 +342,16 @@ template.loaders = {
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('5a17c2'),
-                speed = data.raw['transport-belt']['ultra-express-transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_tier = max_loader, -- animations, explosion etc.
-                variant = 'matt',
+                loader_gfx = max_loader, -- animations, explosion etc.
+                entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
                         matt = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 4 },
-                            { type = 'item', name = previous .. '-underground-belt',  amount = 2 },
-                            { type = 'item', name = 'bulk-inserter',                  amount = 8 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 2 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -338,10 +364,8 @@ template.loaders = {
         end,
     },
     ['extreme-express'] = {
-        condition = function()
-            return game_mode.matt and true or false
-        end,
-        data = function()
+        condition = check_matt,
+        data = function(dash_prefix)
             local previous = 'ultra-express'
 
             return {
@@ -349,16 +373,16 @@ template.loaders = {
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('1146d4'),
-                speed = data.raw['transport-belt']['extreme-express-transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_tier = max_loader, -- animations, explosion etc.
-                variant = 'matt',
+                loader_gfx = max_loader, -- animations, explosion etc.
+                entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
                         matt = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 4 },
-                            { type = 'item', name = previous .. '-underground-belt',  amount = 4 },
-                            { type = 'item', name = 'bulk-inserter',                  amount = 8 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 2 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -371,10 +395,8 @@ template.loaders = {
         end,
     },
     ['ultimate'] = {
-        condition = function()
-            return game_mode.matt and true or false
-        end,
-        data = function()
+        condition = check_matt,
+        data = function(dash_prefix)
             local previous = 'extreme-express'
 
             return {
@@ -382,16 +404,16 @@ template.loaders = {
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('a6a6a6'),
-                speed = data.raw['transport-belt']['ultimate-transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_tier = max_loader, -- animations, explosion etc.
-                variant = 'matt',
+                loader_gfx = max_loader, -- animations, explosion etc.
+                entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
                         matt = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
-                            { type = 'item', name = previous .. '-underground-belt',  amount = 1 },
-                            { type = 'item', name = 'bulk-inserter',                  amount = 2 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 2 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -409,10 +431,8 @@ template.loaders = {
     -- =================================================
 
     ['kr-advanced'] = {
-        condition = function()
-            return game_mode.krastorio and true or false
-        end,
-        data = function()
+        condition = check_krastorio,
+        data = function(dash_prefix)
             local previous = 'express'
 
             return {
@@ -420,15 +440,15 @@ template.loaders = {
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('22ec17'),
-                speed = data.raw['transport-belt']['kr-advanced-transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_tier = 'express',
+                loader_gfx = 'express', -- https://codeberg.org/raiguard/Krastorio2/issues/641
                 ingredients = function()
                     return select_data {
                         krastorio = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
-                            { type = 'item', name = 'kr-advanced-underground-belt',   amount = 1 },
-                            { type = 'item', name = 'kr-rare-metals',                 amount = 10 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'kr-rare-metals',                  amount = 10 },
                         },
                     }
                 end,
@@ -441,10 +461,8 @@ template.loaders = {
         end,
     },
     ['kr-superior'] = {
-        condition = function()
-            return game_mode.krastorio and true or false
-        end,
-        data = function()
+        condition = check_krastorio,
+        data = function(dash_prefix)
             local previous = 'kr-advanced'
 
             return {
@@ -452,15 +470,15 @@ template.loaders = {
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('d201f7'),
-                speed = data.raw['transport-belt']['kr-superior-transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_tier = 'express',
+                loader_gfx = 'express', -- https://codeberg.org/raiguard/Krastorio2/issues/641
                 ingredients = function()
                     return select_data {
                         krastorio = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
-                            { type = 'item', name = 'kr-superior-underground-belt',   amount = 1 },
-                            { type = 'item', name = 'kr-imersium-gear-wheel',         amount = 10 },
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'kr-imersium-gear-wheel',          amount = 10 },
                         },
                     }
                 end,
