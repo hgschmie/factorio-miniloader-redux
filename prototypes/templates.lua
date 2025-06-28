@@ -13,6 +13,7 @@ local supported_mods = {
     ['space-age'] = 'space_age',
     ['matts-logistics'] = 'matt',
     ['Krastorio2'] = 'krastorio',
+    ['boblogistics'] = 'bob',
 }
 
 local game_mode = {}
@@ -42,6 +43,10 @@ end
 
 local function check_krastorio()
     return game_mode.krastorio
+end
+
+local function check_bob()
+    return game_mode.bob and (settings.startup['bobmods-logistics-beltoverhaul'].value == true)
 end
 
 local function energy_void()
@@ -76,7 +81,9 @@ template.loaders = {
     [''] = {
         condition = check_base,
         data = function()
-            local previous = 'chute'
+            -- bob adds a tier below the regular belts and above the chute
+            -- tweak the regular loader to accommodate for that
+            local previous = game_mode.bob and 'bob-basic' or 'chute'
 
             return {
                 order = 'd[a]-m',
@@ -232,7 +239,7 @@ template.loaders = {
     ['chute'] = {
         condition = check_chute,
         data = function()
-            local gfx = ''
+            local gfx = game_mode.bob and 'bob-basic' or ''
 
             return {
                 order = 'd[a]-h',
@@ -257,7 +264,7 @@ template.loaders = {
                     }
                 end,
                 prerequisites = function()
-                    local technology = 'logistics'
+                    local technology = game_mode.bob and 'logistics-0' or 'logistics'
                     return select_data {
                         base = { technology },
                     }
@@ -490,6 +497,123 @@ template.loaders = {
             }
         end,
     },
+
+    -- =================================================
+    -- == Bob's Logistics
+    -- =================================================
+
+    ['bob-basic'] = {
+        condition = check_bob,
+        data = function(dash_prefix)
+            local previous = 'chute'
+
+            return {
+                order = 'd[a]-l', -- slower than standard, faster than chute
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('c3c3c3'),
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                loader_gfx = '', -- use basic graphics for explosion and remnants
+                ingredients = function()
+                    return select_data {
+                        bob = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bob-steam-inserter',              amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        bob = { 'logistics-0', const:name_from_prefix(previous), },
+                    }
+                end,
+                research_trigger = {
+                    type = 'craft-item', item = 'iron-gear-wheel', count = 200,
+                },
+                energy_source = energy_void,
+                -- I really would like to make this steam powered just as the steam inserter
+                -- but I can't seem to get this to work. So we keep this on electricity for now
+                --
+                -- energy_source = function()
+                --     local inserter = assert(data.raw.inserter['bob-steam-inserter'])
+                --     local energy_source = util.copy(inserter.energy_source)
+                --     energy_source.scale_fluid_usage = true
+                --     energy_source.fluid_box.production_type = 'input'
+
+                --     return energy_source, '1J'
+                -- end
+            }
+        end,
+    },
+    ['bob-turbo'] = {
+        condition = check_bob,
+        data = function(dash_prefix)
+            local previous = 'express'
+
+            return {
+                order = 'd[a]-q',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('b700ff'),
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                loader_gfx = '', -- use basic graphics for explosion and remnants
+                ingredients = function()
+                    return select_data {
+                        bob = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bob-express-inserter',            amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        bob = { 'logistics-4', const:name_from_prefix(previous), },
+                    }
+                end,
+            }
+        end,
+
+    },
+    ['bob-ultimate'] = {
+        condition = check_bob,
+        data = function(dash_prefix)
+            local previous = 'bob-turbo'
+
+            return {
+                order = 'd[a]-r',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('1aeb2e'),
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                loader_gfx = '', -- use basic graphics for explosion and remnants
+                ingredients = function()
+                    local inserter = (settings.startup['bobmods-logistics-inserteroverhaul'].value == true)
+                        and 'bob-turbo-inserter'
+                        or 'bob-express-bulk-inserter'
+                    return select_data {
+                        bob = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = inserter,                          amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        bob = { 'logistics-5', const:name_from_prefix(previous), },
+                    }
+                end,
+            }
+        end,
+
+    },
+
+
 }
 
 template.game_mode = game_mode
