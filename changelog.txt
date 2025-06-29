@@ -1,9 +1,12 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.6.6
+Version: 0.7.0
 Date: ????
   Changes:
     - add support for Matt's Logistics belt tiers
     - add support for Krastorio 2 belt tiers
+    - add support for Bob's Logistics belt tiers
+    - recolor the chute as too many mods use "light grey" as a tier color
+    - Fix some naming of the loaders to make it more consistent
   Bugfixes:
     - fix an extremely rare crash where the filter config gets corrupted and blueprinting a miniloader
       causes a duplicate key error
