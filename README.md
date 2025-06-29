@@ -41,7 +41,7 @@ I am open to support additional tiers from other mods from PRs (see below).
 
 I am not a graphics person. E.g. Matt's Logistics belts have a different tint and I convinced ChatGPT to recolor the existing graphics with a different tint that somewhat matches the belts. But getting better graphics would be greatly appreciated.
 
-See [adding more miniloaders for other mods](https://github.com/hgschmie/factorio-miniloader-redux/blob/ADD_NEW_LOADERS.md) for details on how to add loaders for other belt tiers.
+See [adding more miniloaders for other mods](https://github.com/hgschmie/factorio-miniloader-redux/blob/main/ADD_NEW_LOADERS.md) for details on how to add loaders for other belt tiers.
 
 ## Config options
 
@@ -97,7 +97,7 @@ stack traceback:
 miniloader-redux/scripts/controller.lua:181: in function 'create_loader'
 ```
 
-This should only happen if a miniloader was not cleaned out correctly and some of the internal (invisible) entities have remainted. In that case, the `/inspect-miniloaders` command can scan all miniloaders and remove such remnants. When the command completes, it will report:
+This should only happen if a miniloader was not cleaned out correctly and some of the internal (invisible) entities have remained. In that case, the `/inspect-miniloaders` command can scan all miniloaders and remove such remnants. When the command completes, it will report:
 
 ```text
 [Inspect Miniloaders] Invalid entities detected: MiniLoaders: 0 / Internal Loaders: 0 / Internal Inserters: 0.
