@@ -49,8 +49,11 @@ local function compute_dash_prefix(name)
     return name .. '-'
 end
 
-local function icon_gfx(tint, variant)
+local function icon_gfx(tint, variant, mask_variant)
+    if not mask_variant then mask_variant = '' end
+
     local name = compute_dash_prefix(variant)
+    local mask_name = compute_dash_prefix(mask_variant)
 
     return {
         {
@@ -58,7 +61,7 @@ local function icon_gfx(tint, variant)
             icon_size = 64,
         },
         {
-            icon = const:png('item/icon-mask'),
+            icon = const:png('item/' .. mask_name .. 'icon-mask'),
             icon_size = 64,
             tint = tint,
         },
@@ -176,7 +179,7 @@ local function create_entity(params)
 
     if Framework.settings:startup_setting(const.settings_names.no_power) then
         primary_energy = void_energy
-        consumption = "0W"
+        consumption = '0W'
     elseif params.energy_source then
         primary_energy, consumption = params.energy_source()
     else
@@ -285,6 +288,11 @@ local function create_entity(params)
 
     local hidden_inserter = meld(util.copy(inserter), {
         name = inserter_name,
+        icons = icon_gfx(params.tint, 'internal', 'internal'),
+        localised_name = { 'entity-name.' .. inserter_name },
+        description = { 'entity-description.' .. inserter_name },
+        localised_description = meld.delete(),
+
         hidden = true,
         hidden_in_factoriopedia = true,
         platform_picture = meld.overwrite(util.empty_sprite()),
@@ -312,6 +320,8 @@ local function create_entity(params)
     local loader = {
         -- Prototype Base
         name = loader_name,
+        localised_name = { 'entity-name.' .. loader_name },
+        description = { 'entity-description.' .. loader_name },
         type = 'loader-1x1',
         order = params.order,
         subgroup = params.subgroup,
@@ -366,7 +376,7 @@ local function create_entity(params)
         speed = params.speed,
 
         -- EntityPrototype
-        icons = icon_gfx(params.tint, params.entity_gfx),
+        icons = icon_gfx(params.tint, 'internal', 'internal'),
 
         collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
         collision_mask = { layers = { transport_belt = true, } },
