@@ -7,6 +7,7 @@ Date: ????
     - add support for Bob's Logistics belt tiers
     - recolor the chute as too many mods use "light grey" as a tier color
     - Fix some naming of the loaders to make it more consistent
+    - make "Read Transfer" somewhat work, it is actually "Read Hand Contents, pulse mode" of the internal inserters
   Bugfixes:
     - fix an extremely rare crash where the filter config gets corrupted and blueprinting a miniloader
       causes a duplicate key error

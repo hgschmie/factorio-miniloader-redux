@@ -399,7 +399,7 @@ local EMPTY_LOADER_CONFIG = {
     logistic_condition = { constant = 0, comparator = '<', fulfilled = false },
     loader_filter_mode = 'none',
     filters = {},
-    circuit_read_transfers = false,
+    read_transfers = false,
 }
 
 ---@param entity LuaEntity Loader or Inserter
@@ -421,6 +421,9 @@ function Controller:readConfigFromEntity(entity, ml_entity)
         if entity.filter_slot_count > 0 then
             inserter_config.loader_filter_mode = entity.use_filters and entity.inserter_filter_mode or 'none'
 
+            local inserter_control = control --[[@as LuaInserterControlBehavior]]
+            inserter_config.read_transfers = inserter_control.circuit_read_hand_contents
+
             for i = 1, entity.filter_slot_count, 1 do
                 inserter_config.filters[i] = entity.get_filter(i)
             end
@@ -429,6 +432,8 @@ function Controller:readConfigFromEntity(entity, ml_entity)
         end
     else
         inserter_config.loader_filter_mode = entity.loader_filter_mode
+        local loader_control = control --[[@as LuaLoaderControlBehavior ]]
+        inserter_config.read_transfers = loader_control.circuit_read_transfers
 
         for i = 1, entity.filter_slot_count, 1 do
             inserter_config.filters[i] = entity.get_filter(i)
@@ -468,8 +473,12 @@ function Controller:writeConfigToEntity(inserter_config, entity)
         entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 1
 
         local inserter_control = control --[[@as LuaInserterControlBehavior]]
-        inserter_control.circuit_read_hand_contents = false
         inserter_control.circuit_set_stack_size = false
+
+        if inserter_config.read_transfers then
+            inserter_control.circuit_read_hand_contents = true
+            inserter_control.circuit_hand_read_mode = defines.control_behavior.inserter.hand_read_mode.pulse
+        end
     else
         if entity.filter_slot_count > 0 then
             for i = 1, entity.filter_slot_count, 1 do
@@ -478,6 +487,9 @@ function Controller:writeConfigToEntity(inserter_config, entity)
 
             entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
         end
+
+        local loader_control = control --[[@as LuaLoaderControlBehavior ]]
+        loader_control.circuit_read_transfers = inserter_config.read_transfers or false
     end
 end
 
