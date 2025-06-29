@@ -59,6 +59,12 @@ The chute loader is very helpful in the base game but may be considered OP compa
 
 Default value is "off".
 
+### Don't consume power (Startup)
+
+All miniloaders no longer consume any electrical (or other) power. They just work. Because they are not OP enough as-is.
+
+Default value is "off".
+
 ### Migrate Factorio 1.1 Miniloaders (Startup)
 
 This option needs to be enabled before opening a 1.1 saved game in Factorio 2.0. It is *not* necessary to have the old Miniloader module installed (which is not 2.0 compatible). When opening the game, all existing Miniloaders will be migrated to Miniloader (Redux) and all blueprints in the game library and in players' main inventory, that reference the old miniloaders will be automatically updated as well (The player library can not be updated as it is read-only to mods).

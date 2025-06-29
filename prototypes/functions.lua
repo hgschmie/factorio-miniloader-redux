@@ -170,9 +170,14 @@ local function create_entity(params)
     }
 
     local drain = '0.0000001W'
+    local void_energy = { type = 'void', }
 
     local primary_energy, consumption
-    if params.energy_source then
+
+    if Framework.settings:startup_setting(const.settings_names.no_power) then
+        primary_energy = void_energy
+        consumption = "0W"
+    elseif params.energy_source then
         primary_energy, consumption = params.energy_source()
     else
         primary_energy = {
@@ -185,8 +190,6 @@ local function create_entity(params)
 
         consumption = tostring(params.speed * 1200 * (params.bulk and 1.5 or 1)) .. 'kW'
     end
-
-    local void_energy = { type = 'void', }
 
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated

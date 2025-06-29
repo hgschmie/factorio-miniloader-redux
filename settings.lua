@@ -27,8 +27,15 @@ data:extend({
     },
     {
         type = 'bool-setting',
-        name = const.settings.migrate_loaders,
+        name = const.settings.no_power,
         order = 'ab',
+        setting_type = 'startup',
+        default_value = false,
+    },
+    {
+        type = 'bool-setting',
+        name = const.settings.migrate_loaders,
+        order = 'ac',
         setting_type = 'startup',
         default_value = false,
     },

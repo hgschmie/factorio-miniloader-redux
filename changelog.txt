@@ -1,13 +1,16 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.0
 Date: ????
-  Changes:
+  Major Features:
     - add support for Matt's Logistics belt tiers
     - add support for Krastorio 2 belt tiers
     - add support for Bob's Logistics belt tiers
+  Minor Features:
+    - make "Read Transfer" somewhat work, it is actually "Read Hand Contents, pulse mode" of the internal inserters
+    - add a "Don't consume power" startup config option
+  Changes:
     - recolor the chute as too many mods use "light grey" as a tier color
     - Fix some naming of the loaders to make it more consistent
-    - make "Read Transfer" somewhat work, it is actually "Read Hand Contents, pulse mode" of the internal inserters
   Bugfixes:
     - fix an extremely rare crash where the filter config gets corrupted and blueprinting a miniloader
       causes a duplicate key error

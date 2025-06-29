@@ -155,6 +155,7 @@ Constants.settings_keys = {
     'loader_snapping',
     'chute_loader',
     'migrate_loaders',
+    'no_power',
 }
 
 Constants.settings_names = {}
