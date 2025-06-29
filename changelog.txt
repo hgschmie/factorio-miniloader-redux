@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.0
-Date: ????
+Date: 2025-06-29
   Major Features:
     - add support for Matt's Logistics belt tiers
     - add support for Krastorio 2 belt tiers
