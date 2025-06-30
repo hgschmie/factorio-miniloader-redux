@@ -120,13 +120,6 @@ local function technology_gfx(tint, variant)
     }
 end
 
-
----@param prefix string?
----@param name string
-local function add_tier_prefix(prefix, name)
-    return compute_dash_prefix(prefix) .. name
-end
-
 ---@param params miniloader.LoaderTemplate
 local function create_item(params)
     local stack_size = params.stack_size or 50

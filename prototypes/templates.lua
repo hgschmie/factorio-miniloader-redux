@@ -516,18 +516,26 @@ template.loaders = {
                 upgrade_from = const:name_from_prefix(previous),
                 loader_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
-                    return select_data {
-                        bob = {
-                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
-                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
-                            { type = 'item', name = 'bob-steam-inserter',              amount = 2 },
-                        },
+                    local ingredients = {
+                        { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                        { type = 'item', name = 'bob-steam-inserter',              amount = 2 },
                     }
+
+                    if check_chute() then
+                        table.insert(ingredients, { type = 'item', name = const:name_from_prefix(previous), amount = 1 })
+                    else
+                        table.insert(ingredients, { type = 'item', name = 'iron-plate', amount = 4 })
+                    end
+
+                    return ingredients
                 end,
                 prerequisites = function()
-                    return select_data {
-                        bob = { 'logistics-0', const:name_from_prefix(previous), },
-                    }
+                    local prerequisites = { 'logistics-0' }
+                    if check_chute() then
+                        table.insert(prerequisites, const:name_from_prefix(previous))
+                    end
+
+                    return prerequisites
                 end,
                 research_trigger = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 200,
