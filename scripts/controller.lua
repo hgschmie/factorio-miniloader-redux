@@ -559,15 +559,15 @@ function Controller:reconfigure(ml_entity, cfg)
     local direction = config.direction
     assert(direction)
 
+    assert(ml_entity.loader.valid)
+
     -- reorient loader
-    if Is.Valid(ml_entity.loader) then
-        ml_entity.loader.loader_type = tostring(config.loader_type)
-        ml_entity.loader.direction = compute_loader_direction(config)
-        if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
-            -- miniloader was moved
-            ml_entity.loader.destroy()
-            ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
-        end
+    ml_entity.loader.loader_type = tostring(config.loader_type)
+    ml_entity.loader.direction = compute_loader_direction(config)
+    if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
+        -- miniloader was moved
+        ml_entity.loader.destroy()
+        ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
     end
 
     -- connect loader to belt if needed
