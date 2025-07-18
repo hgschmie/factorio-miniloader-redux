@@ -108,8 +108,52 @@ local function inspect_miniloaders(data)
     game.print { const:locale('command_inspect_miniloaders_removed'), removed.miniloader, removed.loader, removed.inserter, removed.entity }
 end
 
+---@param data CustomCommandData
+local function inserter_control(data)
+    local mode
+    if data.parameter == 'on' then
+        mode = true
+        game.print { const:locale('command_control_miniloader_inserters_on') }
+    elseif data.parameter == 'off' then
+        mode = false
+        game.print { const:locale('command_control_miniloader_inserters_off') }
+    else
+        game.print { const:locale('command_control_miniloader_inserters_invalid'), data.parameter or '' }
+        return
+    end
+
+    for _, entity in pairs(This.MiniLoader:entities()) do
+        assert(entity.main.valid)
+        for _, inserter in pairs(entity.inserters) do
+            assert(inserter.valid)
+            inserter.active = mode
+        end
+    end
+end
+
+---@param data CustomCommandData
+local function rebuild_inserter(data)
+    for entity_id, entity in pairs(This.MiniLoader:entities()) do
+        if not (entity.main.valid and entity.loader.valid) then
+            This.MiniLoader:destroy(entity_id)
+        else
+            for i = 2, #entity.inserters do
+                if entity.inserters[i].valid then
+                    entity.inserters[i].destroy()
+                end
+                entity.inserters[i] = nil
+            end
+            entity.inserters = This.MiniLoader:createInserters(entity.main, entity.loader, entity.config)
+            This.MiniLoader:reconfigure(entity)
+        end
+    end
+end
+
+
 function Console:register_commands()
     commands.add_command('inspect-miniloaders', { const:locale('command_inspect_miniloaders') }, inspect_miniloaders)
+    commands.add_command('control-miniloader-inserters', { const:locale('command_control_miniloader_inserters') }, inserter_control)
+    commands.add_command('rebuild-miniloader-inserters', { const:locale('command_rebuild_miniloader_inserters') }, rebuild_inserter)
 end
 
 --------------------------------------------------------------------------------

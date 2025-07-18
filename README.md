@@ -115,6 +115,14 @@ Please file a bug [on github](https://github.com/hgschmie/factorio-miniloader-re
 - running the command reports all '0' values in the second line (especially the "Internal Loader" value)
 - The command reports all '0' values but the crash still occurs.
 
+### /control-miniloader-inserters (on|off)
+
+Turn the internal inserters in all (!) miniloaders on and off. This is only for debugging. When running `/control-miniloader-inserters off`, all miniloaders should cease to move items. If any miniloader still moves items after running this command, please file a bug report. All inserters are reactivate with `/control-miniloader-inserters on`.
+
+### /rebuild-miniloader-inserters
+
+Tear down and rebuild all internal inserters. This is useful for debugging if a template changed and the hand size and/or inserter count for a miniloader change.
+
 ## Planned features
 
 - Better UI. Currently this opens the inserter UI and copies the settings around in the background.
@@ -123,6 +131,7 @@ Please file a bug [on github](https://github.com/hgschmie/factorio-miniloader-re
 ## Known issues
 
 - Similar to the old Miniloader module, Blueprints do not show the "correct" orientation of the loader due to limitations of the game.
+- The rotation speed reported for a miniloader is wildly different based on the hand size and the inserter count.
 
 ## Credits
 
