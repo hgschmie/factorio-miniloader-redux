@@ -11,7 +11,7 @@ local const = require('lib.constants')
 require 'circuit-connector-generated-definitions'
 require 'circuit-connector-sprites'
 
-local function create_miniloader_entity(name)
+local function create_legacy_miniloader_entity(name)
     local source_inserter = data.raw['inserter'][const:with_prefix(const.name)]
     assert(source_inserter)
 
@@ -42,7 +42,7 @@ local function create_miniloader_entity(name)
     data:extend { loader_inserter }
 end
 
-local function create_technology(technology_name)
+local function create_legacy_technology(technology_name)
     local technology = {
         type = 'technology',
         name = technology_name,
@@ -62,7 +62,7 @@ if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
     for prefix in pairs(const:migrations()) do
         local ml_name = prefix .. 'miniloader-inserter'
         if not data.raw['inserter'][ml_name] then
-            create_miniloader_entity(ml_name)
+            create_legacy_miniloader_entity(ml_name)
         end
         -- patch up all entities to support filters.
         data.raw['inserter'][ml_name].filter_count = 5
@@ -70,7 +70,7 @@ if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
         if not (prefix:match('chute') or prefix:match('filter')) then
             local technology_name = prefix .. 'miniloader'
             if not data.raw['technology'][technology_name] then
-                create_technology(technology_name)
+                create_legacy_technology(technology_name)
             end
         end
     end
