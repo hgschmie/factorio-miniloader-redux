@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.7.2
+Version: 0.8.0
 Date: ????
   Changes:
+    - 2.0.59+ allows better speed calculation for the miniloaders. Ensure that the throughput for all loaders is as close to the belt speeds as possible.
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.1
 Date: 2025-06-30

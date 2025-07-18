@@ -25,7 +25,7 @@
 ---@field prerequisites fun():data.TechnologyID[]? Technology prerequisites to make the miniloader
 ---@field research_trigger data.TechnologyTrigger? A technology trigger that will enable the technology.
 ---@field unit data.TechnologyUnit? The unit of research required. If both unit and research_trigger are undefined, the values from the first ingredient are copied.
----@field energy_source? fun():data.BaseEnergySource, data.Energy
+---@field energy_source (fun():data.BaseEnergySource, number)?
 ---@field loader_gfx string? Optional, if missing use the prefix. Selects explosion and remnants graphics.
 ---@field belt_gfx string? Optional, if missing use the loader tier. Selects belt animation set.
 ---@field entity_gfx string? Graphics variant for miniloader graphics

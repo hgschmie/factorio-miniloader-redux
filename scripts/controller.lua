@@ -196,11 +196,11 @@ end
 ---@param main LuaEntity
 ---@param loader LuaEntity
 ---@param config miniloader.Config
-local function create_inserters(main, loader, config)
-    -- 0.125 = 60 items/s / 60 ticks/s / 8 items/tile
-    -- create twice the number of inserters needed (two lanes), but one inserter is
-    -- the main unit
-    local inserter_count = math.ceil(loader.prototype.belt_speed / 0.125) * 2
+function Controller:createInserters(main, loader, config)
+    --- belt speed (carries 4 items per lane, two lanes) / inserter rotation speed
+    local inserter_count = math.floor(loader.prototype.belt_speed / ((main.prototype.inserter_stack_size_bonus + 1) * main.prototype.get_inserter_rotation_speed(main.quality)) * 2 * 4)
+    inserter_count = (inserter_count < 2) and 2 or inserter_count
+    assert(inserter_count <= 8)
 
     local inserters = { main }
 

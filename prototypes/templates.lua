@@ -50,7 +50,7 @@ local function check_bob()
 end
 
 local function energy_void()
-    return { type = 'void' }, '0W'
+    return { type = 'void' }, 0
 end
 
 -- highest available loader tier in the base / space age game
@@ -546,11 +546,12 @@ template.loaders = {
                 --
                 -- energy_source = function()
                 --     local inserter = assert(data.raw.inserter['bob-steam-inserter'])
+                --     ---@type data.EnergySource
                 --     local energy_source = util.copy(inserter.energy_source)
                 --     energy_source.scale_fluid_usage = true
                 --     energy_source.fluid_box.production_type = 'input'
 
-                --     return energy_source, '1J'
+                --     return energy_source, 25
                 -- end
             }
         end,
