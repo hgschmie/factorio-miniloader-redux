@@ -314,7 +314,7 @@ function Controller:setup(main, config)
     config.direction = main.direction -- miniloader entity always points in inserter direction
 
     local loader = create_loader(main, config)
-    local inserters = create_inserters(main, loader, config)
+    local inserters = self:createInserters(main, loader, config)
 
     ---@type miniloader.Data
     local ml_entity = {
