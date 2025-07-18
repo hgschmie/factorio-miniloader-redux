@@ -1,10 +1,15 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.7.3
-Date: ????
-  Changes:
----------------------------------------------------------------------------------------------------
 Version: 0.8.0
 Date: ????
+  Changes:
+    - 2.0.59+ allows better speed calculation for the miniloaders. Ensure that the throughput for all loaders is as close to the belt speeds as possible.
+    - add 'control-miniloader-inserters' and 'rebuild-miniloader-inserters' console commands
+  Bugfixes:
+    - Fix name in Miniloader GUI title bar
+    - Items will no longer "jump" lanes but stay either left or right
+---------------------------------------------------------------------------------------------------
+Version: 0.7.2
+Date: 2025-07-17
   Changes:
     - 2.0.59+ allows better speed calculation for the miniloaders. Ensure that the throughput for all loaders is as close to the belt speeds as possible.
     - add 'control-miniloader-inserters' and 'rebuild-miniloader-inserters' console commands
