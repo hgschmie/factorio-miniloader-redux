@@ -136,7 +136,7 @@ Tear down and rebuild all internal inserters. This is useful for debugging if a 
 ## Credits
 
 - Therax for the original miniloader.
-- Arch666Angel &mdash; for the original graphics; taken from the miniloader mod
+- Kirazy &mdash; for the original graphics; taken from the miniloader mod
 
 ## Legal
 
