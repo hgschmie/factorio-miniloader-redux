@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0
-Date: ????
+Date: 2025-07-18
   Changes:
     - 2.0.59+ allows better speed calculation for the miniloaders. Ensure that the throughput for all loaders is as close to the belt speeds as possible.
     - add 'control-miniloader-inserters' and 'rebuild-miniloader-inserters' console commands
