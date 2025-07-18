@@ -1,20 +1,20 @@
 # Adding miniloaders for other mods
 
-This is the documentation on how the template system works. It is not perfect and there will be corner cases where the code needs to be changed; if you struggle adding your mod, file an issue or a draft PR and I will help as time permits.
+This is the documentation on how the template system works. It is not perfect and there will be corner cases where the code needs to be changed; if you struggle adding your mod, [file an issue](https://github.com/hgschmie/factorio-miniloader-redux/issues) or a [draft PR](https://github.com/hgschmie/factorio-miniloader-redux/compare) and I will help as time permits.
 
 ## How the miniloader works
 
-First, the actual truth: The miniloader is not really a "mini loader" but a collection of inserters disguising as a loader.
-So all the performance of a loader is controlled through a few parameters:
+First, the actual truth: A miniloader is not really a "mini loader" but a collection of inserters disguising as a loader.
+The performance of a miniloader is controlled through a few inserter related parameters:
 
 - The rotation speed of an inserter
 - The hand size of an inserter
 
-Up until 2.0.59, the hand size automatically added the researched inserter capacity bonus of the force, which was often substantial. As a result, Miniloaders until release 0.8.0 had a much higher throughput than they were supposed to have if the force has a large inserter capacity bonus researched.
+Up until Factorio 2.0.59, the hand size automatically included the researched inserter capacity bonus of the force, which was often substantial. As a result, Miniloaders until release 0.8.0 had a much higher throughput than they were supposed to have, if the force has a large inserter capacity bonus researched.
 
-Using a regular "one item at a time" inserter capacity and two inserters (one for each lane), the throughput of an inserter is controlled by [the rotation speed](https://wiki.factorio.com/Inserters#Rotation_Speed). A full rotation of an inserter (pick up an item, rotate, drop the item) takes an even number of ticks. The smallest supported number is 2 so the fastest that an inserter can move items is 30 items per second per lane = 60 items per second. Coincidentally this is also the fastest belt speed.
+Using a regular "one item at a time" inserter capacity and two inserters (one for each lane), the throughput of an inserter is controlled by [the rotation speed](https://wiki.factorio.com/Inserters#Rotation_Speed). A full rotation of an inserter (pick up an item, rotate, drop the item) takes an even number of ticks. The smallest supported number is 2 so the fastest that an inserter can move items is 30 items per second.Coincidentally this is also the fastest per-lane belt speed in the official game (Turbo Belts in the SpaceAge expansion).
 
-Miniloader performance is derived from the belt speed for a given tier. In the base and space age games, [four belt tiers](https://wiki.factorio.com/Transport_belts/Physics#Belt_speeds) exist:
+The Miniloader performance is derived from the belt speed for a given tier. In the base and space age games, [four belt tiers](https://wiki.factorio.com/Transport_belts/Physics#Belt_speeds) exist:
 
 | Belt Tier      | Speed (items/sec) |
 |----------------|-------------------|
@@ -34,21 +34,19 @@ A belt can move eight items (four per lane) at a maximum speed of one tick per t
 
 The belt speed value can be read from the belt prototype in the `data.raw` array, e.g. `data.raw['transport-belt']['fast-transport-belt'].speed` is 0.0625.
 
-The raw throughput of a belt is `belt speed * 480 * hand size`. For the fast belt this is `0.0625 * 480 * 1 = 15`. The miniloader must be capable to move 15 items per second.
+The raw throughput of a belt is `belt speed * 480 * stack size`. For the fast belt this is `0.0625 * 480 * 1 = 30`. To keep up with the fully saturated belt, a miniloader must be capable to move 30 items per second across two belt lanes. Using two inserters, they need to move 15 items/sec each:
 
-To move 15 items per second, each lane needs an inserter. An inserter has 60 ticks per second:
+`number of inserters * hand size * 60 ticks/sec / items/sec = rotation speed in ticks/item`
 
-`rotation speed in ticks/item = number of inserters * hand size * 60 ticks/sec / items/sec`
-
-For the fast belt, this is `2 * 1 * 60 / 30 = 4`. Each inserter in the fast miniloader needs to move an item in 4 ticks to get to 30 items/sec total throughput.
+For the fast belt, this is `2 inserters * hand size 1 * 60 / 30 = 4`. Each inserter in the fast miniloader needs to move an item in 4 ticks to get to 30 items/sec total throughput.
 
 A miniloader can have up to eight inserters in total (four per lane). A miniloader always contains an even number of inserters (2, 4, 6 or 8) and an inserter must use an even number of ticks to move an item.
 
 With a hand size of 1 and 30 items per second per inserter, this limits a miniloader with two inserters to 60 items per second:
 
-`2 inserters * 1 hand size * 60 ticks/sec / 60 items/sec = 2 ticks/item`
+`2 inserters * hand size 1 * 60 ticks/sec / 2 ticks/item = 60 items/sec`
 
-The actual rotation speed is `1/ ticks/item` and must be between 0 and 0.5. The inserter displays its rotation speed in 360º turns per second (`360 * 60 * 0.5 = 10800`, the max rotation per second for an inserter).
+The actual rotation speed for an inserter is `1 / ticks/item` and must be between 0 and 0.5. The inserter displays its rotation speed in 360º turns per second. The maximum rotation speed for an inserter is 10,800º/sec: `360º * 60 ticks/sec * 0.5 rotation/tick = 10800º/sec`
 
 | Belt Tier      | Speed (items/sec) | Belt Speed | Ticks (Rotation Speed) |
 |----------------|-------------------|------------|------------------------|
@@ -57,22 +55,19 @@ The actual rotation speed is `1/ ticks/item` and must be between 0 and 0.5. The 
 | Express        | 45                | 0.09375    | 2.66666 (0.375, 8100º) |
 | Turbo          | 60                | 0.125      | 2 (0.5, 10800º)        |
 
-This table shows a problem: For the Express inserter, using a hand size of 1 results in a fraction (2.66). The simplest solution would be to round the number down (nearest even number). Then the express miniloader and the turbo miniloader would be identical. Not ideal.
+This table shows a problem: For the Express inserter, using a hand size of 1 results in a fraction (2.66), which is not possible. The simplest solution would be to round the number down (nearest even number) to 2. Now the express miniloader and the turbo miniloader would be identical which is not ideal.
 
 The goal is to achieve a throughput of 45 items/sec. This is the same as using the throughput of 15 items/sec but increase the hand size from 1 to 3 (adding a stack bonus of 2):
 
-`2 inserters * 3 hand size * 60 ticks/sec / 45 items/sec = 8`
+`2 inserters * hand size 3 * 60 ticks/sec / 45 items/sec = 8 ticks/item`
 
 Every inserter now has eight ticks to move three items to achieve the throughput of 45 items / sec
 
-| Belt Tier      | Speed (items/sec) | Belt Speed | Inserter Count | Hand Size | Ticks (Rotation Speed) |
-|----------------|-------------------|------------|----------------|-----------|------------------------|
-| Standard       | 15                | 0.03125    | 2              | 1         | 8 (0.125, 2700º)       |
-| Fast           | 30                | 0.0625     | 2              | 1         | 4 (0.25, 5400º)        |
-| Express        | 45                | 0.09375    | 2              | 3         | 8 (0.125, 2700º)       |
-| Turbo          | 60                | 0.125      | 2              | 1         | 2 (0.5, 10800º)        |
+It would also be possible to increase the number of inserters and keep the hand size at 1:
 
-All numbers are automatically computed (using some heuristics). When both increasing the inserter count and increasing the hand size are an option, the current code prefers to increase the hand size (within reason) before increasing the inserter count.
+`6 inserters * hand size 1 * 60 ticks/sec / 45 items/sec = 8 ticks/item`
+
+The miniloader automatically computes inserter count, hand size and ticks per item to achieve a throughput goal. When both increasing the inserter count and increasing the hand size are an option, the code prefers to increase the hand size (within reason) before increasing the inserter count:
 
 | Belt Tier            | Speed (items/sec) | Belt Speed | Inserter Count | Hand Size | Ticks (Rotation Speed) |
 |----------------------|-------------------|------------|----------------|-----------|------------------------|
@@ -94,6 +89,10 @@ All numbers are automatically computed (using some heuristics). When both increa
 | Matt Ultimate        | 450               | 0.9375     | 6              | 10        | 8 (0.125, 2700º)       |
 
 *) Stacking loaders are a special case.
+
+For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed) which can be achieved with two inserters:
+
+`2 inserters * hand size 8 * 60 ticks/sec / 480 items/sec = 2 ticks/item`
 
 With the exception of the Express loader, all standard tiers are using a hand size of 1. For mod specific miniloaders, the hand size and even inserter count may vary wildly; this has some impact on the FPS of the game but it should be minimal.
 
