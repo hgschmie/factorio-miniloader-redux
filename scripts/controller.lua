@@ -595,6 +595,16 @@ function Controller:reconfigure(ml_entity, cfg)
         inserter.direction = direction
         inserter.teleport(ml_entity.main.position)
 
+        if (index % 2) == 1 then
+            -- odd number - pick up from right lane
+            inserter.pickup_from_left_lane = false
+            inserter.pickup_from_right_lane = true
+        else
+            -- even number - pick up from left lane
+            inserter.pickup_from_left_lane = true
+            inserter.pickup_from_right_lane = false
+        end
+
         -- either pickup or drop position
         local outside_position = back_position + self.outside_positions[direction][one_mod(index, 8)]
         local inside_position = front_position + self.inside_positions[direction][one_mod(index, 2)]

@@ -6,6 +6,7 @@ Date: ????
     - add 'control-miniloader-inserters' and 'rebuild-miniloader-inserters' console commands
   Bugfixes:
     - Fix name in Miniloader GUI title bar
+    - Items will no longer "jump" lanes but stay either left or right
 ---------------------------------------------------------------------------------------------------
 Version: 0.7.1
 Date: 2025-06-30
