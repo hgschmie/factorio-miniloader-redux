@@ -628,7 +628,7 @@ function Controller:reconfigure(ml_entity, cfg)
         inserter.pickup_position = pickup_position
         inserter.drop_position = drop_position
 
-        if Framework.settings:runtime_setting('debug_mode') then
+        if Framework.settings:startup_setting('debug_mode') then
             draw_position(ml_entity, inserter.drop_position, { r = 1, g = 0, b = 0 }, index)
             draw_position(ml_entity, inserter.pickup_position, { r = 0, g = 1, b = 0 }, index)
         end

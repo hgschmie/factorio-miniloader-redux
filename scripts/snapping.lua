@@ -111,7 +111,7 @@ end
 local function find_loader_by_entity(entity)
     local area = Area(entity.prototype.selection_box):offset(entity.position):expand(1)
 
-    if Framework.settings:runtime_setting('debug_mode') then
+    if Framework.settings:startup_setting('debug_mode') then
         rendering.draw_rectangle {
             color = { r = 1, g = 0.5, b = 0.5 },
             surface = entity.surface,
@@ -146,7 +146,7 @@ local function find_neighbor_entity(ml_entity, direction)
     -- find area to look at. As the miniloader itself always points in the "chute direction", it is always 1
     local area = Area(ml_entity.main.prototype.selection_box):offset(Position(ml_entity.main.position)):translate(direction, 1)
 
-    if Framework.settings:runtime_setting('debug_mode') then
+    if Framework.settings:startup_setting('debug_mode') then
         rendering.draw_rectangle {
             color = { r = 0.5, g = 0.5, b = 1 },
             surface = ml_entity.main.surface,
