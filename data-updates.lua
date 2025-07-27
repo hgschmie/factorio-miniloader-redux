@@ -16,6 +16,25 @@ local functions = require('prototypes.functions')
 
 local upgrades = {}
 
+if Framework.settings:startup_setting('debug_mode') then
+    data:extend {
+        {
+            type = 'item-subgroup',
+            name = 'miniloader-debug',
+            group = 'logistics',
+            order = 'ca',
+        }
+    }
+end
+
+local mod_data = {
+    type = 'mod-data',
+    name = const.name,
+    hidden = true,
+    hidden_in_factoriopedia = true,
+    data = {}
+}
+
 for prefix, loader_definition in pairs(templates.loaders) do
     assert(loader_definition.condition)
     if (loader_definition.condition()) then
@@ -33,6 +52,12 @@ for prefix, loader_definition in pairs(templates.loaders) do
         functions.create_item(params)
         functions.create_entity(params)
         functions.create_recipe(params)
+
+        mod_data.data[params.name] = params.speed_config
+
+        if Framework.settings:startup_setting('debug_mode') then
+            functions.create_debug(params)
+        end
     end
 end
 
@@ -43,6 +68,8 @@ for upgrade, target in pairs(upgrades) do
         previous_tier.next_upgrade = target
     end
 end
+
+data:extend { mod_data }
 
 ------------------------------------------------------------------------
 

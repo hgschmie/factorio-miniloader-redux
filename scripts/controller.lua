@@ -15,8 +15,7 @@ require('stdlib.utils.string')
 local const = require('lib.constants')
 
 ---@class miniloader.Controller
----@field outside_positions table<defines.direction, MapPosition[]>
----@field inside_positions table<defines.direction, MapPosition[]>
+---@field positions table<defines.direction, MapPosition[]>
 local Controller = {}
 
 -- position calculation
@@ -25,48 +24,52 @@ local Controller = {}
 --                |            |
 --   7  5  3  1   +------------+
 --
---   x  0.4  0.2  0.0 -0.2  y -0.25
---                          y  0.25
+--   x  0.375  0.125  -0.125 -0.375  y -0.25
+--                                   y  0.25
 --
 -- dropoff is 0/0.25 and 0/-0.25
 
 
-Controller.outside_positions = {
+Controller.positions = {
     [defines.direction.north] = {},
     [defines.direction.east] = {},
     [defines.direction.south] = {},
     [defines.direction.west] = {},
 }
 
-Controller.inside_positions = util.copy(Controller.outside_positions)
+local positions = 8 -- number of "outside" positions
+local step = 0.25   -- increment per step
+local shift = 0.25  -- shift for the position (either left/right or up/down, depending on orientation)
 
-local outside_count = 8 -- number of "outside" positions
-local step = 0.2        -- increment per step
-local shift = 0.25      -- shift for the position (either left/right or up/down, depending on orientation)
-
-local count = 0         -- goes 0 .. 3 to choose the four sets of data
-for direction in pairs(Controller.outside_positions) do
+local count = 0     -- goes 0 .. 3 to choose the four sets of data
+for direction in pairs(Controller.positions) do
     local v = bit32.band(count, 1) == 1
     local h = (bit32.band(count, 2) == 2) and 1 or -1
-    local pos = -0.4 -- first start position
+    local pos = -0.375 -- first start position
 
-    for index = 1, outside_count, 2 do
+    for index = 1, positions, 2 do
         local offset = pos * h
         local x = v and shift or offset
         local y = v and offset or shift
 
-        Controller.outside_positions[direction][index] = Position { x = x, y = y }
-        Controller.outside_positions[direction][index + 1] = Position { x = v and -x or x, y = v and y or -y }
+        Controller.positions[direction][index] = Position { x = x, y = y }
+        Controller.positions[direction][index + 1] = Position { x = v and -x or x, y = v and y or -y }
         pos = pos + step
     end
-
-    Controller.inside_positions[direction][1] = Controller.outside_positions[direction][1]
-    Controller.inside_positions[direction][2] = Controller.outside_positions[direction][2]
 
     count = count + 1
 end
 
 ------------------------------------------------------------------------
+
+-- compute 1-based modulo.
+---@param x number
+---@param y number
+---@return number
+local function one_mod(x, y)
+    return ((x - 1) % y) + 1
+end
+
 
 ---@type miniloader.Config
 local default_config = {
@@ -75,6 +78,7 @@ local default_config = {
     inserter_config = {
         filters = {},
     },
+    highspeed = false,
 }
 
 --- Creates a default configuration with some fields overridden by
@@ -194,12 +198,10 @@ local function create_loader(main, config)
 end
 
 ---@param main LuaEntity
----@param loader LuaEntity
+---@param speed_config miniloader.SpeedConfig
 ---@param config miniloader.Config
-function Controller:createInserters(main, loader, config)
-    --- belt speed (carries 4 items per lane, two lanes) / inserter rotation speed
-    local inserter_count = math.floor(loader.prototype.belt_speed / ((main.prototype.inserter_stack_size_bonus + 1) * main.prototype.get_inserter_rotation_speed(main.quality)) * 2 * 4)
-    inserter_count = (inserter_count < 2) and 2 or inserter_count
+function Controller:createInserters(main, speed_config, config)
+    local inserter_count = speed_config.inserter_pairs * 2
     assert(inserter_count <= 8)
 
     local inserters = { main }
@@ -313,8 +315,12 @@ function Controller:setup(main, config)
     config.status = main.status
     config.direction = main.direction -- miniloader entity always points in inserter direction
 
+    ---@type miniloader.SpeedConfig
+    local speed_config = assert(prototypes.mod_data[const.name].data[main.name])
+    config.highspeed = speed_config.items_per_second > 240 -- 240 is max speed for one lane
+
     local loader = create_loader(main, config)
-    local inserters = self:createInserters(main, loader, config)
+    local inserters = self:createInserters(main, speed_config, config)
 
     ---@type miniloader.Data
     local ml_entity = {
@@ -470,7 +476,7 @@ function Controller:writeConfigToEntity(inserter_config, entity)
             end
         end
 
-        entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 1
+        entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 0 -- 0 resets to inserter default
 
         local inserter_control = control --[[@as LuaInserterControlBehavior]]
         inserter_control.circuit_set_stack_size = false
@@ -506,14 +512,6 @@ end
 ------------------------------------------------------------------------
 -- manage internal state
 ------------------------------------------------------------------------
-
--- compute 1-based modulo.
----@param x number
----@param y number
----@return number
-local function one_mod(x, y)
-    return ((x - 1) % y) + 1
-end
 
 ---@param ml_entity miniloader.Data
 ---@param position MapPosition
@@ -575,46 +573,36 @@ function Controller:reconfigure(ml_entity, cfg)
 
     -- connect inserters and loader
     local back_position = Position(ml_entity.main.position):translate(direction, -1)
-    local front_position = Position(ml_entity.main.position)
-    local inside_target = ml_entity.loader
+    local front_position = Position(ml_entity.main.position) -- position is limited to 240 items/sec
+    local hs_front_position = Position(ml_entity.main.position):translate(direction, 0.375)
 
-    if Framework.settings:runtime_setting('debug_mode') then
-        for x = table_size(ml_entity.inserters) + 1, table_size(self.outside_positions[direction]), 1 do
-            local outside_position = back_position + self.outside_positions[direction][one_mod(x, 8)]
+    for inserter_index, inserter in pairs(ml_entity.inserters) do
+        local index = config.highspeed and (9 - inserter_index) or inserter_index
 
-            if config.loader_type == const.loader_direction.input then
-                draw_position(ml_entity, outside_position, { r = 0.4, g = 0.1, b = 0.1 }, x)
-            else
-                draw_position(ml_entity, outside_position, { r = 0.1, g = 0.4, b = 0.1 }, x)
-            end
-        end
-    end
-
-    for index, inserter in pairs(ml_entity.inserters) do
         -- reorient inserter
-        inserter.direction = direction
+        inserter.direction = Direction.opposite(compute_loader_direction(ml_entity.config))
         inserter.teleport(ml_entity.main.position)
 
-        if (index % 2) == 1 then
-            -- odd number - pick up from right lane
-            inserter.pickup_from_left_lane = false
-            inserter.pickup_from_right_lane = true
-        else
-            -- even number - pick up from left lane
-            inserter.pickup_from_left_lane = true
-            inserter.pickup_from_right_lane = false
-        end
+        -- normal speed: even inserters right
+        -- high speed: even inserters left
+        local right_lane = (inserter_index % 2) == (config.highspeed and 0 or 1)
+
+        inserter.pickup_from_left_lane = not right_lane
+        inserter.pickup_from_right_lane = right_lane
 
         -- either pickup or drop position
-        local outside_position = back_position + self.outside_positions[direction][one_mod(index, 8)]
-        local inside_position = front_position + self.inside_positions[direction][one_mod(index, 2)]
 
-        local pickup_position = inside_position
+        local eight_mod = one_mod(index, 8)
+        local outside_position = back_position + self.positions[direction][eight_mod]
+        local inside_position = front_position + self.positions[direction][eight_mod]
+        local hs_inside_position = hs_front_position + self.positions[direction][eight_mod]
+
+        local pickup_position = config.highspeed and hs_inside_position or inside_position
         local drop_position = outside_position
 
         -- loader gets items, inserter drop them off
         if config.loader_type == const.loader_direction.input then
-            inserter.pickup_target = inside_target
+            inserter.pickup_target = ml_entity.loader
             inserter.drop_target = nil
         else
             -- inserter gets items, loader sends them down the belt
@@ -622,15 +610,16 @@ function Controller:reconfigure(ml_entity, cfg)
             drop_position = inside_position
 
             inserter.pickup_target = nil
-            inserter.drop_target = inside_target
+            inserter.drop_target = ml_entity.loader
         end
 
         inserter.pickup_position = pickup_position
         inserter.drop_position = drop_position
 
         if Framework.settings:startup_setting('debug_mode') then
-            draw_position(ml_entity, inserter.drop_position, { r = 1, g = 0, b = 0 }, index)
-            draw_position(ml_entity, inserter.pickup_position, { r = 0, g = 1, b = 0 }, index)
+            draw_position(ml_entity, inserter.drop_position, { r = 1, g = 0, b = 0 }, inserter_index)
+            draw_position(ml_entity, inserter.pickup_position, { r = 0, g = 1, b = 0 }, inserter_index)
+            draw_position(ml_entity, inserter.position, { r = 0, g = 0, b = 1 }, inserter_index)
         end
     end
 

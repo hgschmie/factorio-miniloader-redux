@@ -106,6 +106,12 @@ template.loaders = {
                         base = { 'logistics', 'steel-processing', 'electronics' },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 15,
+                    rotation_speed = 0.075,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
     },
@@ -136,6 +142,12 @@ template.loaders = {
                         base = { 'logistics-2', const:name_from_prefix(''), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 30,
+                    rotation_speed = 0.125,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
     },
@@ -166,6 +178,12 @@ template.loaders = {
                         base = { 'logistics-3', const:name_from_prefix('fast'), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 45,
+                    rotation_speed = 0.125,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 1,
+                },
             }
         end,
     },
@@ -197,6 +215,12 @@ template.loaders = {
                         space_age = { 'turbo-transport-belt', 'metallurgic-science-pack', const:name_from_prefix('express'), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 60,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
     },
@@ -231,6 +255,12 @@ template.loaders = {
                         space_age = { 'logistics-3', 'stack-inserter', const:name_from_prefix('turbo'), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 60,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
     },
@@ -269,6 +299,12 @@ template.loaders = {
                         base = { technology },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 3.75,
+                    rotation_speed = 0.01875,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
     },
@@ -305,6 +341,12 @@ template.loaders = {
                         matt = { 'logistics-4', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 90,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 3,
+                },
             }
         end,
     },
@@ -336,6 +378,12 @@ template.loaders = {
                         matt = { 'logistics-5', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 180,
+                    rotation_speed = 0.5,
+                    inserter_pairs = 2,
+                    stack_size_bonus = 2,
+                },
             }
         end,
     },
@@ -367,6 +415,12 @@ template.loaders = {
                         matt = { 'logistics-6', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 270,
+                    rotation_speed = 0.5,
+                    inserter_pairs = 3,
+                    stack_size_bonus = 2,
+                },
             }
         end,
     },
@@ -398,6 +452,12 @@ template.loaders = {
                         matt = { 'logistics-7', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 360,
+                    rotation_speed = 0.5,
+                    inserter_pairs = 4,
+                    stack_size_bonus = 2,
+                },
             }
         end,
     },
@@ -429,6 +489,12 @@ template.loaders = {
                         matt = { 'logistics-8', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 450,
+                    rotation_speed = 0.5,
+                    inserter_pairs = 4,
+                    stack_size_bonus = 7,
+                },
             }
         end,
     },
@@ -464,6 +530,12 @@ template.loaders = {
                         krastorio = { 'kr-logistic-4', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 60,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
     },
@@ -494,6 +566,12 @@ template.loaders = {
                         krastorio = { 'kr-logistic-5', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 90,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 3,
+                },
             }
         end,
     },
@@ -553,6 +631,12 @@ template.loaders = {
 
                 --     return energy_source, 25
                 -- end
+                speed_config = {
+                    items_per_second = 7.5,
+                    rotation_speed = 0.046875,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
     },
@@ -583,6 +667,12 @@ template.loaders = {
                         bob = { 'logistics-4', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 60,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
 
@@ -617,6 +707,12 @@ template.loaders = {
                         bob = { 'logistics-5', const:name_from_prefix(previous), },
                     }
                 end,
+                speed_config = {
+                    items_per_second = 75,
+                    rotation_speed = 0.1875,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 3,
+                },
             }
         end,
 

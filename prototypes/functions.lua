@@ -143,63 +143,8 @@ local function create_item(params)
     data:extend { item }
 end
 
----@class miniloader.SpeedResult
----@field belt_speed number
----@field rotation_speed number
----@field items_per_second number
----@field hidden_inserters integer
----@field stack_size_bonus integer
-
-
---- find valid inserter speed
----@param speed integer Belt speed
----@return miniloader.SpeedResult
-local function compute_inserter_speed(speed)
-    ---@type miniloader.SpeedResult
-    local result
-
-    -- try exact match first
-    for inserter_pairs = 1, 4 do
-        for stack_size = 1, 10 do
-            result = {
-                belt_speed = math.floor(speed * 480 * 100 / stack_size + 0.5) / 100,
-                rotation_speed = (speed * 4) / (inserter_pairs * stack_size),
-                items_per_second = math.floor(speed * 480 * 100 + 0.5) / 100,
-                hidden_inserters = (inserter_pairs * 2) - 1,
-                stack_size_bonus = stack_size - 1,
-            }
-
-            -- can not go faster than 0.5 (max half a rotation per tick - see https://wiki.factorio.com/inserters#Rotation_Speed)
-            if result.rotation_speed <= 0.5 and result.belt_speed <= 60 then
-                -- 60 ticks per second, i is number of inserter pairs, items per second (total throughput)
-                local inserter_speed = inserter_pairs * 60 * stack_size / result.items_per_second
-
-                if math.floor(inserter_speed) == inserter_speed then return result end
-            end
-        end
-    end
-
-    -- try oversubscribing next
-    for inserter_pairs = 2, 4 do
-        for stack_size = 1, 10 do
-            result = {
-                belt_speed = math.floor(speed / stack_size * 480 * 100 + 0.5) / 100,
-                rotation_speed = (speed * 4) / (inserter_pairs * stack_size),
-                items_per_second = math.floor(speed * 480 * 100 + 0.5) / 100,
-                hidden_inserters = (inserter_pairs * 2) - 1,
-                stack_size_bonus = stack_size - 1,
-            }
-
-            -- can not go faster than 0.5 (max half a rotation per tick - see https://wiki.factorio.com/inserters#Rotation_Speed)
-            if result.rotation_speed <= 0.5 and result.belt_speed <= 30 then
-                -- 60 ticks per second, i is number of inserter pairs, items per second (total throughput)
-                local inserter_speed = math.ceil(inserter_pairs * 30 * stack_size / result.belt_speed)
-                if inserter_speed * 30 * stack_size > result.belt_speed then return result end
-            end
-        end
-    end
-
-    error(('No valid inserter configuration for belt speed %2.4f and %d items per second'):format(speed, result.items_per_second))
+local function round_two_digits(value)
+    return math.floor(value * 100 + 0.5) / 100
 end
 
 ---@param params miniloader.LoaderTemplate
@@ -210,7 +155,9 @@ local function create_entity(params)
     local loader_gfx = params.loader_gfx or params.prefix
     local belt_gfx = params.belt_gfx or params.prefix
 
-    local speed_result = compute_inserter_speed(params.speed)
+    local speed_config = params.speed_config
+    -- can not go faster than 0.5 (max half a rotation per tick - see https://wiki.factorio.com/inserters#Rotation_Speed)
+    assert(speed_config.rotation_speed <= 0.5, ('Rotation speed: %.2f'):format(speed_config.rotation_speed))
 
     local description = { '',
         { 'entity-description.' .. entity_name },
@@ -218,7 +165,7 @@ local function create_entity(params)
         '[font=default-semibold][color=255,230,192]',
         { 'description.belt-speed' },
         ':[/color][/font] ',
-        tostring(speed_result.items_per_second),
+        tostring(speed_config.items_per_second),
         ' ',
         { 'description.belt-items' },
         { 'per-second-suffix' }
@@ -245,7 +192,7 @@ local function create_entity(params)
     end
 
     local consumption = tostring(consumption_amount) .. 'kW'
-    local hidden_consumption = tostring(consumption_amount / speed_result.hidden_inserters) .. 'kW'
+    local hidden_consumption = tostring(consumption_amount / (speed_config.inserter_pairs * 2 - 1)) .. 'kW'
 
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
@@ -263,8 +210,8 @@ local function create_entity(params)
         hidden_in_factoriopedia        = false,
 
         -- InserterPrototype
-        extension_speed                = speed_result.rotation_speed * 2.5,
-        rotation_speed                 = speed_result.rotation_speed,
+        extension_speed                = speed_config.rotation_speed * 5,
+        rotation_speed                 = speed_config.rotation_speed,
         insert_position                = { 0, 0 },
         pickup_position                = { 0, 0 },
 
@@ -288,10 +235,10 @@ local function create_entity(params)
 
         -- handle stacking
         bulk                           = params.bulk or false,
-        wait_for_full_hand             = params.bulk or (speed_result.stack_size_bonus > 0) or false,
+        wait_for_full_hand             = params.bulk or false,
         grab_less_to_match_belt_stack  = params.bulk or false,
-        stack_size_bonus               = params.bulk and 4 or speed_result.stack_size_bonus,
-        max_belt_stack_size            = params.bulk and 4,
+        stack_size_bonus               = params.bulk and 4 or speed_config.stack_size_bonus,
+        max_belt_stack_size            = params.bulk and 4 or 1,
 
         circuit_wire_max_distance      = not params.nerf_mode and default_circuit_wire_max_distance or 0,
         draw_inserter_arrow            = false,
@@ -372,6 +319,8 @@ local function create_entity(params)
         selectable_in_game = false,
         fast_replaceable_group = meld.delete(),
     })
+
+    table.insert(hidden_inserter.flags, 'placeable-off-grid')
 
     local loader = {
         -- Prototype Base
@@ -515,9 +464,89 @@ local function create_recipe(params)
     data:extend { recipe, technology }
 end
 
+---@param params miniloader.LoaderTemplate
+local function create_debug(params)
+    local debug_name = const.debug_name(params.name)
+    local subgroup = 'miniloader-debug'
+
+    local src = assert(data.raw['inserter'][params.name])
+
+    -- item
+    local debug_item = meld(util.copy(data.raw['item']['inserter']), {
+        name           = debug_name,
+        localised_name = { 'entity-name.' .. debug_name },
+        order          = params.order,
+        subgroup       = subgroup,
+        place_result   = debug_name,
+    })
+
+    debug_item.icons = {
+        {
+            icon = debug_item.icon,
+            tint = params.tint,
+        },
+    }
+
+    debug_item.icon = nil
+
+    -- entity
+    local debug_inserter = meld(util.copy(data.raw['inserter']['inserter']), {
+        -- Prototype Base
+        name                           = debug_name,
+        localised_name                 = { 'entity-name.' .. debug_name },
+        subgroup                       = subgroup,
+        hidden_in_factoriopedia        = true,
+
+        -- InserterPrototype
+        extension_speed                = src.extension_speed,
+        rotation_speed                 = src.rotation_speed,
+        insert_position                = src.insert_position,
+        pickup_position                = src.pickup_position,
+
+        uses_inserter_stack_size_bonus = src.uses_inserter_stack_size_bonus,
+        allow_custom_vectors           = src.allow_custom_vectors,
+        use_easter_egg                 = src.use_easter_egg,
+        filter_count                   = src.filter_count,
+
+        -- handle stacking
+        bulk                           = src.bulk,
+        wait_for_full_hand             = src.wait_for_full_hand,
+        grab_less_to_match_belt_stack  = src.grab_less_to_match_belt_stack,
+        stack_size_bonus               = src.stack_size_bonus,
+        max_belt_stack_size            = src.max_belt_stack_size,
+
+        circuit_wire_max_distance      = src.circuit_wire_max_distance,
+        chases_belt_items              = src.chases_belt_items,
+        circuit_connector              = src.circuit_connector,
+        collision_mask                 = meld.overwrite(collision_mask_util.new_mask()),
+        next_upgrade                   = meld.delete(),
+        minable                        = { mining_time = 0.1, result = debug_name },
+    })
+
+    table.insert(debug_inserter.flags, 'placeable-off-grid')
+
+    debug_inserter.platform_picture.sheet.tint = params.tint
+
+    local debug_recipe = meld(util.copy(data.raw['recipe']['inserter']), {
+        name           = debug_name,
+        localised_name = { 'entity-name.' .. debug_name },
+        enabled        = true,
+        results        = {
+            {
+                type = 'item',
+                name = debug_name,
+                amount = 1,
+            },
+        },
+    })
+
+    data:extend { debug_item, debug_inserter, debug_recipe }
+end
+
 return {
     create_item = create_item,
     create_entity = create_entity,
     create_recipe = create_recipe,
+    create_debug = create_debug,
     compute_dash_prefix = compute_dash_prefix,
 }

@@ -113,6 +113,12 @@ function Constants.inserter_name(name)
     return name .. '-i'
 end
 
+---@param name string
+---@return string
+function Constants.debug_name(name)
+    return name .. '-debug'
+end
+
 Constants.miniloader_type_names = {
     'inserter',
 }

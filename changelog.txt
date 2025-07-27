@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.8.1
+Version: 0.9.0
 Date: ????
   Changes:
+    - Redid all of the speed calculations, then replaced with heuristics and measurements. As a result, most loaders should now match belt speeds closely.
+    - added debug inserters for testing
 ---------------------------------------------------------------------------------------------------
 Version: 0.8.0
 Date: 2025-07-18

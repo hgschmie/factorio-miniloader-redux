@@ -7,20 +7,28 @@
 -- prototypes/templates.lua
 ----------------------------------------------------------------------------------------------------
 
+---@class miniloader.SpeedConfig
+---@field rotation_speed number
+---@field items_per_second number
+---@field inserter_pairs integer
+---@field stack_size_bonus integer
+
+
 ---@class miniloader.LoaderDefinition
 ---@field condition (fun():boolean)?
 ---@field data fun(dash_prefix:string):miniloader.LoaderTemplate
 
 ---@class miniloader.LoaderTemplate
----@field prefix string? Prefix for the loader. Set by code from the template key
----@field name string? Internal name for the loader. Set by code from the template key
----@field localised_name string? Localised name for the loader. defaults to entity-name.<name>
----@field upgrade_from string? Tier name from which this loader is an upgrade.
+---@field prefix string Prefix for the loader. Set by code from the template key
+---@field name string Internal name for the loader. Set by code from the template key
 ---@field order string
 ---@field subgroup string
 ---@field speed integer
 ---@field tint Color
 ---@field stack_size number
+---@field speed_config miniloader.SpeedConfig
+---@field localised_name string? Localised name for the loader. defaults to entity-name.<name>
+---@field upgrade_from string? Tier name from which this loader is an upgrade.
 ---@field ingredients fun():data.IngredientPrototype[] Ingredients to make the loader
 ---@field prerequisites fun():data.TechnologyID[]? Technology prerequisites to make the miniloader
 ---@field research_trigger data.TechnologyTrigger? A technology trigger that will enable the technology.
@@ -49,6 +57,7 @@
 ---@field loader_type miniloader.LoaderDirection -- direction of the loader. The loader_type and the direction combined define the direction of the loader entity
 ---@field direction defines.direction?           -- direction of the miniloader. This is always the inserter direction and is never changed by the mod (only by player interaction)
 ---@field inserter_config table<string, any?>    -- inserter config, gets synced in reconfigure
+---@field highspeed boolean?                     -- speed > 240 items/sec ?
 
 ---@class miniloader.Data
 ---@field main LuaEntity

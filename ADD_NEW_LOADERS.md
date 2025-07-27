@@ -4,97 +4,40 @@ This is the documentation on how the template system works. It is not perfect an
 
 ## How the miniloader works
 
-First, the actual truth: A miniloader is not really a "mini loader" but a collection of inserters disguising as a loader.
-The performance of a miniloader is controlled through a few inserter related parameters:
+There was a long explanation here on how to compute throughput and speed. Doing this makes the inserters run much too fast. So this turned into straight up trial-and-error with measurement...
 
-- The rotation speed of an inserter
-- The hand size of an inserter
+Going faster than 240 items/s required some reconfiguration of the pickup and dropoff points.
 
-Up until Factorio 2.0.59, the hand size automatically included the researched inserter capacity bonus of the force, which was often substantial. As a result, Miniloaders until release 0.8.0 had a much higher throughput than they were supposed to have, if the force has a large inserter capacity bonus researched.
+| Belt Tier            | Speed (items/sec) | Rotation Speed | Inserter Count | Hand Size | Speed (in/out/both)|
+|----------------------|-------------------|----------------|----------------|-----------|--------------------|
+| Chute                | 3.75              | 0.01875        | 2              | 1         | 3/4/4              |
+| Standard             | 15                | 0.075          | 2              | 1         | 15/15/15           |
+| Fast                 | 30                | 0.125          | 2              | 1         | 30/30/30           |
+| Express              | 45                | 0.125          | 2              | 2         | 48/48/45           |
+| Turbo                | 60                | 0.25           | 2              | 1         | 60/60/60           |
+| Stack                | 60                | 0.25           | 2              | 1 *)      | 60/60/60           |
+| Bob Basic            | 7.5               | 0.046875       | 2              | 1         | 8/9/7.5            |
+| Bob Turbo            | 60                | 0.25           | 2              | 1         | 60/60/60           |
+| Bob Ultimate         | 75                | 0.1875         | 2              | 3         | 75/75/75           |
+| Krastorio Advanced   | 60                | 0.25           | 2              | 1         | 60/60/60           |
+| Krastorio Superior   | 90                | 0.25           | 2              | 4         | 90/90/90           |
+| Matt Ultra Fast      | 90                | 0.25           | 2              | 4         | 96/96/90           |
+| Matt Extreme Fast    | 180               | 0.5            | 4              | 3         | 180/180/180        |
+| Matt Ultra Express   | 270               | 0.5            | 6              | 3         | 270/270/270  +)    |
+| Matt Extreme Express | 360               | 0.5            | 8              | 3         | 360/300/330  +)    |
+| Matt Ultimate        | 450               | 0.5            | 8              | 8         | 425/425/425  +)    |
 
-Using a regular "one item at a time" inserter capacity and two inserters (one for each lane), the throughput of an inserter is controlled by [the rotation speed](https://wiki.factorio.com/Inserters#Rotation_Speed). A full rotation of an inserter (pick up an item, rotate, drop the item) takes an even number of ticks. The smallest supported number is 2 so the fastest that an inserter can move items is 30 items per second.Coincidentally this is also the fastest per-lane belt speed in the official game (Turbo Belts in the SpaceAge expansion).
+Speed measured:
 
-The Miniloader performance is derived from the belt speed for a given tier. In the base and space age games, [four belt tiers](https://wiki.factorio.com/Transport_belts/Physics#Belt_speeds) exist:
+in:  Output from a fast belt (faster than the miniloader), onto a chest
+out: Output to a fast best (faster than the miniloader), from a chest
+both: Input/Output from/to a belt of the same tier, chest at both ends
 
-| Belt Tier      | Speed (items/sec) |
-|----------------|-------------------|
-| Standard       | 15                |
-| Fast           | 30                |
-| Express        | 45                |
-| Turbo          | 60                |
+*) Stacking loaders are a special case; they are locked into 4x (max stack size) stack
++) Using high speed mode. This shifts the pickup points for some loaders to allow going past 240 items/sec.
 
-A belt can move eight items (four per lane) at a maximum speed of one tick per tile. So the max throughput of a fully saturated, non-stacked belt is 8 * 60 = 480 items/sec. The actual speed factor of a belt is the speed / 480:
-
-| Belt Tier      | Speed (items/sec) | Belt Speed |
-|----------------|-------------------|------------|
-| Standard       | 15                | 0.03125    |
-| Fast           | 30                | 0.0625     |
-| Express        | 45                | 0.09375    |
-| Turbo          | 60                | 0.125      |
-
-The belt speed value can be read from the belt prototype in the `data.raw` array, e.g. `data.raw['transport-belt']['fast-transport-belt'].speed` is 0.0625.
-
-The raw throughput of a belt is `belt speed * 480 * stack size`. For the fast belt this is `0.0625 * 480 * 1 = 30`. To keep up with the fully saturated belt, a miniloader must be capable to move 30 items per second across two belt lanes. Using two inserters, they need to move 15 items/sec each:
-
-`number of inserters * hand size * 60 ticks/sec / items/sec = rotation speed in ticks/item`
-
-For the fast belt, this is `2 inserters * hand size 1 * 60 / 30 = 4`. Each inserter in the fast miniloader needs to move an item in 4 ticks to get to 30 items/sec total throughput.
-
-A miniloader can have up to eight inserters in total (four per lane). A miniloader always contains an even number of inserters (2, 4, 6 or 8) and an inserter must use an even number of ticks to move an item.
-
-With a hand size of 1 and 30 items per second per inserter, this limits a miniloader with two inserters to 60 items per second:
-
-`2 inserters * hand size 1 * 60 ticks/sec / 2 ticks/item = 60 items/sec`
-
-The actual rotation speed for an inserter is `1 / ticks/item` and must be between 0 and 0.5. The inserter displays its rotation speed in 360º turns per second. The maximum rotation speed for an inserter is 10,800º/sec: `360º * 60 ticks/sec * 0.5 rotation/tick = 10800º/sec`
-
-| Belt Tier      | Speed (items/sec) | Belt Speed | Ticks (Rotation Speed) |
-|----------------|-------------------|------------|------------------------|
-| Standard       | 15                | 0.03125    | 8 (0.125, 2700º)       |
-| Fast           | 30                | 0.0625     | 4 (0.25, 5400º)        |
-| Express        | 45                | 0.09375    | 2.66666 (0.375, 8100º) |
-| Turbo          | 60                | 0.125      | 2 (0.5, 10800º)        |
-
-This table shows a problem: For the Express inserter, using a hand size of 1 results in a fraction (2.66), which is not possible. The simplest solution would be to round the number down (nearest even number) to 2. Now the express miniloader and the turbo miniloader would be identical which is not ideal.
-
-The goal is to achieve a throughput of 45 items/sec. This is the same as using the throughput of 15 items/sec but increase the hand size from 1 to 3 (adding a stack bonus of 2):
-
-`2 inserters * hand size 3 * 60 ticks/sec / 45 items/sec = 8 ticks/item`
-
-Every inserter now has eight ticks to move three items to achieve the throughput of 45 items / sec
-
-It would also be possible to increase the number of inserters and keep the hand size at 1:
-
-`6 inserters * hand size 1 * 60 ticks/sec / 45 items/sec = 8 ticks/item`
-
-The miniloader automatically computes inserter count, hand size and ticks per item to achieve a throughput goal. When both increasing the inserter count and increasing the hand size are an option, the code prefers to increase the hand size (within reason) before increasing the inserter count:
-
-| Belt Tier            | Speed (items/sec) | Belt Speed | Inserter Count | Hand Size | Ticks (Rotation Speed) |
-|----------------------|-------------------|------------|----------------|-----------|------------------------|
-| Chute                | 3.75              | 0.0078125  | 2              | 1         | 32 (0.03125, 675º)     |
-| Standard             | 15                | 0.03125    | 2              | 1         | 8 (0.125, 2700º)       |
-| Fast                 | 30                | 0.0625     | 2              | 1         | 4 (0.25, 5400º)        |
-| Express              | 45                | 0.09375    | 2              | 3         | 8 (0.125, 2700º)       |
-| Turbo                | 60                | 0.125      | 2              | 1         | 2 (0.5, 10800º)        |
-| Stack                | 60                | 0.125      | 2              | 1 *)      | 2 (0.5, 10800º)        |
-| Bob Basic            | 7.5               | 0.015625   | 2              | 1         | 16 (0.0625, 1350º)     |
-| Bob Turbo            | 60                | 0.125      | 2              | 1         | 2 (0.5, 10800º)        |
-| Bob Ultimate         | 75                | 0.15625    | 2              | 5         | 8 (0.125, 2700º)       |
-| Krastorio Advanced   | 60                | 0.125      | 2              | 1         | 2 (0.5, 10800º)        |
-| Krastorio Superior   | 90                | 0.1875     | 2              | 3         | 4 (0.25, 5400º)        |
-| Matt Ultra Fast      | 90                | 0.1875     | 2              | 3         | 4 (0.25, 5400º)        |
-| Matt Extreme Fast    | 180               | 0.375      | 2              | 3         | 2 (0.5, 10800º)        |
-| Matt Ultra Express   | 270               | 0.5625     | 2              | 9         | 4 (0.25, 5400º)        |
-| Matt Extreme Express | 360               | 0.75       | 2              | 6         | 2 (0.5, 10800º)        |
-| Matt Ultimate        | 450               | 0.9375     | 6              | 10        | 8 (0.125, 2700º)       |
-
-*) Stacking loaders are a special case.
-
-For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed) which can be achieved with two inserters:
-
-`2 inserters * hand size 8 * 60 ticks/sec / 480 items/sec = 2 ticks/item`
-
-With the exception of the Express loader, all standard tiers are using a hand size of 1. For mod specific miniloaders, the hand size and even inserter count may vary wildly; this has some impact on the FPS of the game but it should be minimal.
+For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed). The maximum that seems to be possible with inserters
+(which need time to swing around and can drop only one item per tick on a belt) seems to be the 425 items/sec measured for the Matt Ultimate loader.
 
 ## Adding new miniloaders
 
@@ -410,6 +353,58 @@ The basic loader is very early in the game, so it should be triggered by a resea
         end,
     },
 ```
+
+Finally, the inserter speed needs to be configured. For the basic belt, the desired speed is 7.5 items per second. This can be accomplished with two inserters that move 3.75 items per second each. With some measuring, the actual rotation speed for an inserter is 0.046875.
+
+Speed is defined as a table with four attributes:
+
+- items_per_second - only used for the display text. For Bob Basic this is 7.5
+- rotation_speed - defines how quick the inserters move. For Bob Basic, the right value is 0.046875
+- inserter_pairs - number of inserter pairs used. Usually 1 but for higher speeds, more than pair might be needed
+- stack_size_bonus - number of additional items moved with each inserter rotation. Must be a positive integer.
+
+``` lua
+    ['bob-basic'] = {
+        condition = check_bob,
+        data = function(dash_prefix)
+            local previous = 'chute' -- slots in between chute and the standard tier
+
+            return {
+                order = 'd[a]-l', -- slower than standard, faster than chute
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('c3c3c3'),
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                loader_gfx = '', -- use basic graphics for explosion and remnants
+                ingredients = function()
+                    return select_data {
+                        bob = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bob-steam-inserter',              amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        bob = { 'logistics-0', const:name_from_prefix(previous), },
+                    }
+                end,
+                research_trigger = {
+                    type = 'craft-item', item = 'iron-gear-wheel', count = 200,
+                },
+            }
+        end,
+        speed_config = {
+            items_per_second = 7.5,
+            rotation_speed = 0.046875,
+            inserter_pairs = 1,
+            stack_size_bonus = 0,
+        },
+    },
+```
+
 
 Additional things that can be defined in a loader template:
 
