@@ -35,7 +35,16 @@ Starting with version 0.7.0, Miniloader supports
 
 The miniloaders are activated if the corresponding module is detected.
 
-I am open to support additional tiers from other mods from PRs (see below).
+Getting the speeds for additional tiers beyond the basic levels (base games and Space Age DLC) is tricky and the game mechanics are stretched when going faster than ~ 120 items/sec. Supporting faster loaders is at best unreliable and might be outright wrong. YMMV.
+
+I spent four weeks on and off getting the mechanics for the supported mods right. This was extremely unpleasant work and I do not intend to do this again. With 0.9 and beyond the speeds should be as closely as possible to the belt speeds in the different tiers.
+
+I am open to support additional tiers from other mods from PRs (see below) but I do not plan to actively add any support for other mods.
+
+## Limitations
+
+- High speed (> 120 items/sec) miniloader will only achieve maximum throughput if loading from or to a chest. Any other loading operation will reduce the throughput.
+- When sideloading onto a belt with High speed miniloaders, they may spray items across both lanes of the belt they are loading to.
 
 ## How you can help
 
@@ -77,7 +86,7 @@ Note that this will not migrate any custom tier loaders (as of now).
 
 Default value is "off".
 
-### Debugging Mode (Runtime, per Map)
+### Debugging Mode (Startup)
 
 Show pickup, dropoff positions for the internal inserters and the area scanned when placing loaders or other entities when loader snapping is enabled. Useful for troubleshooting / but reporting but should not be needed otherwise.
 
