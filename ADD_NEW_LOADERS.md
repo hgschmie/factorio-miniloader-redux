@@ -29,15 +29,14 @@ Going faster than 240 items/s required some reconfiguration of the pickup and dr
 
 Speed measured:
 
-in:  Output from a fast belt (faster than the miniloader), onto a chest
-out: Output to a fast best (faster than the miniloader), from a chest
+in:  Output from a fast belt (faster than the miniloader), onto a chest<br/>
+out: Output to a fast best (faster than the miniloader), from a chest<br/>
 both: Input/Output from/to a belt of the same tier, chest at both ends
 
-*) Stacking loaders are a special case; they are locked into 4x (max stack size) stack
+*) Stacking loaders are a special case; they are locked into 4x (max stack size) stack<br/>
 +) Using high speed mode. This shifts the pickup points for some loaders to allow going past 240 items/sec.
 
-For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed). The maximum that seems to be possible with inserters
-(which need time to swing around and can drop only one item per tick on a belt) seems to be the 425 items/sec measured for the Matt Ultimate loader.
+For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed). The maximum that seems to be possible with inserters (which need time to swing around and can drop only one item per tick on a belt) seems to be the 425 items/sec measured for the Matt Ultimate loader.
 
 ## Adding new miniloaders
 
@@ -358,10 +357,10 @@ Finally, the inserter speed needs to be configured. For the basic belt, the desi
 
 Speed is defined as a table with four attributes:
 
-- items_per_second - only used for the display text. For Bob Basic this is 7.5
-- rotation_speed - defines how quick the inserters move. For Bob Basic, the right value is 0.046875
-- inserter_pairs - number of inserter pairs used. Usually 1 but for higher speeds, more than pair might be needed
-- stack_size_bonus - number of additional items moved with each inserter rotation. Must be a positive integer.
+- `items_per_second` - only used for the display text. For Bob Basic this is 7.5
+- `rotation_speed` - defines how quick the inserters move. For Bob Basic, the right value is 0.046875
+- `inserter_pairs` - number of inserter pairs used. Usually 1 but for higher speeds, more than pair might be needed
+- `stack_size_bonus` - number of additional items moved with each inserter rotation. Must be a positive integer.
 
 ``` lua
     ['bob-basic'] = {
@@ -394,14 +393,14 @@ Speed is defined as a table with four attributes:
                 research_trigger = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 200,
                 },
+                speed_config = {
+                    items_per_second = 7.5,
+                    rotation_speed = 0.046875,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 0,
+                },
             }
         end,
-        speed_config = {
-            items_per_second = 7.5,
-            rotation_speed = 0.046875,
-            inserter_pairs = 1,
-            stack_size_bonus = 0,
-        },
     },
 ```
 
@@ -419,4 +418,4 @@ Additional things that can be defined in a loader template:
   - the inserter uses 50% more power
 - `nerf_mode` - Turn off some inserter features:
   - Filtering is disabled
-  - No wires can be conneceted
+  - No wires can be connected
