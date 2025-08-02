@@ -1,6 +1,6 @@
 {
   "name": "miniloader-redux",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "title": "Miniloader (Redux)",
   "description": "UPS-friendly 1x1 loaders.",
   "author": "hgschmie",
