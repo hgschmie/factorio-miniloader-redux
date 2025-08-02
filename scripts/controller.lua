@@ -315,12 +315,13 @@ function Controller:setup(main, config)
     config.status = main.status
     config.direction = main.direction -- miniloader entity always points in inserter direction
 
-    ---@type miniloader.SpeedConfig
-    local speed_config = assert(prototypes.mod_data[const.name].data[main.name])
-    config.highspeed = speed_config.items_per_second > 240 -- 240 is max speed for one lane
+    local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
+    config.highspeed = inserter_data.speed_config.items_per_second > 240 -- 240 is max speed for one lane
+    config.nerf_mode = inserter_data.nerf_mode
+
 
     local loader = create_loader(main, config)
-    local inserters = self:createInserters(main, speed_config, config)
+    local inserters = self:createInserters(main, inserter_data.speed_config, config)
 
     ---@type miniloader.Data
     local ml_entity = {
@@ -420,11 +421,15 @@ function Controller:readConfigFromEntity(entity, ml_entity)
 
     -- copy control attributes
     for _, attribute in pairs(control_attributes) do
-        inserter_config[attribute] = control[attribute]
+        if ml_entity.config.nerf_mode then
+            inserter_config[attribute] = EMPTY_LOADER_CONFIG[attribute]
+        else
+            inserter_config[attribute] = control[attribute]
+        end
     end
 
     if entity.type == 'inserter' then
-        if entity.filter_slot_count > 0 then
+        if entity.filter_slot_count > 0 and not ml_entity.config.nerf_mode then
             inserter_config.loader_filter_mode = entity.use_filters and entity.inserter_filter_mode or 'none'
 
             local inserter_control = control --[[@as LuaInserterControlBehavior]]

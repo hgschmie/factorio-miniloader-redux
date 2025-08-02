@@ -324,17 +324,17 @@ local function create_entity(params)
 
     local loader = {
         -- Prototype Base
-        name = loader_name,
-        localised_name = { 'entity-name.' .. loader_name },
-        description = { 'entity-description.' .. loader_name },
-        type = 'loader-1x1',
-        order = params.order,
-        subgroup = params.subgroup,
-        hidden = true,
-        hidden_in_factoriopedia = true,
+        name                        = loader_name,
+        localised_name              = { 'entity-name.' .. loader_name },
+        description                 = { 'entity-description.' .. loader_name },
+        type                        = 'loader-1x1',
+        order                       = params.order,
+        subgroup                    = params.subgroup,
+        hidden                      = true,
+        hidden_in_factoriopedia     = true,
 
         -- LoaderPrototype
-        structure = {
+        structure                   = {
             direction_in = {
                 sheets = entity_sheets_gfx(params.tint, params.entity_gfx)
             },
@@ -360,33 +360,33 @@ local function create_entity(params)
                 }
             }
         },
-        filter_count = params.nerf_mode and 0 or 5,
-        structure_render_layer = 'object',
-        container_distance = 0,
-        allow_rail_interaction = false,
+        filter_count                = params.nerf_mode and 0 or 5,
+        structure_render_layer      = 'object',
+        container_distance          = 0,
+        allow_rail_interaction      = false,
         allow_container_interaction = false,
-        per_lane_filters = false,
-        energy_source = void_energy,
-        energy_per_item = drain,
+        per_lane_filters            = false,
+        energy_source               = void_energy,
+        energy_per_item             = drain,
 
-        circuit_wire_max_distance = default_circuit_wire_max_distance,
-        circuit_connector = loader_connector_definitions,
+        circuit_wire_max_distance   = default_circuit_wire_max_distance,
+        circuit_connector           = loader_connector_definitions,
 
         -- EntityWitHealthPrototype
-        max_health = 10,
+        max_health                  = 10,
 
         -- TransportBeltConnectablePrototype
-        belt_animation_set = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
+        belt_animation_set          = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
         animation_speed_coefficient = 32,
-        speed = params.speed,
+        speed                       = params.speed,
 
         -- EntityPrototype
-        icons = icon_gfx(params.tint, 'internal', 'internal'),
+        icons                       = icon_gfx(params.tint, 'internal', 'internal'),
 
-        collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-        collision_mask = { layers = { transport_belt = true, } },
-        selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-        flags = {
+        collision_box               = { { -0.4, -0.4 }, { 0.4, 0.4 } },
+        collision_mask              = { layers = { transport_belt = true, } },
+        selection_box               = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+        flags                       = {
             'placeable-neutral',
             'placeable-player',
             'not-on-map',
@@ -398,10 +398,10 @@ local function create_entity(params)
             'not-in-kill-statistics',
             'not-in-made-in',
         },
-        minable = nil,
-        selection_priority = 0,
-        allow_copy_paste = false,
-        selectable_in_game = false,
+        minable                     = nil,
+        selection_priority          = 0,
+        allow_copy_paste            = false,
+        selectable_in_game          = false,
     }
 
     -- hack to get the belt color right
@@ -417,12 +417,12 @@ end
 
 local function create_recipe(params)
     local recipe = {
-        type = 'recipe',
-        name = params.name,
+        type           = 'recipe',
+        name           = params.name,
         localised_name = params.localised_name,
-        ingredients = params.ingredients(),
-        enabled = false,
-        results = {
+        ingredients    = params.ingredients(),
+        enabled        = false,
+        results        = {
             {
                 type = 'item',
                 name = params.name,
@@ -432,14 +432,14 @@ local function create_recipe(params)
     }
 
     local technology = {
-        type = 'technology',
-        name = params.name,
-        order = params.order,
-        icons = technology_gfx(params.tint, params.entity_gfx),
-        prerequisites = params.prerequisites(),
-        research_trigger = params.research_trigger,
+        type                  = 'technology',
+        name                  = params.name,
+        order                 = params.order,
+        icons                 = technology_gfx(params.tint, params.entity_gfx),
+        prerequisites         = params.prerequisites(),
+        research_trigger      = params.research_trigger,
         visible_when_disabled = false,
-        effects = {
+        effects               = {
             {
                 type = 'unlock-recipe',
                 recipe = params.name,

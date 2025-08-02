@@ -13,7 +13,6 @@
 ---@field inserter_pairs integer
 ---@field stack_size_bonus integer
 
-
 ---@class miniloader.LoaderDefinition
 ---@field condition (fun():boolean)?
 ---@field data fun(dash_prefix:string):miniloader.LoaderTemplate
@@ -37,9 +36,8 @@
 ---@field loader_gfx string? Optional, if missing use the prefix. Selects explosion and remnants graphics.
 ---@field belt_gfx string? Optional, if missing use the loader tier. Selects belt animation set.
 ---@field entity_gfx string? Graphics variant for miniloader graphics
----@field bulk? boolean If true, support bulk moves
----@field nerf_mode? boolean Turn off all the nice features and make the loader really dumb.
-
+---@field bulk boolean? If true, support bulk moves
+---@field nerf_mode boolean? Turn off all the nice features and make the loader really dumb.
 
 ----------------------------------------------------------------------------------------------------
 -- scripts/controller.lua
@@ -54,10 +52,11 @@
 ---@class miniloader.Config
 ---@field enabled boolean
 ---@field status defines.entity_status?
----@field loader_type miniloader.LoaderDirection -- direction of the loader. The loader_type and the direction combined define the direction of the loader entity
----@field direction defines.direction?           -- direction of the miniloader. This is always the inserter direction and is never changed by the mod (only by player interaction)
----@field inserter_config table<string, any?>    -- inserter config, gets synced in reconfigure
----@field highspeed boolean?                     -- speed > 240 items/sec ?
+---@field loader_type miniloader.LoaderDirection Direction of the loader. The loader_type and the direction combined define the direction of the loader entity
+---@field direction defines.direction?           Direction of the miniloader. This is always the inserter direction and is never changed by the mod (only by player interaction)
+---@field inserter_config table<string, any?>    Inserter config, gets synced in reconfigure
+---@field highspeed boolean?                     Speed > 240 items/sec ?
+---@field nerf_mode boolean?                     Loader is really dumb (no filters, connections etc.)
 
 ---@class miniloader.Data
 ---@field main LuaEntity

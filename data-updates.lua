@@ -53,7 +53,10 @@ for prefix, loader_definition in pairs(templates.loaders) do
         functions.create_entity(params)
         functions.create_recipe(params)
 
-        mod_data.data[params.name] = params.speed_config
+        mod_data.data[params.name] = {
+            speed_config = params.speed_config,
+            nerf_mode = params.nerf_mode or false,
+        }
 
         if Framework.settings:startup_setting('debug_mode') then
             functions.create_debug(params)
