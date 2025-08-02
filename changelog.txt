@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.9.1
-Date: ????
+Date: 2025-08-02
   Bugfixes:
     - Fixed that when fast-replacing a miniloader with filters, logistics or circuit conditions with a chute, the conditions were kept even though the chute does not support them.
 ---------------------------------------------------------------------------------------------------
