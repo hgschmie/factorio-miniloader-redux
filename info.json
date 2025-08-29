@@ -11,6 +11,7 @@
     "base >= 2.0.59",
     "(?) matts-logistics",
     "(?) Krastorio2",
+    "(?) Krastorio2-spaced-out",
     "(?) boblogistics"
   ],
   "package": {
