@@ -13,6 +13,7 @@ local supported_mods = {
     ['space-age'] = 'space_age',
     ['matts-logistics'] = 'matt',
     ['Krastorio2'] = 'krastorio',
+    ['Krastorio2-spaced-out'] = 'krastorioso',
     ['boblogistics'] = 'bob',
 }
 
@@ -42,7 +43,7 @@ local function check_matt()
 end
 
 local function check_krastorio()
-    return game_mode.krastorio
+    return game_mode.krastorio or game_mode.krastorioso
 end
 
 local function check_bob()
