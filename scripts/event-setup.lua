@@ -32,8 +32,9 @@ local function on_entity_created(event)
     end
 
     local config = tags and tags[const.config_tag_name] --[[@as miniloader.Config]]
+    local no_snapping = tags and tags[const.no_snapping_tag_name] or false
 
-    This.MiniLoader:create(entity, config)
+    This.MiniLoader:create(entity, config, no_snapping)
 end
 
 ---@param event EventData.on_player_mined_entity | EventData.on_robot_mined_entity | EventData.on_space_platform_mined_entity | EventData.script_raised_destroy
@@ -125,6 +126,14 @@ local function serialize_config(entity)
     return This.MiniLoader:serializeConfiguration(entity)
 end
 
+---@param entity LuaEntity
+---@return table<string, any>?
+local function add_snapping_tag(entity)
+    if not entity and entity.valid then return end
+
+    return This.MiniLoader:addSnappingTag(entity)
+end
+
 --------------------------------------------------------------------------------
 -- Configuration changes (startup)
 --------------------------------------------------------------------------------
@@ -166,6 +175,9 @@ local function on_snappable_entity_created(event)
 
     -- if this is an actual miniloader, don't snap it
     if const.supported_types[entity.name] then return end
+
+    -- if the entity is marked as non-snapping, don't update loaders
+    if event.tags and event.tags[const.no_snapping_tag_name] then return end
 
     This.Snapping:updateLoaders(entity)
 end
@@ -232,7 +244,8 @@ local function register_events()
     Event.on_configuration_changed(on_configuration_changed)
 
     -- manage blueprinting and copy/paste
-    Framework.blueprint:registerCallback(const.supported_type_names, serialize_config)
+    Framework.blueprint:registerCallback(const.supported_type_names, 'inserter', serialize_config)
+    Framework.blueprint:registerTypeCallback(const.snapping_type_names, add_snapping_tag)
 
     -- manage tombstones for undo/redo and dead entities
     Framework.tombstone:registerCallback(const.supported_type_names, {

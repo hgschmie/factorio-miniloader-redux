@@ -1,7 +1,8 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.9.2
+Version: 0.10.1
 Date: ????
   Changes:
+    - Entities that would cause a miniloader to 'snap' around are marked and will not change miniloaders when built from a blueprint.
 ---------------------------------------------------------------------------------------------------
 Version: 0.9.1
 Date: 2025-08-02

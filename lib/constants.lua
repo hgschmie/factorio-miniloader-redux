@@ -38,6 +38,7 @@ local Constants = {
     root = '__miniloader-redux__',
     order = 'l[oaders]-m[iniloader]',
     config_tag_name = 'ml_config',
+    no_snapping_tag_name = 'no_snapping',
 
     supported_types = {},
     supported_type_names = {},

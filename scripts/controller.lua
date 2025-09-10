@@ -295,6 +295,17 @@ function Controller:serializeConfiguration(entity)
 
     return {
         [const.config_tag_name] = ml_entity.config,
+        [const.no_snapping_tag_name] = 'true',
+    }
+end
+
+--- Add tag to entities to not snap miniloaders when built from blueprint.
+---
+---@param entity LuaEntity
+---@return table<string, any>?
+function Controller:addSnappingTag(entity)
+    return {
+        [const.no_snapping_tag_name] = 'true',
     }
 end
 
@@ -340,15 +351,18 @@ end
 --- and configures it.
 ---@param main LuaEntity
 ---@param config miniloader.Config?
+---@param no_snapping boolean? If true, don't snap to neighbors
 ---@return miniloader.Data?
-function Controller:create(main, config)
+function Controller:create(main, config, no_snapping)
     if not Is.Valid(main) then return nil end
 
     local ml_entity = self:setup(main, config)
 
-    This.Snapping:snapToNeighbor(ml_entity)
+    if not no_snapping then
+        This.Snapping:snapToNeighbor(ml_entity)
+        self:readConfigFromEntity(main, ml_entity)
+    end
 
-    self:readConfigFromEntity(main, ml_entity)
     self:reconfigure(ml_entity)
 
     return ml_entity
