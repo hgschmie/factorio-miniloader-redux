@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.10.1
+Version: 0.10.0
 Date: ????
   Bugfixes:
     - Pay extra attention when building miniloaders from a blueprint to ensure they are placed exactly as marked in the blueprint.

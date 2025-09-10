@@ -141,6 +141,8 @@ Tear down and rebuild all internal inserters. This is useful for debugging if a 
 
 - Similar to the old Miniloader module, Blueprints do not show the "correct" orientation of the loader due to limitations of the game.
 - The rotation speed reported for a miniloader is wildly different based on the hand size and the inserter count.
+- Until release 0.10.0, miniloaders might have been placed with the wrong orientation when blueprinted.
+- In very rare cases, when 'snapping' is enabled, it is possible that the build order of entities affects the loader orientation (a loader may 'snap' if e.g. a belt is placed after the loader). Any blueprint created with the 0.10.0 or later release marks such entities as 'non-snapping'. For older blueprints, snapping should be temporarily disabled when placing a problematic blueprint to work around the issue.
 
 ## Credits
 
