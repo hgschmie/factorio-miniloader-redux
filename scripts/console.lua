@@ -51,13 +51,13 @@ local function inspect_miniloaders(data)
 
 
     ---@param list LuaEntity[]
-    ---@param type string
-    local function insert(list, type)
+    ---@param entity_type string
+    local function insert(list, entity_type)
         for _, entity in pairs(list) do
             if entity.valid then
-                all[type][entity.unit_number] = entity
+                all[entity_type][entity.unit_number] = entity
             else
-                invalid[type] = invalid[type] + 1
+                invalid[entity_type] = invalid[entity_type] + 1
             end
         end
     end
