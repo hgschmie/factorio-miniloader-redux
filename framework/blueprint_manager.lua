@@ -10,6 +10,8 @@ local table = require('stdlib.utils.table')
 
 local tools = require('framework.tools')
 
+---@alias framework.blueprint.EntityMatcher string
+
 ---@alias framework.blueprint.PrepareCallback fun(blueprint: LuaItemStack): BlueprintEntity[]?
 ---@alias framework.blueprint.MapCallback fun(entity: LuaEntity, idx: integer, context: table<string, any>)
 ---@alias framework.blueprint.Callback fun(entity: LuaEntity, context: table<string, any>): table<string, any>?
@@ -17,8 +19,8 @@ local tools = require('framework.tools')
 ---@alias framework.blueprint.EntityMap table<string, LuaEntity>
 
 ---@class framework.blueprint.Manager
----@field map_callbacks table<string, framework.blueprint.MapCallback>
----@field callbacks table<string, framework.blueprint.Callback>
+---@field map_callbacks table<framework.blueprint.EntityMatcher, framework.blueprint.MapCallback>
+---@field callbacks table<framework.blueprint.EntityMatcher, framework.blueprint.Callback>
 ---@field prepare_blueprint_callback framework.blueprint.PrepareCallback?
 local FrameworkBlueprintManager = {
     map_callbacks = {},
@@ -29,6 +31,25 @@ local FrameworkBlueprintManager = {
 ------------------------------------------------------------------------
 -- Blueprint management
 ------------------------------------------------------------------------
+
+---@param entity_type string
+---@param entity_name string?
+---@return framework.blueprint.EntityMatcher
+local function create_entity_matcher(entity_type, entity_name)
+    return ('%s__%s'):format(entity_name or '*', assert(entity_type))
+end
+
+---@generic T
+---@param entity LuaEntity
+---@param matchers table<framework.blueprint.EntityMatcher, T>
+---@return T?
+local function match_entity(entity, matchers)
+    if not (entity and entity.valid) then return nil end
+    local res = matchers[create_entity_matcher(entity.type, entity.name)]
+    if res then return res end
+    return matchers[create_entity_matcher(entity.type)]
+end
+
 
 ---@param player LuaPlayer
 ---@return boolean
@@ -56,7 +77,7 @@ function FrameworkBlueprintManager:augmentBlueprint(blueprint, entity_map, conte
     for idx, entity in pairs(blueprint_entities) do
         local key = tools:createEntityKeyFromBlueprintEntity(entity) -- override surface index to 0
         if entity_map[key] then
-            local callback = self.callbacks[entity.name]
+            local callback = match_entity(entity_map[key], FrameworkBlueprintManager.callbacks)
             if callback then
                 local tags = callback(entity_map[key], context)
                 if tags then
@@ -77,20 +98,18 @@ function FrameworkBlueprintManager:createEntityMap(entities, context)
 
     local entity_map = {}
     for idx, entity in pairs(entities) do
-        if self.callbacks[entity.name] then -- there is a callback for this entity
-            local map_callback = self.map_callbacks[entity.name]
-            if map_callback then
-                map_callback(entity, idx, context)
-            end
+        local map_callback = match_entity(entity, FrameworkBlueprintManager.map_callbacks)
+        if map_callback then -- there is a callback for this entity
+            map_callback(entity, idx, context)
+        end
 
-            local key = tools:createEntityKeyFromEntity(entity, 0) -- override surface index to 0
-            assert(key)
+        local key = tools:createEntityKeyFromEntity(entity, 0) -- override surface index to 0
+        assert(key)
 
-            if entity_map[key] then
-                Framework.logger:logf('Duplicate entity found at %s: %s', entity.gps_tag, entity.name)
-            else
-                entity_map[key] = entity
-            end
+        if entity_map[key] then
+            Framework.logger:logf('Duplicate entity found at %s: %s', entity.gps_tag, entity.name)
+        else
+            entity_map[key] = entity
         end
     end
 
@@ -131,7 +150,7 @@ local function on_player_setup_blueprint(event)
     else
         -- Player is editing the blueprint, no access for us yet.
         -- onPlayerConfiguredBlueprint picks this up and stores it.
-        player_data.current_blueprint =  {
+        player_data.current_blueprint = {
             entity_map = entity_map,
             context = context,
         }
@@ -159,19 +178,50 @@ end
 -- Public API
 ------------------------------------------------------------------------
 
----@param names string|string[]
+--- Registers blueprint callbacks for a set of entities of the same type with different names. The
+--- callback is called every time an entity is added to a blueprint. The optional map_callback is called
+--- when the entity is added to the blueprint map, which maps the blueprinted entities to the actual entities
+--- on the surface.
+---
+---@param entity_names string|string[]
+---@param entity_type string
 ---@param callback framework.blueprint.Callback
 ---@param map_callback framework.blueprint.MapCallback?
-function FrameworkBlueprintManager:registerCallback(names, callback, map_callback)
-    assert(names)
-    if type(names) ~= 'table' then names = { names } end
+function FrameworkBlueprintManager:registerCallback(entity_names, entity_type, callback, map_callback)
+    assert(entity_names)
+    assert(entity_type)
+    if type(entity_names) ~= 'table' then names = { names } end
 
-    for _, name in pairs(names) do
-        self.callbacks[name] = callback
-        if map_callback then self.map_callbacks[name] = map_callback end
+    for _, name in pairs(entity_names) do
+        local key = create_entity_matcher(entity_type, name)
+        self.callbacks[key] = callback
+        if map_callback then self.map_callbacks[key] = map_callback end
     end
 end
 
+--- Registers blueprint callbacks for one or more entity types. Any entity of that type will be matched.
+--- The callback is called every time an entity  is added to a blueprint. The optional map_callback is
+--- called when the entity is added to the blueprint map, which maps the blueprinted entities to the
+--- actual entities on the surface.
+---
+---@param types string|string[]
+---@param callback framework.blueprint.Callback
+---@param map_callback framework.blueprint.MapCallback?
+function FrameworkBlueprintManager:registerTypeCallback(types, callback, map_callback)
+    assert(types)
+    if type(types) ~= 'table' then types = { types } end
+
+    for _, entity_type in pairs(types) do
+        local key = create_entity_matcher(entity_type)
+        self.callbacks[key] = callback
+        if map_callback then self.map_callbacks[key] = map_callback end
+    end
+end
+
+--- Registers a callback with the blueprint manager that will be called when it tries
+--- to retrieve the blueprint entities from the blueprint. This allows a mod to modify
+--- the blueprint before it gets saved by the game.
+---
 ---@param callback framework.blueprint.PrepareCallback
 function FrameworkBlueprintManager:registerPreprocessor(callback)
     self.prepare_blueprint_callback = callback
