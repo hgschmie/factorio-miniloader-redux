@@ -63,3 +63,8 @@
 ---@field loader LuaEntity
 ---@field inserters LuaEntity[]
 ---@field config miniloader.Config
+
+---@class miniloader.PreBuild
+---@field direction defines.direction  Direction as reported by the prebuild event
+---@field flip_horizontal boolean      Flip horizontal as reported by the prebuild event
+---@field flip_vertical boolean        Flip vertical as reported by the prebuild event

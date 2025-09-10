@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.1
 Date: ????
+  Bugfixes:
+    - Pay extra attention when building miniloaders from a blueprint to ensure they are placed exactly as marked in the blueprint.
   Changes:
     - Entities that would cause a miniloader to 'snap' around are marked and will not change miniloaders when built from a blueprint.
 ---------------------------------------------------------------------------------------------------

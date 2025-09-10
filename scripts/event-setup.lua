@@ -19,19 +19,55 @@ local migration = require('scripts.migration')
 -- entity create / delete
 --------------------------------------------------------------------------------
 
+---@param event EventData.on_pre_build
+local function on_pre_build(event)
+    local pdata = Player.pdata(event.player_index)
+    ---@type miniloader.PreBuild
+    pdata.pre_build = pdata.pre_build or {}
+
+    pdata.pre_build.direction = event.direction
+    pdata.pre_build.flip_horizontal = event.flip_horizontal
+    pdata.pre_build.flip_vertical = event.flip_vertical
+end
+
+---@param attached_entity framework.ghost_manager.AttachedEntity
+local function ghost_callback(attached_entity)
+    local pdata = Player.pdata(attached_entity.player_index)
+    ---@type miniloader.PreBuild?
+    local pre_build = pdata and pdata.pre_build
+
+    local config = attached_entity.tags and attached_entity.tags[const.config_tag_name] --[[@as miniloader.Config]]
+
+    -- correct config direction in the ml_config tag
+    if config and config.direction then
+        config.direction = This.Snapping:correct_direction(config.direction, pre_build)
+        -- reassign tags to entity
+        attached_entity.entity.tags = attached_entity.tags
+    end
+end
+
 ---@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.on_space_platform_built_entity | EventData.script_raised_revive | EventData.script_raised_built
 local function on_entity_created(event)
     local entity = event and event.entity
     if not entity then return end
 
+    local pdata = event.player_index and Player.pdata(event.player_index)
+    ---@type miniloader.PreBuild?
+    local pre_build = pdata and pdata.pre_build
+
     local tags = event.tags
+    local config = tags and tags[const.config_tag_name] --[[@as miniloader.Config]]
+    -- correct config direction in the ml_config tag
+    if config and config.direction then
+        config.direction = This.Snapping:correct_direction(config.direction, pre_build)
+    end
 
     local entity_ghost = Framework.ghost_manager:findGhostForEntity(entity)
     if entity_ghost then
         tags = tags or entity_ghost.tags
     end
 
-    local config = tags and tags[const.config_tag_name] --[[@as miniloader.Config]]
+    config = tags and tags[const.config_tag_name] --[[@as miniloader.Config]]
     local no_snapping = tags and tags[const.no_snapping_tag_name] or false
 
     This.MiniLoader:create(entity, config, no_snapping)
@@ -224,6 +260,8 @@ local function register_events()
     local match_snap_entities = Matchers:matchEventEntity('type', const.snapping_type_names)
     local match_forward_snap_entities = Matchers:matchEventEntity('type', const.forward_snapping_type_names)
 
+
+    Event.register(defines.events.on_pre_build, on_pre_build)
     -- entity create / delete
     Event.register(Matchers.CREATION_EVENTS, on_entity_created, match_all_main_entities)
     -- deletion events can not include on_entity_died because then the tombstone manager would not work.
@@ -236,6 +274,7 @@ local function register_events()
 
     -- manage ghost building (robot building)
     Framework.ghost_manager:registerForName(const.supported_type_names)
+    Framework.ghost_manager:addGhostCallback(ghost_callback)
 
     -- entity destroy (can't filter on that)
     Event.register(defines.events.on_object_destroyed, on_object_destroyed)

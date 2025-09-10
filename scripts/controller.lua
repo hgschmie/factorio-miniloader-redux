@@ -81,6 +81,8 @@ local default_config = {
     highspeed = false,
 }
 
+local config_field_names = { 'enabled', 'loader_type', 'inserter_config', 'direction', 'highspeed' }
+
 --- Creates a default configuration with some fields overridden by
 --- an optional parent.
 ---
@@ -91,11 +93,11 @@ local function create_config(parent_config)
 
     local config = {}
     -- iterate over all field names given in the default_config
-    for field_name, _ in pairs(default_config) do
+    for _, field_name in pairs(config_field_names) do
         if parent_config[field_name] ~= nil then
-            config[field_name] = parent_config[field_name]
+            config[field_name] = util.copy(parent_config[field_name])
         else
-            config[field_name] = default_config[field_name]
+            config[field_name] = util.copy(default_config[field_name])
         end
     end
 
@@ -163,13 +165,6 @@ end
 -- sub entity management
 ------------------------------------------------------------------------
 
----@param config miniloader.Config
----@return defines.direction
-local function compute_loader_direction(config)
-    -- output loader points in the same direction as the miniloader, input loader points in opposite direction
-    return config.loader_type == const.loader_direction.output and config.direction or Direction.opposite(config.direction)
-end
-
 ---@param main LuaEntity
 ---@param config miniloader.Config
 local function create_loader(main, config)
@@ -178,7 +173,7 @@ local function create_loader(main, config)
     local loader = main.surface.create_entity {
         name = const.loader_name(main.name),
         position = main.position,
-        direction = compute_loader_direction(config),
+        direction = This.Snapping:compute_loader_direction(config),
         force = main.force,
         type = tostring(config.loader_type),
     }
@@ -269,13 +264,9 @@ end
 function Controller:sanitizeConfiguration(ml_entity)
     local filters = {}
     for key, value in pairs(ml_entity.config.inserter_config.filters) do
-        if type(key) == 'number' then
-            filters[key] = value
-        elseif type(key) == 'string' then
-            local new_key = tonumber(key)
-            if new_key then
-                filters[new_key] = filters[new_key] or value
-            end
+        local new_key = tonumber(key)
+        if new_key then
+            filters[new_key] = value
         end
     end
     if table_size(ml_entity.config.inserter_config.filters) ~= table_size(filters) then
@@ -324,12 +315,11 @@ function Controller:setup(main, config)
     -- if tags were passed in and they contain a config, use that.
     config = create_config(config)
     config.status = main.status
-    config.direction = main.direction -- miniloader entity always points in inserter direction
+    config.direction = config.direction or This.Snapping:direction_from_inserter(main.direction, config.loader_type)
 
     local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
     config.highspeed = inserter_data.speed_config.items_per_second > 240 -- 240 is max speed for one lane
     config.nerf_mode = inserter_data.nerf_mode
-
 
     local loader = create_loader(main, config)
     local inserters = self:createInserters(main, inserter_data.speed_config, config)
@@ -580,7 +570,7 @@ function Controller:reconfigure(ml_entity, cfg)
 
     -- reorient loader
     ml_entity.loader.loader_type = tostring(config.loader_type)
-    ml_entity.loader.direction = compute_loader_direction(config)
+    ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
     if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
         -- miniloader was moved
         ml_entity.loader.destroy()
@@ -599,7 +589,7 @@ function Controller:reconfigure(ml_entity, cfg)
         local index = config.highspeed and (9 - inserter_index) or inserter_index
 
         -- reorient inserter
-        inserter.direction = Direction.opposite(compute_loader_direction(ml_entity.config))
+        inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
         inserter.teleport(ml_entity.main.position)
 
         -- normal speed: even inserters right

@@ -11,7 +11,7 @@ local Direction = require('stdlib.area.direction')
 
 local const = require('lib.constants')
 
-local tools = require('framework.tools')
+local DIRECTION_SIZE = table_size(defines.direction)
 
 ---@class miniloader.Snapping
 local Snapping = {}
@@ -33,23 +33,23 @@ local function get_loader_type(entity)
     return nil
 end
 
----@param entity LuaEntity
+---@param direction defines.direction
 ---@return boolean
-function Snapping:is_vertical_aligned(entity)
-    return entity.direction == defines.direction.north or entity.direction == defines.direction.south
+function Snapping:is_vertical(direction)
+    return direction == defines.direction.north or direction == defines.direction.south
 end
 
----@param entity LuaEntity
+---@param direction defines.direction
 ---@return boolean
-function Snapping:is_horizontal_aligned(entity)
-    return entity.direction == defines.direction.west or entity.direction == defines.direction.east
+function Snapping:is_horizontal(direction)
+    return direction == defines.direction.west or direction == defines.direction.east
 end
 
 ---@param entity1 LuaEntity
 ---@param entity2 LuaEntity
 ---@return boolean
 function Snapping:are_aligned(entity1, entity2)
-    return self:is_vertical_aligned(entity1) ~= self:is_horizontal_aligned(entity2)
+    return self:is_vertical(entity1.direction) ~= self:is_horizontal(entity2.direction)
 end
 
 ---@param ml_entity miniloader.Data
@@ -72,6 +72,46 @@ function Snapping:compute_loader_direction(config)
     -- output loader points in the same direction as the miniloader, input loader points in opposite direction
     return config.loader_type == const.loader_direction.output and config.direction or Direction.opposite(config.direction)
 end
+
+---@param config miniloader.Config
+---@return defines.direction
+function Snapping:compute_inserter_direction(config)
+    -- for input loaders, the inserter points in the same direction as the miniloader, for output loaders it points in opposite direction
+    return config.loader_type == const.loader_direction.input and config.direction or Direction.opposite(config.direction)
+end
+
+---@param direction defines.direction
+---@param loader_type miniloader.LoaderDirection
+function Snapping:direction_from_inserter(direction, loader_type)
+    return loader_type == const.loader_direction.input and direction or Direction.opposite(direction)
+end
+
+--- Corrects a given direction based on the prebuild information about rotation and flipping.
+--- This is most useful when building entities from a blueprint.
+---@param direction defines.direction
+---@param pre_build miniloader.PreBuild?
+---@return defines.direction corrected_direction
+function Snapping:correct_direction(direction, pre_build)
+    if not pre_build then return direction end
+
+    -- correct blueprint flipping
+    local corrected_direction = direction
+    if pre_build.flip_horizontal and This.Snapping:is_horizontal(direction) then
+        corrected_direction = Direction.opposite(corrected_direction)
+    end
+
+    if pre_build.flip_vertical and This.Snapping:is_vertical(direction) then
+        corrected_direction = Direction.opposite(corrected_direction)
+    end
+
+    -- correct blueprint rotation
+    if pre_build.direction then
+        corrected_direction = (corrected_direction + pre_build.direction) % DIRECTION_SIZE
+    end
+
+    return corrected_direction
+end
+
 
 -- set loader direction according to the entity in front. Unlike other snapping code,
 -- this only considers the entity in front of the loader
@@ -143,7 +183,7 @@ end
 local function find_neighbor_entity(ml_entity, direction)
     direction = direction or ml_entity.config.direction
 
-    -- find area to look at. As the miniloader itself always points in the "chute direction", it is always 1
+    -- find area to look at in front of the miniloader (the miniloader points in 'direction')
     local area = Area(ml_entity.main.prototype.selection_box):offset(Position(ml_entity.main.position)):translate(direction, 1)
 
     if Framework.settings:startup_setting('debug_mode') then
