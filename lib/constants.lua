@@ -162,6 +162,7 @@ Constants.settings_keys = {
     'loader_snapping',
     'chute_loader',
     'migrate_loaders',
+    'sanitize_loaders',
     'no_power',
 }
 

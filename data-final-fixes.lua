@@ -76,4 +76,12 @@ if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
     end
 end
 
+if Framework.settings:startup_setting(const.settings_names.sanitize_loaders) then
+    for _, loader in pairs(data.raw['loader-1x1']) do
+        if loader.collision_mask then
+            loader.collision_mask.layers.transport_belt = true
+        end
+    end
+end
+
 Framework.post_data_final_fixes_stage()

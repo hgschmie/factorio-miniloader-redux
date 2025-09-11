@@ -2,6 +2,7 @@
 Version: 0.10.2
 Date: ????
   Changes:
+    - Add a startup setting to work around mod incompatibilities with loader-1x1 collision masks.
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.1
 Date: 2025-09-11

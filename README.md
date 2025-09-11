@@ -46,6 +46,29 @@ I am open to support additional tiers from other mods from PRs (see below) but I
 - High speed (> 120 items/sec) miniloader will only achieve maximum throughput if loading from or to a chest. Any other loading operation will reduce the throughput.
 - When sideloading onto a belt with High speed miniloaders, they may spray items across both lanes of the belt they are loading to.
 
+### Fixing Collision mask failures
+
+When using Miniloaders with some other mods (most prominent offender seems to be the [Advanced Furnaces 2 SpaceAgeFix](https://mods.factorio.com/mod/Load-Furn-2-SpaceAgeFix) mod), the game fails to load with an error message like this:
+
+``` text
+Failed to load mods: entity prototype "... some miniloader entity ending in -l..." (loader-1x1) collision_mask(Modifications: Miniloader (Redux)) must collide with entity prototype "... some entity ... " (loader-1x1) collision_mask(...).
+
+```
+
+This happens when the other mod does not declare collision with the `transport_belt` layer. The default collision mask for loaders includes this and most custom loader should simply use the default.
+
+Starting with version 0.10.2, there is now a startup switch (`Sanitize non-Miniloader loader entities`) that ties to 'fix up' such loaders. It adds the `transport_belt` layer to the collision mask of all configured loaders.
+
+Note that this may break functionality of those other loaders. If that is the case, the mod and Miniloader are not compatible.
+
+If you encounter this error, try enabling this setting first. It has no permanent effect on the game; if it breaks another mod, simply uncheck it again.
+
+To enable this setting, when the game fails to start
+- first disable the *other* mod that causes the problem. Keep Miniloader enabled
+- set the startup setting
+- re-enable the other mod
+
+
 ## How you can help
 
 I am not a graphics person. E.g. Matt's Logistics belts have a different tint and I convinced ChatGPT to recolor the existing graphics with a different tint that somewhat matches the belts. But getting better graphics would be greatly appreciated.
@@ -83,6 +106,12 @@ This option needs to be enabled before opening a 1.1 saved game in Factorio 2.0.
 - Express Miniloader, Express Filter Miniloader -> Express Miniloader
 
 Note that this will not migrate any custom tier loaders (as of now).
+
+Default value is "off".
+
+### Sanitize non-Miniloader loader entities (Startup)
+
+Patch non-Miniloader loader-1x1 entities to collide with the `transport_belt` layer. See the section `Fixing Collision mask failures` above for an explanation. This is a highly experimental and dangerous setting. If you do not encounter any errors with other mods, do not enable.
 
 Default value is "off".
 

@@ -34,6 +34,13 @@ data:extend({
     },
     {
         type = 'bool-setting',
+        name = const.settings.sanitize_loaders,
+        order = 'ax',
+        setting_type = 'startup',
+        default_value = false,
+    },
+    {
+        type = 'bool-setting',
         name = const.settings.migrate_loaders,
         order = 'ay',
         setting_type = 'startup',
