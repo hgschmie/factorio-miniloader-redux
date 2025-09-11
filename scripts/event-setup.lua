@@ -283,8 +283,8 @@ local function register_events()
     Event.on_configuration_changed(on_configuration_changed)
 
     -- manage blueprinting and copy/paste
-    Framework.blueprint:registerCallback(const.supported_type_names, 'inserter', serialize_config)
-    Framework.blueprint:registerTypeCallback(const.snapping_type_names, add_snapping_tag)
+    Framework.blueprint:registerCallbackForNames(const.supported_type_names, serialize_config)
+    Framework.blueprint:registerCallbackForTypes(const.snapping_type_names, add_snapping_tag)
 
     -- manage tombstones for undo/redo and dead entities
     Framework.tombstone:registerCallback(const.supported_type_names, {
