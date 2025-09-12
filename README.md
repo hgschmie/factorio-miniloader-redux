@@ -57,17 +57,17 @@ Failed to load mods: entity prototype "... some miniloader entity ending in -l..
 
 This happens when the other mod does not declare collision with the `transport_belt` layer. The default collision mask for loaders includes this and most custom loader should simply use the default.
 
-Starting with version 0.10.2, there is now a startup switch (`Sanitize non-Miniloader loader entities`) that ties to 'fix up' such loaders. It adds the `transport_belt` layer to the collision mask of all configured loaders.
+Starting with version 0.10.2, there is now a startup switch (`Sanitize non-Miniloader loader entities`) that tries to 'fix up' such loaders. It adds the `transport_belt` layer to the collision mask of all configured loaders.
 
 Note that this may break functionality of those other loaders. If that is the case, the mod and Miniloader are not compatible.
 
 If you encounter this error, try enabling this setting first. It has no permanent effect on the game; if it breaks another mod, simply uncheck it again.
 
-To enable this setting, when the game fails to start
+To enable this setting, when the game fails to start:
+
 - first disable the *other* mod that causes the problem. Keep Miniloader enabled
 - set the startup setting
 - re-enable the other mod
-
 
 ## How you can help
 
