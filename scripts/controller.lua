@@ -7,6 +7,7 @@ assert(script)
 local util = require('util')
 
 local Is = require('stdlib.utils.is')
+local Math = require('stdlib.utils.math')
 local Direction = require('stdlib.area.direction')
 local Position = require('stdlib.area.position')
 
@@ -61,15 +62,6 @@ for direction in pairs(Controller.positions) do
 end
 
 ------------------------------------------------------------------------
-
--- compute 1-based modulo.
----@param x number
----@param y number
----@return number
-local function one_mod(x, y)
-    return ((x - 1) % y) + 1
-end
-
 
 ---@type miniloader.Config
 local default_config = {
@@ -601,7 +593,7 @@ function Controller:reconfigure(ml_entity, cfg)
 
         -- either pickup or drop position
 
-        local eight_mod = one_mod(index, 8)
+        local eight_mod = Math.one_mod(index, 8)
         local outside_position = back_position + self.positions[direction][eight_mod]
         local inside_position = front_position + self.positions[direction][eight_mod]
         local hs_inside_position = hs_front_position + self.positions[direction][eight_mod]
