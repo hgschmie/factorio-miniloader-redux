@@ -239,7 +239,7 @@ template.loaders = {
                 speed = data.raw['transport-belt']['turbo-transport-belt'].speed,
                 bulk = true,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = 'turbo', -- use turbo animations, explosion etc.
+                corpse_gfx = 'turbo', -- use turbo animations, explosion etc.
                 belt_gfx = 'turbo',
                 ingredients = function()
                     return select_data {
@@ -281,7 +281,7 @@ template.loaders = {
                 research_trigger = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 100,
                 },
-                loader_gfx = '',
+                corpse_gfx = '',
                 belt_gfx = gfx,
                 nerf_mode = true,
                 ingredients = function()
@@ -325,7 +325,7 @@ template.loaders = {
                 tint = util.color('2ac217'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = max_loader, -- animations, explosion etc.
+                corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
@@ -362,7 +362,7 @@ template.loaders = {
                 tint = util.color('c34722'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = max_loader, -- animations, explosion etc.
+                corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
@@ -399,7 +399,7 @@ template.loaders = {
                 tint = util.color('5a17c2'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = max_loader, -- animations, explosion etc.
+                corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
@@ -436,7 +436,7 @@ template.loaders = {
                 tint = util.color('1146d4'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = max_loader, -- animations, explosion etc.
+                corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
@@ -473,7 +473,7 @@ template.loaders = {
                 tint = util.color('a6a6a6'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = max_loader, -- animations, explosion etc.
+                corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
                 ingredients = function()
                     return select_data {
@@ -515,7 +515,7 @@ template.loaders = {
                 tint = util.color('22ec17'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = 'express', -- https://codeberg.org/raiguard/Krastorio2/issues/641
+                explosion_gfx = '',
                 ingredients = function()
                     return select_data {
                         krastorio = {
@@ -551,7 +551,7 @@ template.loaders = {
                 tint = util.color('d201f7'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = 'express', -- https://codeberg.org/raiguard/Krastorio2/issues/641
+                explosion_gfx = '',
                 ingredients = function()
                     return select_data {
                         krastorio = {
@@ -592,7 +592,7 @@ template.loaders = {
                 tint = util.color('c3c3c3'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = '', -- use basic graphics for explosion and remnants
+                corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
                     local ingredients = {
                         { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
@@ -652,7 +652,7 @@ template.loaders = {
                 tint = util.color('b700ff'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = '', -- use basic graphics for explosion and remnants
+                corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
                     return select_data {
                         bob = {
@@ -689,7 +689,7 @@ template.loaders = {
                 tint = util.color('1aeb2e'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
-                loader_gfx = '', -- use basic graphics for explosion and remnants
+                corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
                     local inserter = (settings.startup['bobmods-logistics-inserteroverhaul'].value == true)
                         and 'bob-turbo-inserter'

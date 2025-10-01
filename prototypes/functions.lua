@@ -152,7 +152,8 @@ local function create_entity(params)
     local entity_name = params.name
     local loader_name = const.loader_name(entity_name)
     local inserter_name = const.inserter_name(entity_name)
-    local loader_gfx = params.loader_gfx or params.prefix
+    local corpse_gfx = params.corpse_gfx or params.prefix
+    local explosion_gfx = params.explosion_gfx or corpse_gfx
     local belt_gfx = params.belt_gfx or params.prefix
 
     local speed_config = params.speed_config
@@ -254,7 +255,7 @@ local function create_entity(params)
             offsets = { { 0, 1 } },
             damage_type_filters = 'fire'
         },
-        dying_explosion                = compute_dash_prefix(loader_gfx) .. 'underground-belt-explosion',
+        dying_explosion                = compute_dash_prefix(explosion_gfx) .. 'underground-belt-explosion',
         resistances                    = {
             {
                 type = 'fire',
@@ -265,7 +266,7 @@ local function create_entity(params)
                 percent = 30
             }
         },
-        corpse                         = compute_dash_prefix(loader_gfx) .. 'underground-belt-remnants',
+        corpse                         = compute_dash_prefix(corpse_gfx) .. 'underground-belt-remnants',
 
         -- EntityPrototype
         icons                          = icon_gfx(params.tint, params.entity_gfx),

@@ -10,7 +10,7 @@
   "dependencies": [
     "base >= 2.0.59",
     "(?) matts-logistics",
-    "(?) Krastorio2",
+    "(?) Krastorio2 >= 2.0.7",
     "(?) boblogistics"
   ],
   "package": {
