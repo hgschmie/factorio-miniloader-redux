@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.10.4
+Version: 0.11.0
 Date: ????
   Minor Features:
     - add support for 'Advanced Furnaces 2'
