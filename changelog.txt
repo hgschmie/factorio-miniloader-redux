@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.11.0
-Date: ????
+Date: 2025-10-13
   Minor Features:
     - add support for 'Advanced Furnaces 2'
     - add config switch to double all recipes for two miniloaders
