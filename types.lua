@@ -39,6 +39,7 @@
 ---@field entity_gfx string? Graphics variant for miniloader graphics
 ---@field bulk boolean? If true, support bulk moves
 ---@field nerf_mode boolean? Turn off all the nice features and make the loader really dumb.
+---@field belt_color_selector? fun(loader: data.LoaderPrototype, name: string)
 
 ----------------------------------------------------------------------------------------------------
 -- scripts/controller.lua

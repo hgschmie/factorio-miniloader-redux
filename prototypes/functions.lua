@@ -147,6 +147,15 @@ local function round_two_digits(value)
     return math.floor(value * 100 + 0.5) / 100
 end
 
+---@param loader data.LoaderPrototype
+---@param name string
+local function default_belt_color_selector(loader, name)
+    if not (name and name:len() > 0) then return end
+    local belt_source = data.raw['underground-belt'][compute_dash_prefix(name) .. 'underground-belt']
+    if not belt_source then return end
+    loader.belt_animation_set = util.copy(belt_source.belt_animation_set)
+end
+
 ---@param params miniloader.LoaderTemplate
 local function create_entity(params)
     local entity_name = params.name
@@ -155,6 +164,7 @@ local function create_entity(params)
     local corpse_gfx = params.corpse_gfx or params.prefix
     local explosion_gfx = params.explosion_gfx or corpse_gfx
     local belt_gfx = params.belt_gfx or params.prefix
+    local belt_color_selector = params.belt_color_selector or default_belt_color_selector
 
     local speed_config = params.speed_config
     -- can not go faster than 0.5 (max half a rotation per tick - see https://wiki.factorio.com/inserters#Rotation_Speed)
@@ -406,12 +416,7 @@ local function create_entity(params)
     }
 
     -- hack to get the belt color right
-    if belt_gfx and belt_gfx:len() > 0 then
-        local belt_source = data.raw['underground-belt'][compute_dash_prefix(belt_gfx) .. 'underground-belt']
-        if belt_source then
-            loader.belt_animation_set = util.copy(belt_source.belt_animation_set)
-        end
-    end
+    belt_color_selector(loader, belt_gfx)
 
     data:extend { inserter, hidden_inserter, loader }
 end

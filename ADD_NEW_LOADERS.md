@@ -26,6 +26,8 @@ Going faster than 240 items/s required some reconfiguration of the pickup and dr
 | Matt Ultra Express   | 270               | 0.5            | 6              | 3         | 270/270/270  +)    |
 | Matt Extreme Express | 360               | 0.5            | 8              | 3         | 360/300/330  +)    |
 | Matt Ultimate        | 450               | 0.5            | 8              | 8         | 425/425/425  +)    |
+| Adv. Furnaces PRO-1  | 75                | 0.1875         | 2              | 3         | 75/75/75           |
+| Adv. Furnaces PRO-2  | 105               | 0.25           | 2              | 6         | 102/104/105        |
 
 Speed measured:
 

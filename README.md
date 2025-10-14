@@ -27,11 +27,12 @@ The genius of the 1x1 Miniloader module is that it checks all the boxes. Hence M
 
 There are three available tiers in the base game ("Vanilla", Fast and Express) and five when playing Space Age (additionally Turbo and Stack). I made a conscious decision to not support any additional tiers or enable stacking in the base game. The mod tries to follow the "spirit" of the game and there are other options (such as Loader Modernized) that work fine if this is not wanted.
 
-Starting with version 0.7.0, Miniloader supports
+Miniloader supports some other mods:
 
 - [Matt's Logistics](https://mods.factorio.com/mod/matts-logistics)
 - [Krastorio 2](https://mods.factorio.com/mod/Krastorio2)
 - [Bob's Logistics](https://mods.factorio.com/mod/boblogistics)
+- [Advanced Furnaces 2 SpaceAgeFix](https://mods.factorio.com/mod/Load-Furn-2-SpaceAgeFix)
 
 The miniloaders are activated if the corresponding module is detected.
 
@@ -52,7 +53,6 @@ When using Miniloaders with some other mods (most prominent offender seems to be
 
 ``` text
 Failed to load mods: entity prototype "... some miniloader entity ending in -l..." (loader-1x1) collision_mask(Modifications: Miniloader (Redux)) must collide with entity prototype "... some entity ... " (loader-1x1) collision_mask(...).
-
 ```
 
 This happens when the other mod does not declare collision with the `transport_belt` layer. The default collision mask for loaders includes this and most custom loader should simply use the default.

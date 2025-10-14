@@ -14,6 +14,7 @@ local supported_mods = {
     ['matts-logistics'] = 'matt',
     ['Krastorio2'] = 'krastorio',
     ['boblogistics'] = 'bob',
+    ['Load-Furn-2-SpaceAgeFix'] = 'adv_furnace_2',
 }
 
 local game_mode = {}
@@ -49,6 +50,12 @@ local function check_bob()
     return game_mode.bob and (settings.startup['bobmods-logistics-beltoverhaul'].value == true)
 end
 
+local function check_adv_furnace_2()
+    -- that thing is a hot mess...
+    local logistics_enabled = settings.startup['logist'] and settings.startup['logist'].value or false
+    return game_mode.adv_furnace_2 and logistics_enabled
+end
+
 local function energy_void()
     return { type = 'void' }, 0
 end
@@ -59,14 +66,17 @@ local max_loader = game_mode.space_age and 'turbo' or 'express'
 ---@param data table<string, any>
 local function select_data(data)
     for name in pairs(game_mode) do
-        -- mod + space age?
-        if game_mode.space_age then
-            local sa_name = name .. '_space_age'
-            if data[sa_name] then return data[sa_name] end
+        if name ~= 'base' then
+            -- mod + space age?
+            if game_mode.space_age then
+                local sa_name = name .. '_space_age'
+                if data[sa_name] then return data[sa_name] end
+            end
+            -- just mod?
+            if data[name] then return data[name] end
         end
-        -- just mod?
-        if data[name] then return data[name] end
     end
+
     -- when an inserter tier is under a condition switch, then
     -- the data must exist under that condition (e.g. for mod 'xxx', the
     -- data must have an 'xxx' key). Otherwise, it will fall back to base which
@@ -97,7 +107,7 @@ template.loaders = {
                         base = {
                             { type = 'item', name = 'underground-belt', amount = 1 },
                             { type = 'item', name = 'steel-plate',      amount = 4 },
-                            { type = 'item', name = 'inserter',         amount = 4 },
+                            { type = 'item', name = 'inserter',         amount = 2 },
                         },
                     }
                 end,
@@ -135,6 +145,11 @@ template.loaders = {
                             { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
                             { type = 'item', name = dash_prefix .. 'inserter',         amount = 2 },
                         },
+                        bob = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'long-handed-inserter',            amount = 2 },
+                        },
                     }
                 end,
                 prerequisites = function()
@@ -170,6 +185,11 @@ template.loaders = {
                             { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
                             { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
                             { type = 'item', name = 'bulk-inserter',                   amount = 2 },
+                        },
+                        bob = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'fast-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -654,11 +674,15 @@ template.loaders = {
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
+                    local inserter = (settings.startup['bobmods-logistics-inserteroverhaul'].value == true)
+                        and 'bob-turbo-inserter'
+                        or 'bob-express-inserter'
+
                     return select_data {
                         bob = {
                             { type = 'item', name = const:name_from_prefix(previous),  amount = 1 },
                             { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
-                            { type = 'item', name = 'bob-express-inserter',            amount = 2 },
+                            { type = 'item', name = inserter,                          amount = 2 },
                         },
                     }
                 end,
@@ -692,7 +716,7 @@ template.loaders = {
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
                     local inserter = (settings.startup['bobmods-logistics-inserteroverhaul'].value == true)
-                        and 'bob-turbo-inserter'
+                        and 'bob-express-inserter'
                         or 'bob-express-bulk-inserter'
                     return select_data {
                         bob = {
@@ -717,8 +741,84 @@ template.loaders = {
         end,
 
     },
+    ['af2-pro-1'] = {
+        condition = check_adv_furnace_2,
+        data = function()
+            local previous = 'express'
 
+            return {
+                order = 'd[d]-a',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('eea500'),
+                speed = data.raw['transport-belt']['transport-belt-pro'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = '', -- use basic graphics for explosion and remnants
+                ingredients = function()
+                    return select_data {
+                        adv_furnace_2 = {
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
+                            { type = 'item', name = 'underground-belt-pro',           amount = 1 },
+                            { type = 'item', name = 'loader-pro-02',                  amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        adv_furnace_2 = { 'logistics-3', const:name_from_prefix(previous), },
+                    }
+                end,
+                belt_color_selector = function(loader)
+                    loader.belt_animation_set = util.copy(assert(data.raw['underground-belt']['underground-belt-pro'].belt_animation_set))
+                end,
+                speed_config = {
+                    items_per_second = 75,
+                    rotation_speed = 0.1875,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 3,
+                },
+            }
+        end,
+    },
+    ['af2-pro-2'] = {
+        condition = check_adv_furnace_2,
+        data = function()
+            local previous = 'af2-pro-1'
 
+            return {
+                order = 'd[d]-b',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('00fd53'),
+                speed = data.raw['transport-belt']['transport-belt-pro2'].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = '', -- use basic graphics for explosion and remnants
+                ingredients = function()
+                    return select_data {
+                        adv_furnace_2 = {
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
+                            { type = 'item', name = 'underground-belt-pro2',          amount = 1 },
+                            { type = 'item', name = 'loader-pro-03',                  amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        adv_furnace_2 = { 'logistics-3', const:name_from_prefix(previous), },
+                    }
+                end,
+                belt_color_selector = function(loader)
+                    loader.belt_animation_set = util.copy(assert(data.raw['underground-belt']['underground-belt-pro2'].belt_animation_set))
+                end,
+                speed_config = {
+                    items_per_second = 105,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 5,
+                },
+            }
+        end,
+    },
 }
 
 template.game_mode = game_mode
