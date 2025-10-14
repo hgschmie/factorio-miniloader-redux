@@ -422,17 +422,27 @@ local function create_entity(params)
 end
 
 local function create_recipe(params)
+
+    local double_recipe = Framework.settings:startup_setting(const.settings_names.double_recipes)
+
+    local ingredients = util.copy(params.ingredients())
+    if double_recipe then
+        for _, ingredient in pairs(ingredients) do
+            ingredient.amount = ingredient.amount * 2
+        end
+    end
+
     local recipe = {
         type           = 'recipe',
         name           = params.name,
         localised_name = params.localised_name,
-        ingredients    = params.ingredients(),
+        ingredients    = ingredients,
         enabled        = false,
         results        = {
             {
                 type = 'item',
                 name = params.name,
-                amount = 1,
+                amount = double_recipe and 2 or 1,
             },
         },
     }

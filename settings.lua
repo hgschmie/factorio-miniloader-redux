@@ -27,8 +27,15 @@ data:extend({
     },
     {
         type = 'bool-setting',
-        name = const.settings.no_power,
+        name = const.settings.double_recipes,
         order = 'ab',
+        setting_type = 'startup',
+        default_value = false,
+    },
+    {
+        type = 'bool-setting',
+        name = const.settings.no_power,
+        order = 'ac',
         setting_type = 'startup',
         default_value = false,
     },

@@ -15,6 +15,7 @@ local Settings = {
         [const.settings_names.migrate_loaders] = { key = const.settings.migrate_loaders, value = false, },
         [const.settings_names.sanitize_loaders] = { key = const.settings.sanitize_loaders, value = false, },
         [const.settings_names.no_power] = { key = const.settings.no_power, value = false, },
+        [const.settings_names.double_recipes] = { key = const.settings.double_recipes, value = false },
     },
 }
 

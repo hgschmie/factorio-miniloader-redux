@@ -1,9 +1,12 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.4
 Date: ????
+  Minor Features:
+    - add support for 'Advanced Furnaces 2'
+    - add config switch to double all recipes for two miniloaders
   Changes:
     - use Krastorio remnant graphics
-    - add support for 'Advanced Furnaces 2'
+  Bugfixes:
     - fix required inserters for bob's mods
 ---------------------------------------------------------------------------------------------------
 Version: 0.10.3

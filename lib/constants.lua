@@ -164,6 +164,7 @@ Constants.settings_keys = {
     'migrate_loaders',
     'sanitize_loaders',
     'no_power',
+    'double_recipes',
 }
 
 Constants.settings_names = {}
