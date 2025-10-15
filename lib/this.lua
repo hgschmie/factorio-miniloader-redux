@@ -12,6 +12,7 @@ This = {
     other_mods = {
         ['PickerDollies'] = 'picker-dollies',
         ['even-pickier-dollies'] = 'picker-dollies',
+        ['space-exploration'] = 'space-exploration',
     },
 }
 
