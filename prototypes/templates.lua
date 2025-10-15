@@ -15,6 +15,7 @@ local supported_mods = {
     ['Krastorio2'] = 'krastorio',
     ['boblogistics'] = 'bob',
     ['Load-Furn-2-SpaceAgeFix'] = 'adv_furnace_2',
+    ['space-exploration'] = 'space_exploration',
 }
 
 local game_mode = {}
@@ -54,6 +55,10 @@ local function check_adv_furnace_2()
     -- that thing is a hot mess...
     local logistics_enabled = settings.startup['logist'] and settings.startup['logist'].value or false
     return game_mode.adv_furnace_2 and logistics_enabled
+end
+
+local function check_space_exploration()
+    return game_mode.space_exploration
 end
 
 ---@return data.VoidEnergySource energy_source
@@ -821,6 +826,90 @@ template.loaders = {
                 },
             }
         end,
+    },
+
+    -- =================================================
+    -- == Space Exploration
+    -- =================================================
+
+    ['se-space'] = {
+        condition = check_space_exploration,
+        data = function(dash_prefix)
+            return {
+                order = 'd[d]-a',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = { r = 240 / 255, g = 240 / 255, b = 240 / 255, a = 125 / 255 },
+                speed = data.raw['transport-belt'][dash_prefix..'transport-belt'].speed,
+                corpse_gfx = 'express',
+                ingredients = function()
+                    return select_data {
+                        space_exploration = {
+                            { type = "item" , name = dash_prefix..'transport-belt',   amount = 1 },
+                            { type = "item" , name = dash_prefix..'underground-belt', amount = 1 },
+                            { type = "item" , name = 'bulk-inserter',                 amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        space_exploration = { 'se-space-belt', },
+                    }
+                end,
+                speed_config = {
+                    items_per_second = 45,
+                    rotation_speed = 0.125,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 1,
+                }
+            }
+        end,
+    },
+
+    ['se-deep-space'] = {
+        condition = check_space_exploration,
+        data = function (dash_prefix)
+            local previous = 'se-space'
+            local color = '-black'
+
+            return {
+                order = 'd[d]-b',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = { r = 25 / 255, g = 25 / 255, b = 25 / 255, a = 200 / 255 },
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'..color].speed,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = 'express',
+
+                ingredients = function()
+                    return select_data {
+                        space_exploration = {
+                            { type = "item" , name = const:name_from_prefix(previous),        amount = 2 },
+                            { type = "item" , name = dash_prefix..'underground-belt'..color,  amount = 1 },
+                            { type = "item" , name = 'se-nanomaterial',                       amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        space_exploration = { 'se-deep-space-transport-belt', const:name_from_prefix(previous) },
+                    }
+                end,
+                belt_color_selector = function(loader)
+                    loader.belt_animation_set = util.copy(
+                        assert(
+                            data.raw['underground-belt'][dash_prefix..'underground-belt'..color].belt_animation_set
+                        )
+                    )
+                end,
+                speed_config = {
+                    items_per_second = 90,
+                    rotation_speed = 0.25,
+                    inserter_pairs = 1,
+                    stack_size_bonus = 3,
+                }
+            }
+        end
     },
 }
 
