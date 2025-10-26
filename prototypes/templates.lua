@@ -836,18 +836,18 @@ template.loaders = {
         condition = check_space_exploration,
         data = function(dash_prefix)
             return {
-                order = 'd[d]-a',
+                order = 'd[e]-a',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = { r = 240 / 255, g = 240 / 255, b = 240 / 255, a = 125 / 255 },
-                speed = data.raw['transport-belt'][dash_prefix..'transport-belt'].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 corpse_gfx = 'express',
                 ingredients = function()
                     return select_data {
                         space_exploration = {
-                            { type = "item" , name = dash_prefix..'transport-belt',   amount = 1 },
-                            { type = "item" , name = dash_prefix..'underground-belt', amount = 1 },
-                            { type = "item" , name = 'bulk-inserter',                 amount = 2 },
+                            { type = 'item', name = dash_prefix .. 'transport-belt',   amount = 1 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
                         },
                     }
                 end,
@@ -868,25 +868,25 @@ template.loaders = {
 
     ['se-deep-space'] = {
         condition = check_space_exploration,
-        data = function (dash_prefix)
+        data = function(dash_prefix)
             local previous = 'se-space'
             local color = '-black'
 
             return {
-                order = 'd[d]-b',
+                order = 'd[e]-b',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = { r = 25 / 255, g = 25 / 255, b = 25 / 255, a = 200 / 255 },
-                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'..color].speed,
+                speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt' .. color].speed,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = 'express',
 
                 ingredients = function()
                     return select_data {
                         space_exploration = {
-                            { type = "item" , name = const:name_from_prefix(previous),        amount = 2 },
-                            { type = "item" , name = dash_prefix..'underground-belt'..color,  amount = 1 },
-                            { type = "item" , name = 'se-nanomaterial',                       amount = 2 },
+                            { type = 'item', name = const:name_from_prefix(previous),           amount = 2 },
+                            { type = 'item', name = dash_prefix .. 'underground-belt' .. color, amount = 1 },
+                            { type = 'item', name = 'se-nanomaterial',                          amount = 2 },
                         },
                     }
                 end,
@@ -898,7 +898,7 @@ template.loaders = {
                 belt_color_selector = function(loader)
                     loader.belt_animation_set = util.copy(
                         assert(
-                            data.raw['underground-belt'][dash_prefix..'underground-belt'..color].belt_animation_set
+                            data.raw['underground-belt'][dash_prefix .. 'underground-belt' .. color].belt_animation_set
                         )
                     )
                 end,
