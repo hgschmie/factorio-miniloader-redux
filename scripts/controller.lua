@@ -159,6 +159,7 @@ end
 
 ---@param main LuaEntity
 ---@param config miniloader.Config
+---@return LuaEntity? loader
 local function create_loader(main, config)
     -- create the loader with the same orientation as the inserter. Then look in front of the
     -- loader and snap the direction for it.
@@ -169,7 +170,7 @@ local function create_loader(main, config)
         force = main.force,
         type = tostring(config.loader_type),
     }
-    assert(loader)
+    if not loader then return nil end
 
     loader.destructible = false
     loader.operable = true
@@ -187,6 +188,7 @@ end
 ---@param main LuaEntity
 ---@param speed_config miniloader.SpeedConfig
 ---@param config miniloader.Config
+---@return (LuaEntity[])? inserters
 function Controller:createInserters(main, speed_config, config)
     local inserter_count = speed_config.inserter_pairs * 2
     assert(inserter_count <= 8)
@@ -204,7 +206,7 @@ function Controller:createInserters(main, speed_config, config)
             direction = config.direction,
             force = main.force,
         }
-        assert(inserter)
+        if not inserter then return nil end
 
         inserter.destructible = false
         inserter.operable = false
@@ -298,7 +300,7 @@ end
 
 ---@param main LuaEntity
 ---@param config miniloader.Config?
----@return miniloader.Data
+---@return miniloader.Data?
 function Controller:setup(main, config)
     local entity_id = main.unit_number --[[@as integer]]
 
@@ -315,6 +317,11 @@ function Controller:setup(main, config)
 
     local loader = create_loader(main, config)
     local inserters = self:createInserters(main, inserter_data.speed_config, config)
+
+    if not (loader and inserters) then
+        main.destroy()
+        return nil
+    end
 
     ---@type miniloader.Data
     local ml_entity = {
@@ -339,6 +346,7 @@ function Controller:create(main, config, no_snapping)
     if not Is.Valid(main) then return nil end
 
     local ml_entity = self:setup(main, config)
+    if not ml_entity then return nil end
 
     if not no_snapping then
         This.Snapping:snapToNeighbor(ml_entity)
