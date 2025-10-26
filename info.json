@@ -12,7 +12,8 @@
     "(?) matts-logistics",
     "(?) Krastorio2 >= 2.0.7",
     "(?) boblogistics",
-    "(?) Load-Furn-2-SpaceAgeFix"
+    "(?) Load-Furn-2-SpaceAgeFix",
+    "(?) space-exploration"
   ],
   "package": {
     "ignore":[

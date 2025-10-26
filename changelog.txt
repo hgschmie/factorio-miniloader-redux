@@ -5,6 +5,8 @@ Date: ????
     - Change energy consumption calculation (asked for by various folks on the forum)
     - Do not crash when any of the hidden entities can't be created. Simply destroy the main entity
       to allow the player to try again (based on bug report by @ArsStels)
+  Bugfixes:
+    - (not really) Add space exploration as a hidden dependency to work around crash in migrations. Fixes #31, reported by @phazor and @BurninSun.
 ---------------------------------------------------------------------------------------------------
 Version: 0.11.0
 Date: 2025-10-13
