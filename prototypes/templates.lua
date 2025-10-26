@@ -56,8 +56,11 @@ local function check_adv_furnace_2()
     return game_mode.adv_furnace_2 and logistics_enabled
 end
 
+---@return data.VoidEnergySource energy_source
+---@return number consumption_amount
+---@return number drain_amount
 local function energy_void()
-    return { type = 'void' }, 0
+    return { type = 'void' }, 0, 0
 end
 
 -- highest available loader tier in the base / space age game
@@ -263,7 +266,7 @@ template.loaders = {
                 belt_gfx = 'turbo',
                 ingredients = function()
                     return select_data {
-                        base = {
+                        space_age = {
                             { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
                             { type = 'item', name = 'turbo-underground-belt',         amount = 1 },
                             { type = 'item', name = 'stack-inserter',                 amount = 2 },
@@ -649,7 +652,7 @@ template.loaders = {
                 --     energy_source.scale_fluid_usage = true
                 --     energy_source.fluid_box.production_type = 'input'
 
-                --     return energy_source, 25
+                --     return energy_source, 25, 0
                 -- end
                 speed_config = {
                     items_per_second = 7.5,

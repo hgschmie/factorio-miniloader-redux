@@ -168,6 +168,7 @@ Tear down and rebuild all internal inserters. This is useful for debugging if a 
 
 ## Known issues
 
+- Each miniloader only shows *HALF* of its actual energy consumption. Before reporting that "miniloader xxx uses less energy than inserter xxx", please multiply the energy consumption by 2. In the electrical network display, there are "miniloader" and "internal logic for miniloader" entities draining power, these need to be added.
 - Similar to the old Miniloader module, Blueprints do not show the "correct" orientation of the loader due to limitations of the game.
 - The rotation speed reported for a miniloader is wildly different based on the hand size and the inserter count.
 - Until release 0.10.0, miniloaders might have been placed with the wrong orientation when blueprinted.

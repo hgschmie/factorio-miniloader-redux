@@ -13,6 +13,7 @@ require 'sound-util'
 
 local const = require('lib.constants')
 
+local FORMAT_STRING = '%.2fkW'
 
 -- similar to the original miniloader module, this uses an inserter as the "main" entity.
 -- unlike the miniloader, it manages all other entities fully. It also uses different inserter entities for
@@ -143,10 +144,6 @@ local function create_item(params)
     data:extend { item }
 end
 
-local function round_two_digits(value)
-    return math.floor(value * 100 + 0.5) / 100
-end
-
 ---@param loader data.LoaderPrototype
 ---@param name string
 local function default_belt_color_selector(loader, name)
@@ -182,28 +179,32 @@ local function create_entity(params)
         { 'per-second-suffix' }
     }
 
-    local drain = '0.0000001W'
     local void_energy = { type = 'void', }
 
+    ---@type data.ElectricEnergySource|data.VoidEnergySource|data.BurnerEnergySource
     local primary_energy = {
         type = 'electric',
-        buffer_capacity = '0kJ',
         usage_priority = 'secondary-input',
         render_no_power_icon = true,
         render_no_network_icon = true,
     }
 
-    local consumption_amount = params.speed * 1200 * (params.bulk and 1.5 or 1)
+    local consumption_amount = math.sqrt(math.pow(speed_config.items_per_second, 2) / 8) * (params.bulk and 2 or 1) * 5
+    local drain_amount = 0.4 + (speed_config.items_per_second / 150) * speed_config.inserter_pairs
 
     if Framework.settings:startup_setting(const.settings_names.no_power) then
         primary_energy = void_energy
         consumption_amount = 0
+        drain_amount = 0
     elseif params.energy_source then
-        primary_energy, consumption_amount = params.energy_source()
+        primary_energy, consumption_amount, drain_amount = params.energy_source()
     end
 
-    local consumption = tostring(consumption_amount) .. 'kW'
-    local hidden_consumption = tostring(consumption_amount / (speed_config.inserter_pairs * 2 - 1)) .. 'kW'
+    local consumption = FORMAT_STRING:format(consumption_amount)
+    local hidden_consumption = FORMAT_STRING:format(consumption_amount / (speed_config.inserter_pairs * 2 - 1))
+    local drain = FORMAT_STRING:format(drain_amount)
+
+    if drain_amount > 0 then primary_energy.drain = drain end
 
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
@@ -378,7 +379,7 @@ local function create_entity(params)
         allow_container_interaction = false,
         per_lane_filters            = false,
         energy_source               = void_energy,
-        energy_per_item             = drain,
+        energy_per_item             = '0.0000001W',
 
         circuit_wire_max_distance   = default_circuit_wire_max_distance,
         circuit_connector           = loader_connector_definitions,
@@ -422,7 +423,6 @@ local function create_entity(params)
 end
 
 local function create_recipe(params)
-
     local double_recipe = Framework.settings:startup_setting(const.settings_names.double_recipes)
 
     local ingredients = util.copy(params.ingredients())

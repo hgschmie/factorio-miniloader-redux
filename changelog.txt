@@ -2,6 +2,7 @@
 Version: 0.11.1
 Date: ????
   Changes:
+    - Change energy consumption calculation (asked for by various folks on the forum)
 ---------------------------------------------------------------------------------------------------
 Version: 0.11.0
 Date: 2025-10-13
