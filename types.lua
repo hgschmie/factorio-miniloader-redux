@@ -17,6 +17,8 @@
 ---@field condition (fun():boolean)?
 ---@field data fun(dash_prefix:string):miniloader.LoaderTemplate
 
+---@alias miniloader.PrototypeProcessor fun(prototype: data.EntityWithOwnerPrototype)
+
 ---@class miniloader.LoaderTemplate
 ---@field prefix string Prefix for the loader. Set by code from the template key
 ---@field name string Internal name for the loader. Set by code from the template key
@@ -39,7 +41,9 @@
 ---@field entity_gfx string? Graphics variant for miniloader graphics
 ---@field bulk boolean? If true, support bulk moves
 ---@field nerf_mode boolean? Turn off all the nice features and make the loader really dumb.
----@field belt_color_selector? fun(loader: data.LoaderPrototype, name: string)
+---@field belt_color_selector fun(loader: data.LoaderPrototype, name: string)?
+---@field prototype_processor miniloader.PrototypeProcessor?
+---@field global_prototype_processors miniloader.PrototypeProcessor[]
 
 ----------------------------------------------------------------------------------------------------
 -- scripts/controller.lua

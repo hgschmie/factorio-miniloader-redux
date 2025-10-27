@@ -6,8 +6,6 @@
 local util = require('util')
 local const = require('lib.constants')
 
-local template = {}
-
 local supported_mods = {
     ['base'] = 'base',
     ['space-age'] = 'space_age',
@@ -18,6 +16,9 @@ local supported_mods = {
     ['space-exploration'] = 'space_exploration',
 }
 
+-- contains switches for all enabled game modes. The keys are the canonical
+-- values stores in the supported_mods table above.
+---@type table<string, boolean>
 local game_mode = {}
 for mod_name, name in pairs(supported_mods) do
     if mods[mod_name] then
@@ -26,6 +27,16 @@ for mod_name, name in pairs(supported_mods) do
         game_mode[name] = false
     end
 end
+
+-- prototype processing functions for each game mode. These will be called before any
+-- per-loader prototype processing functions, e.g. to set defaults.
+---@type table<string, miniloader.PrototypeProcessor>)
+local prototype_processors = {
+    space_exploration = function(prototype)
+        ---@diagnostic disable-next-line:inject-field
+        prototype.se_allow_in_space = false
+    end
+}
 
 local function check_base()
     return game_mode.base
@@ -68,6 +79,12 @@ local function energy_void()
     return { type = 'void' }, 0, 0
 end
 
+---@param prototype data.EntityWithOwnerPrototype
+local function allow_in_space(prototype)
+    ---@diagnostic disable-next-line:inject-field
+    prototype.se_allow_in_space = true
+end
+
 -- highest available loader tier in the base / space age game
 local max_loader = game_mode.space_age and 'turbo' or 'express'
 
@@ -94,7 +111,7 @@ local function select_data(data)
 end
 
 ---@type table<string, miniloader.LoaderDefinition>
-template.loaders = {
+local loaders = {
     -- regular miniloader, base game
     [''] = {
         condition = check_base,
@@ -856,6 +873,7 @@ template.loaders = {
                         space_exploration = { 'se-space-belt', },
                     }
                 end,
+                prototype_processor = allow_in_space,
                 speed_config = {
                     items_per_second = 45,
                     rotation_speed = 0.125,
@@ -902,6 +920,7 @@ template.loaders = {
                         )
                     )
                 end,
+                prototype_processor = allow_in_space,
                 speed_config = {
                     items_per_second = 90,
                     rotation_speed = 0.25,
@@ -913,6 +932,14 @@ template.loaders = {
     },
 }
 
-template.game_mode = game_mode
+---@class miniloader.LoaderTemplates
+---@field game_mode table<string, boolean>
+---@field prototype_processors table<string, miniloader.PrototypeProcessor>
+---@field loaders table<string, miniloader.LoaderDefinition>
+local templates = {
+    game_mode = game_mode,
+    prototype_processors = prototype_processors,
+    loaders = loaders
+}
 
-return template
+return templates

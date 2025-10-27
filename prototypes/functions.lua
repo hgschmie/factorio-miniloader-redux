@@ -154,6 +154,16 @@ local function default_belt_color_selector(loader, name)
 end
 
 ---@param params miniloader.LoaderTemplate
+---@param prototype data.EntityWithOwnerPrototype
+local function apply_prototype_processors(params, prototype)
+    for _, processor in pairs(params.global_prototype_processors) do
+        processor(prototype)
+    end
+
+    if params.prototype_processor then params.prototype_processor(prototype) end
+end
+
+---@param params miniloader.LoaderTemplate
 local function create_entity(params)
     local entity_name = params.name
     local loader_name = const.loader_name(entity_name)
@@ -299,6 +309,8 @@ local function create_entity(params)
         fast_replaceable_group         = 'mini-loader',
     }
 
+    apply_prototype_processors(params, inserter)
+
     local hidden_inserter = meld(util.copy(inserter), {
         name = inserter_name,
         icons = icon_gfx(params.tint, 'internal', 'internal'),
@@ -333,6 +345,8 @@ local function create_entity(params)
     })
 
     table.insert(hidden_inserter.flags, 'placeable-off-grid')
+
+    apply_prototype_processors(params, hidden_inserter)
 
     local loader = {
         -- Prototype Base
@@ -418,6 +432,8 @@ local function create_entity(params)
 
     -- hack to get the belt color right
     belt_color_selector(loader, belt_gfx)
+
+    apply_prototype_processors(params, loader)
 
     data:extend { inserter, hidden_inserter, loader }
 end

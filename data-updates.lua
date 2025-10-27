@@ -35,6 +35,15 @@ local mod_data = {
     data = {}
 }
 
+-- find all active processors
+---@type miniloader.PrototypeProcessor[]
+local global_prototype_processors = {}
+for key, value in pairs(templates.game_mode) do
+    if value and templates.prototype_processors[key] then
+        table.insert(global_prototype_processors, templates.prototype_processors[key])
+    end
+end
+
 for prefix, loader_definition in pairs(templates.loaders) do
     assert(loader_definition.condition)
     if (loader_definition.condition()) then
@@ -47,6 +56,8 @@ for prefix, loader_definition in pairs(templates.loaders) do
         if params.upgrade_from then
             upgrades[params.upgrade_from] = params.name
         end
+
+        params.global_prototype_processors = global_prototype_processors
 
         -- create per-loader items
         functions.create_item(params)
