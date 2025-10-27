@@ -424,3 +424,48 @@ Additional things that can be defined in a loader template:
 - `nerf_mode` - Turn off some inserter features:
   - Filtering is disabled
   - No wires can be connected
+
+## Doing really obscure things (prototype processing)
+
+For some mods, it is necessary to do things directly to the prototype entities. This should only be done if templating alone simply won't cut it.
+
+e.g. for Space Exploration, it is necessary to mark entities that should be in space with an additional field in the prototype itself. This can be done with a `prototype_processor`:
+
+``` lua
+---@param prototype data.EntityWithOwnerPrototype
+local function allow_in_space(prototype)
+    ---@diagnostic disable-next-line:inject-field
+    prototype.se_allow_in_space = true
+end
+
+local loaders = {
+...
+    ['se-space'] = {
+...
+                prototype_processor = allow_in_space,
+    },
+...
+}
+```
+
+For every entity that is related to the 'se-space' type of miniloader, the `prototype_processor` is called with the prototype itself. In this case, the function will add the `se_allow_in_space = true` attribute to the prototype which will allow using the SE specific miniloaders on a space platform.
+
+Sometimes, the default for a an entity when a specific mod is enabled, is wrong. E.g. in the case of Space Exploration, all inserter-related entities are allowed to be used in space by default.
+
+To avoid that, it is possible to define a per-mod specific `prototype_processor` that will be called for *all* entities defined. If multiple mod that require processors are enabled, they will all be called. These mod-specific processors will all be called *before* any loader specific processor is called.
+
+In the case of SE, a global processor is defined in the `prototype_processors` local table:
+
+``` lua
+---@type table<string, miniloader.PrototypeProcessor>)
+local prototype_processors = {
+    space_exploration = function(prototype)
+        ---@diagnostic disable-next-line:inject-field
+        prototype.se_allow_in_space = false
+    end
+}
+```
+
+The key in this table is the canonical value from the `supported_mods` table.
+
+This ensures that for every entity defined, the `se_allow_in_space` field is set to `false` when SE is enabled. But the per-loader processor then overrides that, which get the desired effect of only allowing the SE specific miniloaders to be available in space.
