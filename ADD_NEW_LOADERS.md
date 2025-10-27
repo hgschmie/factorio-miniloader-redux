@@ -28,6 +28,8 @@ Going faster than 240 items/s required some reconfiguration of the pickup and dr
 | Matt Ultimate        | 450               | 0.5            | 8              | 8         | 425/425/425  +)    |
 | Adv. Furnaces PRO-1  | 75                | 0.1875         | 2              | 3         | 75/75/75           |
 | Adv. Furnaces PRO-2  | 105               | 0.25           | 2              | 6         | 102/104/105        |
+| SE Space Belt        | 45                | 0.125          | 2              | 2         | 48/48/45           |
+| SE Deep Space Belt   | 90                | 0.25           | 2              | 4         | 90/90/90           |
 
 Speed measured:
 

@@ -33,6 +33,7 @@ Miniloader supports some other mods:
 - [Krastorio 2](https://mods.factorio.com/mod/Krastorio2)
 - [Bob's Logistics](https://mods.factorio.com/mod/boblogistics)
 - [Advanced Furnaces 2 SpaceAgeFix](https://mods.factorio.com/mod/Load-Furn-2-SpaceAgeFix)
+- [Space Exploration](https://mods.factorio.com/mod/space-exploration)
 
 The miniloaders are activated if the corresponding module is detected.
 

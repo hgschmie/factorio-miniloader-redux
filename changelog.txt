@@ -1,6 +1,8 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.11.1
 Date: ????
+  Minor Features:
+    - add support for Space Exploration (PR by @lohchness, thank you!)
   Changes:
     - Change energy consumption calculation (asked for by various folks on the forum)
     - Do not crash when any of the hidden entities can't be created. Simply destroy the main entity
