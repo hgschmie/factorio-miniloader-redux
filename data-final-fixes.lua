@@ -85,6 +85,7 @@ if Framework.settings:startup_setting(const.settings_names.sanitize_loaders) the
 end
 
 -- TEMPORARY SE FIX
+---@diagnostic disable-next-line: undefined-global
 if space_collision_layer then
     local data_util = require('__space-exploration__.data_util')
 
@@ -93,6 +94,7 @@ if space_collision_layer then
             -- if a prototype has an explicit "se_allow_in_space = false" (not just missing or true), then make it collide
             -- with the space collision layer
             if prototype.se_allow_in_space ~= nil and not prototype.se_allow_in_space and prototype.collision_mask then
+                ---@diagnostic disable-next-line: undefined-global
                 prototype.collision_mask.layers[space_collision_layer] = true
                 data_util.collision_description(prototype)
             end
@@ -100,4 +102,5 @@ if space_collision_layer then
     end
 end
 
+---@diagnostic disable-next-line: undefined-field
 Framework.post_data_final_fixes_stage()

@@ -35,14 +35,6 @@ local function get_player_gui(player_index)
     return storage.ml_data.open_guis[player_index]
 end
 
-local function close_guis()
-    for player_index in pairs(get_guis()) do
-        local player = Player.get(player_index)
-        if player then player.opened = nil end
-        clear_player_gui(player_index)
-    end
-end
-
 local function sync_open_guis()
     local guis = get_guis()
     if table_size(guis) == 0 then return end

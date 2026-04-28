@@ -18,7 +18,9 @@ local FORMAT_STRING = '%.2fkW'
 -- unlike the miniloader, it manages all other entities fully. It also uses different inserter entities for
 -- primary and hidden inserters which allows for correct power stats and blueprints.
 
+---@diagnostic disable-next-line: undefined-global
 local loader_connector_definitions = circuit_connector_definitions.create_vector(
+---@diagnostic disable-next-line: undefined-global
     universal_connector_template,
     {
         { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = util.by_pixel(1, 12), show_shadow = true },  -- North
@@ -33,7 +35,9 @@ local loader_connector_definitions = circuit_connector_definitions.create_vector
     }
 )
 
+---@diagnostic disable-next-line: undefined-global
 local inserter_connector_definitions = circuit_connector_definitions.create_vector(
+---@diagnostic disable-next-line: undefined-global
     universal_connector_template,
     {
         { variation = 31, main_offset = util.by_pixel(17, 0),  shadow_offset = { 0, 0 }, }, -- North
@@ -134,6 +138,7 @@ local function create_item(params)
 
         -- ItemPrototype
         stack_size = stack_size,
+        ---@diagnostic disable-next-line: undefined-global
         weight = 1000 / stack_size * kg,
         icons = icon_gfx(params.tint, params.entity_gfx),
 
@@ -302,6 +307,7 @@ local function create_entity(params)
         close_sound                    = { filename = '__base__/sound/open-close/inserter-close.ogg', volume = 0.5 },
         working_sound                  = {
             match_progress_to_activity = true,
+            ---@diagnostic disable-next-line: undefined-global
             sound = sound_variations('__base__/sound/inserter-basic', 5, 0.5, { volume_multiplier('main-menu', 2), volume_multiplier('tips-and-tricks', 1.8) }),
             audible_distance_modifier = 0.3
         },
