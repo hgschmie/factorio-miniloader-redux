@@ -49,7 +49,7 @@ end
 ---@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.on_space_platform_built_entity | EventData.script_raised_revive | EventData.script_raised_built
 local function on_entity_created(event)
     local entity = event and event.entity
-    if not entity then return end
+    if not (entity and entity.valid) then return end
 
     local pdata = event.player_index and Player.pdata(event.player_index)
     ---@type miniloader.PreBuild?
@@ -157,7 +157,7 @@ end
 ---@param entity LuaEntity
 ---@return table<string, any>?
 local function serialize_config(entity)
-    if not entity and entity.valid then return end
+    if not (entity and entity.valid) then return end
 
     return This.MiniLoader:serializeConfiguration(entity)
 end
@@ -165,7 +165,7 @@ end
 ---@param entity LuaEntity
 ---@return table<string, any>?
 local function add_snapping_tag(entity)
-    if not entity and entity.valid then return end
+    if not (entity and entity.valid) then return end
 
     return This.MiniLoader:addSnappingTag(entity)
 end
