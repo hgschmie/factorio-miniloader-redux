@@ -89,15 +89,17 @@ local max_loader = game_mode.space_age and 'turbo' or 'express'
 
 ---@param data table<string, any>
 local function select_data(data)
-    for name in pairs(game_mode) do
-        if name ~= 'base' then
-            -- mod + space age?
-            if game_mode.space_age then
-                local sa_name = name .. '_space_age'
-                if data[sa_name] then return data[sa_name] end
+    for name, present in pairs(game_mode) do
+        if present then
+            if name ~= 'base' then
+                -- mod + space age?
+                if game_mode.space_age and name ~= 'space_age' then
+                    local sa_name = name .. '_space_age'
+                    if data[sa_name] then return data[sa_name] end
+                end
+                -- just mod?
+                if data[name] then return data[name] end
             end
-            -- just mod?
-            if data[name] then return data[name] end
         end
     end
 

@@ -81,7 +81,7 @@ function Migration:migrateLoader(surface, loader)
 
     -- add the loader and additional inserters. The loader will be fine as the old
     -- loader has already been deleted
-    local ml_entity = This.MiniLoader:setup(main)
+    local ml_entity = assert(This.MiniLoader:setup(main))
 
     -- pull the config out of the loader that is migrating
     This.MiniLoader:readConfigFromEntity(loader, ml_entity)

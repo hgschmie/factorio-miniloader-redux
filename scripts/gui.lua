@@ -3,9 +3,7 @@
 ------------------------------------------------------------------------
 assert(script)
 
-local Is = require('stdlib.utils.is')
 local Event = require('stdlib.event.event')
-local Player = require('stdlib.event.player')
 
 local Matchers = require('framework.matchers')
 
@@ -40,7 +38,7 @@ local function sync_open_guis()
     if table_size(guis) == 0 then return end
 
     for _, ml_entity in pairs(guis) do
-        if Is.Valid(ml_entity.main) then
+        if  ml_entity.main and ml_entity.main.valid then
             This.MiniLoader:readConfigFromEntity(ml_entity.loader, ml_entity)
             This.MiniLoader:resyncInserters(ml_entity)
         end
@@ -54,7 +52,7 @@ end
 ---@param event EventData.on_gui_opened
 local function onGuiOpened(event)
     if event.gui_type ~= defines.gui_type.entity then return end
-    if not Is.Valid(event.entity) then return end
+    if not (event.entity and event.entity.valid) then return end
 
     local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
     if not ml_entity then return end
@@ -74,12 +72,12 @@ end
 ---@param event EventData.on_gui_closed
 local function onGuiClosed(event)
     local ml_entity = get_player_gui(event.player_index)
+    clear_player_gui(event.player_index)
+
     if not ml_entity then return end
 
-    if not Is.Valid(event.entity) then return end
+    if not (event.entity and event.entity.valid) then return end
     if event.entity.unit_number ~= ml_entity.loader.unit_number then return end
-
-    clear_player_gui(event.player_index)
 
     This.MiniLoader:readConfigFromEntity(ml_entity.loader, ml_entity)
     This.MiniLoader:reconfigure(ml_entity)

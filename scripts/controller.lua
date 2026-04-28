@@ -415,6 +415,7 @@ local EMPTY_LOADER_CONFIG = {
 ---@param entity LuaEntity Loader or Inserter
 ---@param ml_entity miniloader.Data
 function Controller:readConfigFromEntity(entity, ml_entity)
+    assert(entity)
     local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
     assert(control)
 
@@ -551,6 +552,7 @@ local function draw_position(ml_entity, position, color, index)
 end
 
 ---@param ml_entity miniloader.Data
+---@param cfg miniloader.Config?
 function Controller:reconfigure(ml_entity, cfg)
     if cfg then
         local new_config = util.copy(cfg)
