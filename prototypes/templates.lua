@@ -10,6 +10,7 @@ local supported_mods = {
     ['space-age'] = 'space_age',
     ['matts-logistics'] = 'matt',
     ['Krastorio2'] = 'krastorio',
+    ['bobelectronics'] = 'bob_electronics',
     ['boblogistics'] = 'bob',
     ['Load-Furn-2-SpaceAgeFix'] = 'adv_furnace_2',
     ['space-exploration'] = 'space_exploration',
@@ -140,6 +141,7 @@ local loaders = {
                 prerequisites = function()
                     return select_data {
                         base = { 'logistics', 'steel-processing', 'electronics' },
+                        bob_electronics = { 'logistics', 'steel-processing', 'bob-electronics' },
                     }
                 end,
                 speed_config = {
