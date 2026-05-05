@@ -266,6 +266,7 @@ local function create_entity(params)
         stack_size_bonus               = params.bulk and 4 or speed_config.stack_size_bonus,
         max_belt_stack_size            = params.bulk and 4 or 1,
 
+        ---@diagnostic disable-next-line: undefined-global
         circuit_wire_max_distance      = not params.nerf_mode and default_circuit_wire_max_distance or 0,
         draw_inserter_arrow            = false,
         chases_belt_items              = false,
@@ -400,6 +401,7 @@ local function create_entity(params)
         energy_source               = void_energy,
         energy_per_item             = '0.0000001W',
 
+        ---@diagnostic disable-next-line: undefined-global
         circuit_wire_max_distance   = default_circuit_wire_max_distance,
         circuit_connector           = loader_connector_definitions,
 
