@@ -635,8 +635,12 @@ function Controller:reconfigure(ml_entity, cfg)
 
     self:resyncInserters(ml_entity)
 
-    -- clear out loader configuration
-    self:writeConfigToEntity(EMPTY_LOADER_CONFIG, ml_entity.loader)
+    -- if a gui is open, copy the config also to the loader which is shown on the GUI right now
+    if This.Gui:hasOpenGui(ml_entity) then
+        self:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
+    else
+        self:writeConfigToEntity(EMPTY_LOADER_CONFIG, ml_entity.loader)
+    end
 end
 
 ------------------------------------------------------------------------
