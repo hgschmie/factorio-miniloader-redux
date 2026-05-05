@@ -35,6 +35,7 @@ local function create_legacy_miniloader_entity(name)
         insert_position = { 0, 0 },
         draw_held_item = false,
         draw_inserter_arrow = false,
+        ---@diagnostic disable-next-line: undefined-global
         circuit_wire_max_distance = default_circuit_wire_max_distance,
         circuit_connector = source_inserter.circuit_connector,
     }

@@ -87,4 +87,5 @@ data:extend { mod_data }
 
 ------------------------------------------------------------------------
 
+---@diagnostic disable-next-line: undefined-field
 Framework.post_data_updates_stage()
