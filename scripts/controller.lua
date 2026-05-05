@@ -456,6 +456,33 @@ function Controller:readConfigFromEntity(entity, ml_entity)
     end
 end
 
+---@param bp_entity BlueprintEntity.inserter
+---@param ml_entity miniloader.Data
+function Controller:readConfigFromBlueprintEntity(bp_entity, ml_entity)
+    if not (ml_entity and ml_entity.main and ml_entity.main.valid) then return end
+
+    ---@type InserterBlueprintControlBehavior
+    local control_behavior = bp_entity.control_behavior or {}
+    ---@type table<string, any>
+    local ml_inserter_config = {
+        circuit_set_filters = control_behavior.circuit_set_filters or false,
+        circuit_enable_disable = control_behavior.circuit_enabled or false,
+        circuit_condition = control_behavior.circuit_condition or {},
+        connect_to_logistic_network = control_behavior.connect_to_logistic_network or false,
+        logistic_condition = control_behavior.logistic_condition or {},
+        read_transfers = control_behavior.circuit_read_hand_contents or false,
+    }
+
+    if ml_entity.config.nerf_mode then
+        ml_inserter_config.loader_filter_mode = 'none'
+        ml_inserter_config.filters = {}
+    else
+        ml_inserter_config.loader_filter_mode = (bp_entity.use_filters and (bp_entity.filter_mode or 'whitelist')) or 'none'
+        ml_inserter_config.filters = bp_entity.filters or {}
+    end
+    ml_entity.config.inserter_config = ml_inserter_config
+end
+
 ---@param inserter_config table<string, any?>
 ---@param entity LuaEntity Loader or Inserter
 function Controller:writeConfigToEntity(inserter_config, entity)

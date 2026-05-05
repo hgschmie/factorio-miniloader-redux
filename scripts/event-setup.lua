@@ -151,6 +151,24 @@ local function on_entity_settings_pasted(event)
 end
 
 --------------------------------------------------------------------------------
+-- undo/redo
+--------------------------------------------------------------------------------
+
+---@param event EventData.on_undo_applied
+local function on_undo_redo_applied(event)
+    for _, action in pairs(event.actions) do
+        if action.type == 'copy-entity-settings' and action.target and action.entity_with_previous_settings then
+            local inserter = game.surfaces[action.surface_index].find_entity(action.target.name, action.target.position)
+            if inserter and inserter.valid then
+                local ml_entity = This.MiniLoader:getEntity(inserter.unit_number)
+                This.MiniLoader:readConfigFromBlueprintEntity(action.entity_with_previous_settings, ml_entity)
+                This.MiniLoader:reconfigure(ml_entity)
+            end
+        end
+    end
+end
+
+--------------------------------------------------------------------------------
 -- serialization for Blueprinting and Tombstones
 --------------------------------------------------------------------------------
 
@@ -281,6 +299,10 @@ local function register_events()
 
     -- Configuration changes (startup)
     Event.on_configuration_changed(on_configuration_changed)
+
+    -- Undo/Redo
+    Event.register(defines.events.on_undo_applied, on_undo_redo_applied)
+    Event.register(defines.events.on_redo_applied, on_undo_redo_applied)
 
     -- manage blueprinting and copy/paste
     Framework.blueprint:registerCallbackForNames(const.supported_type_names, serialize_config)
