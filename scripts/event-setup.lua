@@ -90,16 +90,6 @@ local function on_entity_died(event)
 end
 
 --------------------------------------------------------------------------------
--- Entity destruction
---------------------------------------------------------------------------------
-
----@param event EventData.on_object_destroyed
-local function on_object_destroyed(event)
-    -- main entity destroyed
-    This.MiniLoader:destroy(event.useful_id)
-end
-
---------------------------------------------------------------------------------
 -- Entity cloning
 --------------------------------------------------------------------------------
 
@@ -293,9 +283,6 @@ local function register_events()
     -- manage ghost building (robot building)
     Framework.ghost_manager:registerForName(const.supported_type_names)
     Framework.ghost_manager:addGhostCallback(ghost_callback)
-
-    -- entity destroy (can't filter on that)
-    Event.register(defines.events.on_object_destroyed, on_object_destroyed)
 
     -- Configuration changes (startup)
     Event.on_configuration_changed(on_configuration_changed)
