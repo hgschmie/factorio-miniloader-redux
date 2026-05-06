@@ -187,7 +187,8 @@ end
 ---@param main LuaEntity
 ---@param speed_config miniloader.SpeedConfig
 ---@param config miniloader.Config
----@return (LuaEntity[])? inserters
+---@return LuaEntity[] inserters
+---@return boolean success
 function Controller:createInserters(main, speed_config, config)
     local inserter_count = speed_config.inserter_pairs * 2
     assert(inserter_count <= 8)
@@ -205,7 +206,8 @@ function Controller:createInserters(main, speed_config, config)
             direction = config.direction,
             force = main.force,
         }
-        if not inserter then return nil end
+
+        if not inserter then return inserters, false end
 
         inserter.destructible = false
         inserter.operable = false
@@ -219,7 +221,7 @@ function Controller:createInserters(main, speed_config, config)
         table.insert(inserters, inserter)
     end
 
-    return inserters
+    return inserters, true
 end
 
 ------------------------------------------------------------------------
@@ -301,9 +303,7 @@ end
 ---@param config miniloader.Config?
 ---@return miniloader.Data?
 function Controller:setup(main, config)
-    local entity_id = main.unit_number --[[@as integer]]
-
-    assert(self:getEntity(entity_id) == nil)
+    local entity_id = main.unit_number
 
     -- if tags were passed in and they contain a config, use that.
     config = create_config(config)
@@ -315,10 +315,17 @@ function Controller:setup(main, config)
     config.nerf_mode = inserter_data.nerf_mode
 
     local loader = create_loader(main, config)
-    local inserters = self:createInserters(main, inserter_data.speed_config, config)
+    local inserters, success = self:createInserters(main, inserter_data.speed_config, config)
 
-    if not (loader and inserters) then
+    if not (loader and success) then
+        if loader then loader.destroy() end
+
+        for i = 2, #inserters do
+            if inserters[i] then inserters[i].destroy() end
+        end
+
         main.destroy()
+
         return nil
     end
 
