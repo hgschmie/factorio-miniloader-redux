@@ -53,6 +53,9 @@ local function compute_dash_prefix(name)
     return name .. '-'
 end
 
+---@param tint data.Color
+---@param variant string
+---@param mask_variant string?
 local function icon_gfx(tint, variant, mask_variant)
     if not mask_variant then mask_variant = '' end
 
@@ -313,6 +316,10 @@ local function create_entity(params)
             audible_distance_modifier = 0.3
         },
         fast_replaceable_group         = 'mini-loader',
+        icon_draw_specification        = {
+            scale = 0.5,
+            scale_for_many = 0.75,
+        },
     }
 
     apply_prototype_processors(params, inserter)
