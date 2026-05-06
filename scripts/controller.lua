@@ -354,9 +354,26 @@ function Controller:create(main, config, no_snapping)
     local ml_entity = self:setup(main, config)
     if not ml_entity then return nil end
 
+    if config then
+        -- support blueprint parameters. In this case, there is a config but the
+        -- inserter also has filters set. Reset the filters from the config and read
+        -- the actual filter values out of the inserter
+        if not ml_entity.config.nerf_mode then
+            local bp_filters = {}
+            for i = 1, ml_entity.main.filter_slot_count do
+                local value = ml_entity.main.get_filter(i)
+                if value then bp_filters[i] = value end
+            end
+            if table_size(bp_filters) > 0 then
+                ml_entity.config.inserter_config.filters = bp_filters
+            end
+        end
+    else
+        self:readConfigFromEntity(main, ml_entity)
+    end
+
     if not no_snapping then
         This.Snapping:snapToNeighbor(ml_entity)
-        self:readConfigFromEntity(main, ml_entity)
     end
 
     self:reconfigure(ml_entity)
@@ -423,10 +440,9 @@ local EMPTY_LOADER_CONFIG = {
 ---@param ml_entity miniloader.Data
 function Controller:readConfigFromEntity(entity, ml_entity)
     assert(entity)
-    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
-    assert(control)
 
-    if not control.valid then return end
+    local control = assert(entity.get_or_create_control_behavior()) --[[@as LuaGenericOnOffControlBehavior ]]
+    assert(control.valid)
 
     local inserter_config = ml_entity.config.inserter_config
 
