@@ -13,7 +13,8 @@
     "(?) Krastorio2 >= 2.0.7",
     "(?) boblogistics",
     "(?) Load-Furn-2-SpaceAgeFix",
-    "(?) space-exploration"
+    "(?) space-exploration",
+    "(?) TurboBelt"
   ],
   "package": {
     "git_publish_branch": "main",

@@ -34,6 +34,7 @@ Miniloader supports some other mods:
 - [Bob's Logistics](https://mods.factorio.com/mod/boblogistics)
 - [Advanced Furnaces 2 SpaceAgeFix](https://mods.factorio.com/mod/Load-Furn-2-SpaceAgeFix)
 - [Space Exploration](https://mods.factorio.com/mod/space-exploration)
+- [TurboBelt](https://mods.factorio.com/mod/TurboBelt)
 
 The miniloaders are activated if the corresponding module is detected.
 
@@ -182,4 +183,4 @@ Tear down and rebuild all internal inserters. This is useful for debugging if a 
 
 ## Legal
 
-(C) 2024-2025 Henning Schmiedehausen (hgschmie). Released under the MIT License.
+(C) 2024-2026 Henning Schmiedehausen (hgschmie). Released under the MIT License.
