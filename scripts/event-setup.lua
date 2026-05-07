@@ -151,8 +151,10 @@ local function on_undo_redo_applied(event)
             local inserter = game.surfaces[action.surface_index].find_entity(action.target.name, action.target.position)
             if inserter and inserter.valid then
                 local ml_entity = This.MiniLoader:getEntity(inserter.unit_number)
-                This.MiniLoader:readConfigFromBlueprintEntity(action.entity_with_previous_settings, ml_entity)
-                This.MiniLoader:reconfigure(ml_entity)
+                if ml_entity then
+                    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromBlueprintEntity(action.entity_with_previous_settings, ml_entity)
+                    This.MiniLoader:reconfigure(ml_entity)
+                end
             end
         end
     end

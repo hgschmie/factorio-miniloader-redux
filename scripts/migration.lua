@@ -84,7 +84,7 @@ function Migration:migrateLoader(surface, loader)
     local ml_entity = assert(This.MiniLoader:setup(main))
 
     -- pull the config out of the loader that is migrating
-    This.MiniLoader:readConfigFromEntity(loader, ml_entity)
+    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromEntity(loader, ml_entity)
 
     local has_wires = copy_wire_connections(loader, main)
     -- fix up config

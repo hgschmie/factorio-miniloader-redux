@@ -16,7 +16,10 @@ local const = require('lib.constants')
 
 ---@class miniloader.Controller
 ---@field positions table<defines.direction, MapPosition[]>
-local Controller = {}
+---@field spoiling boolean
+local Controller = {
+    spoiling = script.feature_flags.spoiling,
+}
 
 -- position calculation
 --
@@ -369,7 +372,7 @@ function Controller:create(main, config, no_snapping)
             end
         end
     else
-        self:readConfigFromEntity(main, ml_entity)
+        ml_entity.config.inserter_config = self:readConfigFromEntity(main, ml_entity)
     end
 
     if not no_snapping then
@@ -438,13 +441,16 @@ local EMPTY_LOADER_CONFIG = {
 
 ---@param entity LuaEntity Loader or Inserter
 ---@param ml_entity miniloader.Data
+---@return table<string, any> inserter_config
 function Controller:readConfigFromEntity(entity, ml_entity)
     assert(entity)
 
     local control = assert(entity.get_or_create_control_behavior()) --[[@as LuaGenericOnOffControlBehavior ]]
     assert(control.valid)
 
-    local inserter_config = ml_entity.config.inserter_config
+    local inserter_config = {
+        filters = {}
+    }
 
     -- copy control attributes
     for _, attribute in pairs(control_attributes) do
@@ -465,8 +471,11 @@ function Controller:readConfigFromEntity(entity, ml_entity)
             for i = 1, entity.filter_slot_count, 1 do
                 inserter_config.filters[i] = entity.get_filter(i)
             end
+
+            inserter_config.inserter_spoil_priority = self.spoiling and (entity.inserter_spoil_priority or 'none') or nil
         else
             inserter_config.loader_filter_mode = 'none'
+            inserter_config.inserter_spoil_priority = self.spoiling and 'none' or nil
         end
     else
         inserter_config.loader_filter_mode = entity.loader_filter_mode
@@ -476,34 +485,51 @@ function Controller:readConfigFromEntity(entity, ml_entity)
         for i = 1, entity.filter_slot_count, 1 do
             inserter_config.filters[i] = entity.get_filter(i)
         end
+
+        -- Loader has no concept of spoil_priority, retain existing values
+        inserter_config.inserter_spoil_priority = self.spoiling and (ml_entity.config.inserter_config.inserter_spoil_priority or 'none') or nil
     end
+
+    return inserter_config
 end
+
+--- see https://forums.factorio.com/viewtopic.php?t=133512
+local fix_spoil_prio = {
+    ['fresh-first'] = 'fresh_first',
+    ['spoiled-first'] = 'spoiled_first',
+    fresh_first = 'fresh_first',
+    spoiled_first = 'spoiled_first',
+    none = 'none',
+}
 
 ---@param bp_entity BlueprintEntity.inserter
 ---@param ml_entity miniloader.Data
+---@return table<string, any> inserter_config
 function Controller:readConfigFromBlueprintEntity(bp_entity, ml_entity)
-    if not (ml_entity and ml_entity.main and ml_entity.main.valid) then return end
 
     ---@type InserterBlueprintControlBehavior
     local control_behavior = bp_entity.control_behavior or {}
     ---@type table<string, any>
-    local ml_inserter_config = {
+    local inserter_config = {
         circuit_set_filters = control_behavior.circuit_set_filters or false,
         circuit_enable_disable = control_behavior.circuit_enabled or false,
         circuit_condition = control_behavior.circuit_condition or {},
         connect_to_logistic_network = control_behavior.connect_to_logistic_network or false,
         logistic_condition = control_behavior.logistic_condition or {},
         read_transfers = control_behavior.circuit_read_hand_contents or false,
+        filters = {}
     }
 
     if ml_entity.config.nerf_mode then
-        ml_inserter_config.loader_filter_mode = 'none'
-        ml_inserter_config.filters = {}
+        inserter_config.loader_filter_mode = 'none'
+        inserter_config.inserter_spoil_priority = 'none'
     else
-        ml_inserter_config.loader_filter_mode = (bp_entity.use_filters and (bp_entity.filter_mode or 'whitelist')) or 'none'
-        ml_inserter_config.filters = bp_entity.filters or {}
+        inserter_config.loader_filter_mode = (bp_entity.use_filters and (bp_entity.filter_mode or 'whitelist')) or 'none'
+        inserter_config.filters = util.copy(bp_entity.filters or {})
+        inserter_config.inserter_spoil_priority = self.spoiling and fix_spoil_prio[bp_entity.spoil_priority or 'none'] or nil
     end
-    ml_entity.config.inserter_config = ml_inserter_config
+
+    return inserter_config
 end
 
 ---@param inserter_config table<string, any?>
@@ -537,6 +563,11 @@ function Controller:writeConfigToEntity(inserter_config, entity)
 
         entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 0 -- 0 resets to inserter default
 
+        if self.spoiling then
+            -- only set spoil priority if there are some filter_slots (not nerfed)
+            entity.inserter_spoil_priority = (entity.filter_slot_count > 0) and inserter_config.inserter_spoil_priority or 'none'
+        end
+
         local inserter_control = control --[[@as LuaInserterControlBehavior]]
         inserter_control.circuit_set_stack_size = false
 
@@ -546,11 +577,11 @@ function Controller:writeConfigToEntity(inserter_config, entity)
         end
     else
         if entity.filter_slot_count > 0 then
+            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
+
             for i = 1, entity.filter_slot_count, 1 do
                 entity.set_filter(i, inserter_config.filters[i])
             end
-
-            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
         end
 
         local loader_control = control --[[@as LuaLoaderControlBehavior ]]
@@ -599,6 +630,18 @@ local function draw_position(ml_entity, position, color, index)
         vertical_alignment = 'middle',
         time_to_live = const.debug_lifetime,
     }
+end
+
+---@param ml_entity miniloader.Data
+---@return boolean has_open_gui
+local function has_open_gui(ml_entity)
+    local guis = Framework.gui_manager:findGuisByEntityId(ml_entity.main.unit_number)
+
+    for _, gui in pairs(guis) do
+        if gui.entity_id == ml_entity.main.unit_number then return true end
+    end
+
+    return false
 end
 
 ---@param ml_entity miniloader.Data
@@ -686,7 +729,7 @@ function Controller:reconfigure(ml_entity, cfg)
     self:resyncInserters(ml_entity)
 
     -- if a gui is open, copy the config also to the loader which is shown on the GUI right now
-    if This.Gui:hasOpenGui(ml_entity) then
+    if has_open_gui(ml_entity) then
         self:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
     else
         self:writeConfigToEntity(EMPTY_LOADER_CONFIG, ml_entity.loader)
