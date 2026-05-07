@@ -209,11 +209,11 @@ end
 
 --- Add a new child or children to the given GUI element.
 ---@param parent LuaGuiElement
----@param children framework.gui.element_definitions The element definition, or an array of element definitions.
+---@param children framework.gui.element_definitions? The element definition, or an array of element definitions.
 ---@param existing_elements table<string, LuaGuiElement>? Optional set of existing GUI elements.
+---@return LuaGuiElement? root The root for the child elements
 function FrameworkGui:addChildElements(parent, children, existing_elements)
     assert(parent and parent.valid, 'Parent element is missing or invalid')
-    assert(children, 'new_elements can not be empty')
 
     if existing_elements then
         -- validate and move existing elements into the internal ui_elements array
@@ -226,6 +226,8 @@ function FrameworkGui:addChildElements(parent, children, existing_elements)
             self.ui_elements[gui_name] = element
         end
     end
+
+    if not children then return nil end
 
     -- If a single def was passed, wrap it in an array
     children = #children > 0 and children or { children } --[[@as table<string, framework.gui.element_definition>]]
