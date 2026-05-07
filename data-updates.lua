@@ -64,6 +64,7 @@ for prefix, loader_definition in pairs(templates.loaders) do
         functions.create_entity(params)
         functions.create_recipe(params)
 
+        ---@type miniloader.ModData
         mod_data.data[params.name] = {
             speed_config = params.speed_config,
             nerf_mode = params.nerf_mode or false,
