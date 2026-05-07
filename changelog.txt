@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.0
-Date: ????
+Date: 2026-05-06
   Changes:
     - correctness fixes
     - another fix for configuration copy/paste
