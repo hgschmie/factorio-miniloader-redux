@@ -42,6 +42,36 @@ both: Input/Output from/to a belt of the same tier, chest at both ends
 
 For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed). The maximum that seems to be possible with inserters (which need time to swing around and can drop only one item per tick on a belt) seems to be the 425 items/sec measured for the Matt Ultimate loader.
 
+### Loader properties
+
+The miniloader consists of inserters (at least two) and a loader entity. It has two modes: "Normal Mode" and "Turbo Mode"
+
+In "normal mode", items are moved by the inserters on the left and right lane of the loader and the loader moves it to the belt. In Turbo mode, the inserters are not used and the loader connects directly to a container and a belt.
+
+|                  |               Loader                      |                Inserter                       |
+| filters          | LuaEntity#get_filter/LuaEntity#set_filter |   LuaEntity#get_filter/LuaEntity#set_filter   |
+|                  | -                                         | LuaEntity.use_filters must be true            |
+|                  | filter_slot_count                         | filter_slot_count                             |
+|                  | loader_filter_mode                        | inserter_filter_mode                          |
+| on updates       | LuaEntity#update_connections()            | -                                             |
+| pickup/dropoff   |                                           | drop_position, pickup_position                |
+|                  |                                           | drop_target, pickup_target                    |
+|                  |                                           | pickup_from_left_lane, pickup_from_right_lane |
+| direction        | loader_type                               |                                               |
+| stacking         | loader_belt_stack_size_override           | inserter_stack_size_override                  |
+| spoiling         |                                           | inserter_spoil_priority                       |
+| control behavior |                                           |                                               |
+|                  | circuit_set_filters
+|                  | circuit_read_transfers                    | circuit_read_hand_contents
+|                  |                                           | circuit_read_hand_mode
+|                  |                                           | circuit_set_stack_size
+|                  |                                           | circuit_stack_control_signal
+
+
+
+
+
+
 ## Adding new miniloaders
 
 All changes should be made in the `prototypes/templates.lua` file. The examples below omit the existing elements in the tables for illustration purposes. Do *not* remove any of the other entries, all changes should only add things.

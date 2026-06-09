@@ -54,7 +54,6 @@
 ----------------------------------------------------------------------------------------------------
 
 ---@class miniloader.Storage
----@field VERSION integer
 ---@field count integer
 ---@field by_main table<number, miniloader.Data>
 ---@field open_guis table<integer, miniloader.Data>
@@ -67,7 +66,8 @@
 ---@field inserter_config table<string, any?>    Inserter config, gets synced in reconfigure
 ---@field highspeed boolean?                     Speed > 240 items/sec ?
 ---@field nerf_mode boolean?                     Loader is really dumb (no filters, connections etc.)
----@field turbo_mode boolean?
+---@field turbo_mode boolean                     Run in "turbo" mode (only belt <-> container, but very fast)
+---@field lane_filter boolean                    Only two filters, one for each lane
 
 ---@class miniloader.Data
 ---@field main LuaEntity

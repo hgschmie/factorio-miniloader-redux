@@ -5,8 +5,6 @@ local table = require('stdlib.utils.table')
 
 local const = require('lib.constants')
 
-if storage.ml_data and storage.ml_data.VERSION >= const.CURRENT_VERSION then return end
-
 -- add gui reference
 storage.ml_data.open_guis = storage.ml_data.open_guis or {}
 
@@ -22,5 +20,3 @@ for _, idx in pairs(keys) do
         This.MiniLoader:create(main)
     end
 end
-
-storage.ml_data.VERSION = const.CURRENT_VERSION

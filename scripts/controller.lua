@@ -153,7 +153,6 @@ end
 function Controller:init()
     ---@type miniloader.Storage
     storage.ml_data = storage.ml_data or {
-        VERSION = const.CURRENT_VERSION,
         count = 0,
         by_main = {},
         open_guis = {},

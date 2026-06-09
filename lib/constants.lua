@@ -23,15 +23,11 @@ local table = require('stdlib.utils.table')
 ---@field supported_loader_names string[]
 ---@field supported_inserters table<string, true>
 ---@field supported_inserter_names string[]
----@field CURRENT_VERSION number
 ---@field prefix string
 ---@field name string
 ---@field root string
---_@field order string
+---@field order string
 local Constants = {
-    -- the current version that is the result of the latest migration
-    CURRENT_VERSION = 2,
-
     prefix = 'hps__ml-',
     name = 'miniloader',
     root = '__miniloader-redux__',
@@ -205,6 +201,7 @@ end
 
 if script then
     for prototype_name, prototype in pairs(prototypes.entity) do
+        ---@diagnostic disable-next-line: undefined-field
         if prototype_name:starts_with(Constants.prefix) and Constants.miniloader_types[prototype.type] and prototype_name:ends_with(Constants.name) then
             Constants.supported_types[prototype_name] = true
             table.insert(Constants.supported_type_names, prototype_name)
