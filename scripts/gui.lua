@@ -23,8 +23,85 @@ local function get_gui_event_definition()
         events = {
             onToggleSpoilage = Gui.onToggleSpoilage,
             onSpoilPriority = Gui.onSpoilPriority,
+            onToggleTurboMode = Gui.onToggleTurboMode,
         },
         callback = Gui.guiUpdater,
+    }
+end
+
+
+---@param gui framework.gui
+local function spoilage_gui(gui)
+    local gui_events = gui.gui_events
+
+    return {
+        type = 'flow',
+        direction = 'horizontal',
+        children = {
+            {
+                type = 'checkbox',
+                caption = { '', { 'gui-inserter.spoiled-priority' }, ' [img=info]' },
+                tooltip = { 'gui-inserter.spoiled-priority-tooltip' },
+                name = 'spoilage_priority',
+                handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onToggleSpoilage },
+                state = false,
+            },
+            {
+                type = 'empty-widget',
+                style_mods = {
+                    horizontally_stretchable = true,
+                    horizontally_squashable = true,
+                },
+            },
+            {
+                type = 'radiobutton',
+                caption = { 'gui-inserter.spoiled-first' },
+                name = 'spoiled_first',
+                elem_tags = { mode = 'spoiled_first', },
+                handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onSpoilPriority },
+                state = false,
+                enabled = false,
+            },
+            {
+                type = 'radiobutton',
+                caption = { 'gui-inserter.fresh-first' },
+                name = 'fresh_first',
+                elem_tags = { mode = 'fresh_first', },
+                handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onSpoilPriority },
+                state = false,
+                enabled = false,
+            },
+        },
+    }
+end
+
+---@param gui framework.gui
+local function turbo_gui(gui)
+    local gui_events = gui.gui_events
+
+    local ml_entity = assert(This.MiniLoader:getEntity(gui.entity_id))
+
+    return {
+        type = 'flow',
+        direction = 'horizontal',
+        children = {
+            {
+                type = 'checkbox',
+                caption = { '', { const:locale('turbo_mode') }, ' [img=info]' },
+                tooltip = { const:locale('turbo_mode_tooltip') },
+                name = 'turbo_mode',
+                handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onToggleTurboMode },
+                state = ml_entity.config.turbo_mode or false,
+                enabled = true,
+            },
+            {
+                type = 'empty-widget',
+                style_mods = {
+                    horizontally_stretchable = true,
+                    horizontally_squashable = true,
+                },
+            },
+        },
     }
 end
 
@@ -35,7 +112,15 @@ function Gui.getUi(gui)
 
     local ml_entity = assert(This.MiniLoader:getEntity(gui.entity_id))
 
-    if not (This.MiniLoader.spoiling and not ml_entity.config.nerf_mode) then return nil end
+    if ml_entity.config.nerf_mode then return nil end
+
+    local children = {}
+
+    children[#children + 1] = turbo_gui(gui)
+
+    if This.MiniLoader.spoiling then
+        children[#children + 1] = spoilage_gui(gui)
+    end
 
     return {
         type = 'frame',
@@ -52,54 +137,7 @@ function Gui.getUi(gui)
             {
                 type = 'frame',
                 style = 'entity_frame',
-                children = {
-                    {
-                        type = 'flow',
-                        style = 'two_module_spacing_vertical_flow',
-                        direction = 'vertical',
-                        children = {
-                            {
-                                type = 'flow',
-                                direction = 'horizontal',
-                                children = {
-                                    {
-                                        type = 'checkbox',
-                                        caption = { '', { 'gui-inserter.spoiled-priority' }, ' [img=info]' },
-                                        tooltip = { 'gui-inserter.spoiled-priority-tooltip' },
-                                        name = 'spoilage_priority',
-                                        handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onToggleSpoilage },
-                                        state = false,
-                                    },
-                                    {
-                                        type = 'empty-widget',
-                                        style_mods = {
-                                            horizontally_stretchable = true,
-                                            horizontally_squashable = true,
-                                        },
-                                    },
-                                    {
-                                        type = 'radiobutton',
-                                        caption = { 'gui-inserter.spoiled-first' },
-                                        name = 'spoiled_first',
-                                        elem_tags = { mode = 'spoiled_first', },
-                                        handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onSpoilPriority },
-                                        state = false,
-                                        enabled = false,
-                                    },
-                                    {
-                                        type = 'radiobutton',
-                                        caption = { 'gui-inserter.fresh-first' },
-                                        name = 'fresh_first',
-                                        elem_tags = { mode = 'fresh_first', },
-                                        handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onSpoilPriority },
-                                        state = false,
-                                        enabled = false,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
+                children = children,
             },
         },
     }
@@ -132,6 +170,20 @@ function Gui.onSpoilPriority(event, gui)
     local element = event.element
     ml_entity.config.inserter_config.inserter_spoil_priority = assert(element.tags.mode)
 end
+
+---@param event EventData.on_gui_checked_state_changed
+---@param gui framework.gui
+function Gui.onToggleTurboMode(event, gui)
+    local ml_entity = This.MiniLoader:getEntity(gui.entity_id)
+    if not ml_entity then return end
+
+    ---@type miniloader.GuiContext
+    local gui_context = gui.context
+
+    local element = event.element
+    ml_entity.config.turbo_mode = element.state or false
+end
+
 
 --------------------------------------------------------------------------------
 -- Gui Updater
@@ -195,16 +247,20 @@ local function on_gui_opened(event)
     if event.gui_type ~= defines.gui_type.entity then return end
     if not (event.entity and event.entity.valid) then return end
 
-    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
+    return Gui.openGui(event.entity, event.player_index)
+end
+
+function Gui.openGui(entity, player_index)
+    local ml_entity = This.MiniLoader:getEntity(entity.unit_number)
     if not ml_entity then return end
 
     -- nerf mode
     if ml_entity.config.nerf_mode then
-        game.players[event.player_index].opened = nil
+        game.players[player_index].opened = nil
         return
     end
 
-    local player = Player.get(event.player_index)
+    local player = Player.get(player_index)
     if not player then return end
 
     This.MiniLoader:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
@@ -212,21 +268,23 @@ local function on_gui_opened(event)
     ---@class miniloader.GuiContext
     ---@field last_inserter_config table<string, any>?
     ---@field spoil_priority SpoilPriority
+    ---@field turbo_mode boolean
     local gui_state = {
         last_inserter_config = nil, -- first gui tick updates the UI
         spoil_priority = 'spoiled_first',
+        turbo_mode = ml_entity.config.turbo_mode,
     }
 
     Framework.gui_manager:createGui {
         type = Gui.AUX_GUI_NAME,
-        player_index = event.player_index,
+        player_index = player_index,
         parent = player.gui.relative,
         ui_tree_provider = Gui.getUi,
         context = gui_state,
         entity_id = ml_entity.main.unit_number,
     }
 
-    game.players[event.player_index].opened = ml_entity.loader
+    game.players[player_index].opened = ml_entity.loader
 end
 
 ---@param event EventData.on_gui_closed

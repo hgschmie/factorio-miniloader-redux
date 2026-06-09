@@ -61,6 +61,7 @@ local DEFAULT_CONFIG = {
     loader_type = const.loader_direction.input, -- freshly minted loader image is 'input'
     inserter_config = {},
     highspeed = false,
+    turbo_mode = true,
 }
 
 local CONFIG_ATTRIBUTES = { 'enabled', 'loader_type', 'direction', 'highspeed' }
@@ -210,15 +211,19 @@ end
 ---@param config miniloader.Config
 ---@return LuaEntity? loader
 local function create_loader(main, config)
+
+    local name = const.loader_name(main.name) .. (config.turbo_mode and '-turbo' or '')
+
     -- create the loader with the same orientation as the inserter. Then look in front of the
     -- loader and snap the direction for it.
     local loader = main.surface.create_entity {
-        name = const.loader_name(main.name),
+        name = name,
         position = main.position,
         direction = This.Snapping:compute_loader_direction(config),
         force = main.force,
         type = tostring(config.loader_type),
     }
+
     if not loader then return nil end
 
     loader.destructible = false
@@ -708,6 +713,7 @@ function Controller:reconfigure(ml_entity, cfg)
         -- only copy the inserter config.
         ml_entity.config.inserter_config = util.copy(cfg.inserter_config)
         ml_entity.config.enabled = cfg.enabled
+        ml_entity.config.turbo_mode = cfg.turbo_mode
     end
 
     local config = ml_entity.config
@@ -720,70 +726,102 @@ function Controller:reconfigure(ml_entity, cfg)
     ml_entity.loader.loader_type = tostring(config.loader_type)
     ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
     if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
+
+        local player_guis = {}
+
+        for _, gui in pairs(Framework.gui_manager:findGuisByEntityId(ml_entity.main.unit_number)) do
+            player_guis[gui.player_index] = true
+        end
+
         -- miniloader was moved
         ml_entity.loader.destroy()
         ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
+
+        for player_index in pairs(player_guis) do
+            This.Gui.openGui(ml_entity.main, player_index)
+        end
+
     end
 
     -- connect loader to belt if needed
     ml_entity.loader.update_connections()
 
-    -- connect inserters and loader
-    local back_position = Position(ml_entity.main.position):translate(direction, -1)
-    local front_position = Position(ml_entity.main.position) -- position is limited to 240 items/sec
-    local hs_front_position = Position(ml_entity.main.position):translate(direction, 0.375)
+    if not config.turbo_mode then
+        -- connect inserters and loader
+        local back_position = Position(ml_entity.main.position):translate(direction, -1)
+        local front_position = Position(ml_entity.main.position) -- position is limited to 240 items/sec
+        local hs_front_position = Position(ml_entity.main.position):translate(direction, 0.375)
 
-    for inserter_index, inserter in pairs(ml_entity.inserters) do
-        local index = config.highspeed and (9 - inserter_index) or inserter_index
+        for inserter_index, inserter in pairs(ml_entity.inserters) do
+            -- non-turbo mode uses the inserters
+            inserter.active = true
 
-        -- reorient inserter
-        inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
-        inserter.teleport(ml_entity.main.position)
+            local index = config.highspeed and (9 - inserter_index) or inserter_index
 
-        -- normal speed: even inserters right
-        -- high speed: even inserters left
-        local right_lane = (inserter_index % 2) == (config.highspeed and 0 or 1)
+            -- reorient inserter
+            inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
+            inserter.teleport(ml_entity.main.position)
 
-        inserter.pickup_from_left_lane = not right_lane
-        inserter.pickup_from_right_lane = right_lane
+            -- normal speed: even inserters right
+            -- high speed: even inserters left
+            local right_lane = (inserter_index % 2) == (config.highspeed and 0 or 1)
 
-        -- either pickup or drop position
+            inserter.pickup_from_left_lane = not right_lane
+            inserter.pickup_from_right_lane = right_lane
 
-        local eight_mod = Math.one_mod(index, 8)
-        local outside_position = back_position + self.positions[direction][eight_mod]
-        local inside_position = front_position + self.positions[direction][eight_mod]
-        local hs_inside_position = hs_front_position + self.positions[direction][eight_mod]
+            -- either pickup or drop position
 
-        local pickup_position = config.highspeed and hs_inside_position or inside_position
-        local drop_position = outside_position
+            local eight_mod = Math.one_mod(index, 8)
+            local outside_position = back_position + self.positions[direction][eight_mod]
+            local inside_position = front_position + self.positions[direction][eight_mod]
+            local hs_inside_position = hs_front_position + self.positions[direction][eight_mod]
 
-        -- loader gets items, inserter drop them off
-        if config.loader_type == const.loader_direction.input then
-            inserter.pickup_target = ml_entity.loader
-            inserter.drop_target = nil
-        else
-            -- inserter gets items, loader sends them down the belt
-            pickup_position = outside_position
-            drop_position = inside_position
+            local pickup_position = config.highspeed and hs_inside_position or inside_position
+            local drop_position = outside_position
 
-            inserter.pickup_target = nil
-            inserter.drop_target = ml_entity.loader
+            -- loader gets items, inserter drop them off
+            if config.loader_type == const.loader_direction.input then
+                inserter.pickup_target = ml_entity.loader
+                inserter.drop_target = nil
+            else
+                -- inserter gets items, loader sends them down the belt
+                pickup_position = outside_position
+                drop_position = inside_position
+
+                inserter.pickup_target = nil
+                inserter.drop_target = ml_entity.loader
+            end
+
+            inserter.pickup_position = pickup_position
+            inserter.drop_position = drop_position
+
+            if Framework.settings:startup_setting('debug_mode') then
+                draw_position(ml_entity, inserter.drop_position, { r = 1, g = 0, b = 0 }, inserter_index)
+                draw_position(ml_entity, inserter.pickup_position, { r = 0, g = 1, b = 0 }, inserter_index)
+                draw_position(ml_entity, inserter.position, { r = 0, g = 0, b = 1 }, inserter_index)
+            end
+        end
+    else
+        -- Turbo mode
+        for _, inserter in pairs(ml_entity.inserters) do
+            inserter.active = false
         end
 
-        inserter.pickup_position = pickup_position
-        inserter.drop_position = drop_position
-
-        if Framework.settings:startup_setting('debug_mode') then
-            draw_position(ml_entity, inserter.drop_position, { r = 1, g = 0, b = 0 }, inserter_index)
-            draw_position(ml_entity, inserter.pickup_position, { r = 0, g = 1, b = 0 }, inserter_index)
-            draw_position(ml_entity, inserter.position, { r = 0, g = 0, b = 1 }, inserter_index)
-        end
+        ml_entity.loader.update_connections()
+        -- -- find entity at the front of the inserter
+        -- local area = Position(ml_entity.main.position):translate(direction, 1):expand_to_area(0.5)
+        -- local entities = ml_entity.main.surface.find_entities(area)
+        -- for _, entity in pairs(entities) do
+        --     if entity.type == 'container' then
+        --         ml_entity.loader.loader_container = entity
+        --     end
+        -- end
     end
 
     self:resyncInserters(ml_entity)
 
     -- if a gui is open, copy the config also to the loader which is shown on the GUI right now
-    if has_open_gui(ml_entity) then
+    if config.turbo_mode or has_open_gui(ml_entity) then
         self:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
     else
         self:writeConfigToEntity(DEFAULT_LOADER_CONFIG, ml_entity.loader)

@@ -67,6 +67,7 @@
 ---@field inserter_config table<string, any?>    Inserter config, gets synced in reconfigure
 ---@field highspeed boolean?                     Speed > 240 items/sec ?
 ---@field nerf_mode boolean?                     Loader is really dumb (no filters, connections etc.)
+---@field turbo_mode boolean?
 
 ---@class miniloader.Data
 ---@field main LuaEntity

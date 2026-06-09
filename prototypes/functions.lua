@@ -223,6 +223,8 @@ local function create_entity(params)
 
     if drain_amount > 0 then primary_energy.drain = drain end
 
+    local game_inserter = data.raw['inserter']['inserter']
+
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
     -- - it has four different pictures
@@ -247,18 +249,19 @@ local function create_entity(params)
         platform_picture               = {
             sheets = entity_sheets_gfx(params.tint, params.entity_gfx),
         },
-        hand_base_picture              = util.empty_sprite(),
-        hand_open_picture              = util.empty_sprite(),
-        hand_closed_picture            = util.empty_sprite(),
-        hand_base_shadow               = util.empty_sprite(),
-        hand_open_shadow               = util.empty_sprite(),
-        hand_closed_shadow             = util.empty_sprite(),
+
+        hand_base_picture              = util.copy(game_inserter.hand_base_picture), -- DEBUG util.empty_sprite(),
+        hand_open_picture              = util.copy(game_inserter.hand_open_picture), -- DEBUG util.empty_sprite(),
+        hand_closed_picture            = util.copy(game_inserter.hand_closed_picture), -- DEBUG util.empty_sprite(),
+        hand_base_shadow               = util.copy(game_inserter.hand_base_shadow), -- DEBUG util.empty_sprite(),
+        hand_open_shadow               = util.copy(game_inserter.hand_open_shadow), -- DEBUG util.empty_sprite(),
+        hand_closed_shadow             = util.copy(game_inserter.hand_closed_shadow), -- DEBUG util.empty_sprite(),
         energy_source                  = primary_energy,
         energy_per_movement            = consumption,
         energy_per_rotation            = consumption,
         uses_inserter_stack_size_bonus = false, -- otherwise does not match belt speed
         allow_custom_vectors           = true,
-        draw_held_item                 = false,
+        draw_held_item                 = true, -- DEBUG false,
         use_easter_egg                 = false,
         filter_count                   = params.nerf_mode and 0 or 5,
 
@@ -449,7 +452,15 @@ local function create_entity(params)
 
     apply_prototype_processors(params, loader)
 
-    data:extend { inserter, hidden_inserter, loader }
+    local turbo_loader = meld(util.copy(loader), {
+        name = loader.name .. '-turbo',
+        container_distance          = 1,
+        allow_rail_interaction      = true,
+        allow_container_interaction = true,
+    })
+
+
+    data:extend { inserter, hidden_inserter, loader, turbo_loader }
 end
 
 local function create_recipe(params)
