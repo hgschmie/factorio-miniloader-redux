@@ -703,11 +703,22 @@ local loaders = {
         data = function(dash_prefix)
             local previous = 'express'
 
+            -- bob's logistics 2.1.0 renamed its turbo tier belts to the space age
+            -- names (bob-turbo-transport-belt -> turbo-transport-belt etc., see the
+            -- boblogistics 2.1.0 migration). Fall back to the new names if the old
+            -- ones no longer exist.
+            local belt_gfx = nil
+            if not data.raw['transport-belt'][dash_prefix .. 'transport-belt'] then
+                dash_prefix = 'turbo-'
+                belt_gfx = 'turbo'
+            end
+
             return {
                 order = 'd[a]-q',
                 subgroup = 'belt',
                 stack_size = 50,
                 tint = util.color('b700ff'),
+                belt_gfx = belt_gfx,
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
