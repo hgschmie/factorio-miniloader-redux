@@ -16,7 +16,6 @@ local Is = require('stdlib.utils.is')
 ---@class FrameworkRoot
 ---@field PREFIX string
 ---@field NAME string
----@field STORAGE string
 ---@field GAME_ID integer,
 ---@field RUN_ID integer,
 ---@field settings FrameworkSettings?
@@ -41,9 +40,6 @@ Framework = {
 
     --- Root location
     ROOT = '__unknown__',
-
-    --- Name of the field in `global` to store framework persistent runtime data.
-    STORAGE = 'framework',
 
     GAME_ID = -1,
 
