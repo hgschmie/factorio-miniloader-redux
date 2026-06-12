@@ -35,7 +35,7 @@ local Controller = {
 --- Keys are the keys in the inserter_config and control behavior
 --- Values in this table are keys in the blueprint entity
 ---@type table<string, string>
-local CONTROL_ATTRIBUTES = {
+local CONTROL_KEYS = {
     circuit_set_filters = 'circuit_set_filters',
     circuit_enable_disable = 'circuit_enabled',
     circuit_condition = 'circuit_condition',
@@ -44,7 +44,7 @@ local CONTROL_ATTRIBUTES = {
 }
 
 ---@type table<string, any>
-local DEFAULT_LOADER_CONFIG = {
+local DEFAULT_CONTROL = {
     circuit_set_filters = false,
     circuit_enable_disable = false,
     circuit_condition = { constant = 0, comparator = '<', fulfilled = false },
@@ -55,16 +55,20 @@ local DEFAULT_LOADER_CONFIG = {
     read_transfers = false,
 }
 
----@type miniloader.Config
-local DEFAULT_CONFIG = {
-    enabled = true,
-    loader_type = const.loader_direction.input, -- freshly minted loader image is 'input'
-    inserter_config = {},
-    highspeed = false,
-    turbo_mode = true,
-}
+local CONFIG_KEYS = { 'enabled', 'loader_type', 'direction', 'highspeed', 'turbo_mode', 'lane_filter', }
 
-local CONFIG_ATTRIBUTES = { 'enabled', 'loader_type', 'direction', 'highspeed' }
+---@return miniloader.Config config
+---@return string[] config_attributes
+local function getDefaultMiniloaderConfig()
+    return {
+        enabled = true,
+        loader_type = const.loader_direction.input, -- freshly minted loader image is 'input'
+        inserter_config = util.copy(DEFAULT_CONTROL),
+        highspeed = false,
+        turbo_mode = false,
+        lane_filter = false,
+    }, CONFIG_KEYS
+end
 
 Controller.positions = {
     [defines.direction.north] = {},
@@ -105,46 +109,44 @@ end
 ---@param inserter_data miniloader.ModData
 ---@return miniloader.Config
 local function create_config(parent_config, inserter_data)
-    local config = util.copy(DEFAULT_CONFIG)
-    config.inserter_config = util.copy(DEFAULT_LOADER_CONFIG)
+    local default_config, config_attributes = getDefaultMiniloaderConfig()
+    local default_control = default_config.inserter_config
 
-    if not parent_config then return config end
+    if not parent_config then return default_config end
 
     -- iterate over all field names given in the default_config
-    for _, field_name in pairs(CONFIG_ATTRIBUTES) do
+    for _, field_name in pairs(config_attributes) do
         if parent_config[field_name] ~= nil then
-            config[field_name] = util.copy(parent_config[field_name])
-        else
-            config[field_name] = util.copy(DEFAULT_CONFIG[field_name])
+            default_config[field_name] = util.copy(parent_config[field_name])
         end
     end
 
-    local control = parent_config.inserter_config or {}
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
-        if inserter_data.nerf_mode then
-            config.inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
-        else
-            config.inserter_config[control_key] = control[control_key] or DEFAULT_LOADER_CONFIG[control_key]
-        end
-    end
+    if inserter_data.nerf_mode then
+        default_control.loader_filter_mode = 'none'
+        default_control.inserter_spoil_priority = Controller.spoiling and 'none' or nil
+    else
+        -- copy parent control information over
+        local parent_control = parent_config.inserter_config or {}
 
-    if not inserter_data.nerf_mode then
-        config.inserter_config.loader_filter_mode = control.loader_filter_mode or 'none'
-        config.inserter_config.read_transfers = control.read_transfers or false
-
-        if control.filters then
-            for idx, filter in pairs(control.filters) do
-                config.inserter_config.filters[idx] = filter
+        for control_key in pairs(CONTROL_KEYS) do
+            if parent_control[control_key] ~= nil then
+                default_control[control_key] = parent_control[control_key]
             end
         end
 
-        config.inserter_config.inserter_spoil_priority = Controller.spoiling and (control.inserter_spoil_priority or 'none') or nil
-    else
-        config.inserter_config.loader_filter_mode = 'none'
-        config.inserter_config.inserter_spoil_priority = Controller.spoiling and 'none' or nil
+        -- set defaults if missing
+        default_control.loader_filter_mode = parent_control.loader_filter_mode or default_control.loader_filter_mode
+        default_control.read_transfers = parent_control.read_transfers or default_control.read_transfers
+        default_control.inserter_spoil_priority = Controller.spoiling and (parent_control.inserter_spoil_priority or 'none') or nil
+
+        if parent_control.filters then
+            for idx, filter in pairs(parent_control.filters) do
+                default_control.filters[idx] = util.copy(filter)
+            end
+        end
     end
 
-    return config
+    return default_config
 end
 
 ------------------------------------------------------------------------
@@ -210,7 +212,6 @@ end
 ---@param config miniloader.Config
 ---@return LuaEntity? loader
 local function create_loader(main, config)
-
     local name = const.loader_name(main.name) .. (config.turbo_mode and '-turbo' or '')
 
     -- create the loader with the same orientation as the inserter. Then look in front of the
@@ -309,7 +310,7 @@ end
 --- Blueprints are deserialized from json and the set of keys may be deserialized
 --- as strings. Turn them back into numbers.
 ---
----@param ml_config miniloader.Config
+---@param ml_config miniloader.Config?
 function Controller:sanitizeConfiguration(ml_config)
     if not ml_config then return end
 
@@ -320,6 +321,11 @@ function Controller:sanitizeConfiguration(ml_config)
             filters[new_key] = value
         end
     end
+
+    -- new config settings for 1.0.0
+    ml_config.turbo_mode = ml_config.turbo_mode or false
+    ml_config.lane_filter = ml_config.lane_filter or false
+
     ml_config.inserter_config.filters = filters
 end
 
@@ -498,9 +504,9 @@ function Controller:readConfigFromEntity(entity, ml_entity)
     }
 
     -- copy control attributes
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
+    for control_key in pairs(CONTROL_KEYS) do
         if ml_entity.config.nerf_mode then
-            inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
+            inserter_config[control_key] = DEFAULT_CONTROL[control_key]
         else
             inserter_config[control_key] = control[control_key]
         end
@@ -559,11 +565,11 @@ function Controller:readConfigFromBlueprintEntity(bp_entity, ml_entity)
     }
 
     -- copy blueprint attributes
-    for control_key, bp_key in pairs(CONTROL_ATTRIBUTES) do
+    for control_key, bp_key in pairs(CONTROL_KEYS) do
         if ml_entity.config.nerf_mode then
-            inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
+            inserter_config[control_key] = DEFAULT_CONTROL[control_key]
         else
-            inserter_config[control_key] = (control_behavior[bp_key] ~= nil) and control_behavior[bp_key] or DEFAULT_LOADER_CONFIG[control_key]
+            inserter_config[control_key] = (control_behavior[bp_key] ~= nil) and control_behavior[bp_key] or DEFAULT_CONTROL[control_key]
         end
     end
 
@@ -603,7 +609,7 @@ function Controller:writeConfigToEntity(inserter_config, entity)
     if not control.valid then return end
 
     -- copy control attributes
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
+    for control_key in pairs(CONTROL_KEYS) do
         control[control_key] = inserter_config[control_key]
     end
 
@@ -725,7 +731,6 @@ function Controller:reconfigure(ml_entity, cfg)
     ml_entity.loader.loader_type = tostring(config.loader_type)
     ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
     if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
-
         local player_guis = {}
 
         for _, gui in pairs(Framework.gui_manager:findGuisByEntityId(ml_entity.main.unit_number)) do
@@ -739,7 +744,6 @@ function Controller:reconfigure(ml_entity, cfg)
         for player_index in pairs(player_guis) do
             This.Gui.openGui(ml_entity.main, player_index)
         end
-
     end
 
     -- connect loader to belt if needed
@@ -823,7 +827,7 @@ function Controller:reconfigure(ml_entity, cfg)
     if config.turbo_mode or has_open_gui(ml_entity) then
         self:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
     else
-        self:writeConfigToEntity(DEFAULT_LOADER_CONFIG, ml_entity.loader)
+        self:writeConfigToEntity(DEFAULT_CONTROL, ml_entity.loader)
     end
 end
 
