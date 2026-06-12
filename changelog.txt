@@ -3,6 +3,7 @@ Version: 0.13.1
 Date: ????
   Bugfix:
     - update support for bob logistics 2.1
+    - ensure that string keys do not leak into the internal configuration (addresses #39)
   Changes:
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.0
