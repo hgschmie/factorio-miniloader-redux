@@ -307,6 +307,8 @@ end
 ---
 ---@param ml_config miniloader.Config
 function Controller:sanitizeConfiguration(ml_config)
+    if not ml_config then return end
+
     local filters = {}
     for key, value in pairs(ml_config.inserter_config.filters) do
         local new_key = tonumber(key)
@@ -320,17 +322,28 @@ end
 --- Serializes the configuration suitable for blueprinting and tombstone management.
 ---
 ---@param entity LuaEntity
----@return table<string, any>?
+---@return Tags?
 function Controller:serializeConfiguration(entity)
     local ml_entity = self:getEntity(entity.unit_number)
     if not ml_entity then return end
-
-    self:sanitizeConfiguration(ml_entity)
 
     return {
         [const.config_tag_name] = ml_entity.config,
         [const.no_snapping_tag_name] = 'true',
     }
+end
+
+---@param tags Tags?
+---@return miniloader.Config? ml_config
+---@return boolean no_snapping
+function Controller:deserializeConfiguration(tags)
+    if not (tags and tags[const.config_tag_name]) then return nil, false end
+
+    ---@type miniloader.Config
+    local ml_config = tags[const.config_tag_name]
+    self:sanitizeConfiguration(ml_config)
+
+    return ml_config, tostring(tags[const.no_snapping_tag_name]) == 'true'
 end
 
 --- Add tag to entities to not snap miniloaders when built from blueprint.
