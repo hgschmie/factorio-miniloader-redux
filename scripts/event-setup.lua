@@ -202,10 +202,6 @@ local function on_configuration_changed()
         migration:migrateBlueprints()
         migration:migrateTechnologies()
     end
-
-    for _, ml_entity in pairs(This.MiniLoader:entities()) do
-        This.MiniLoader:sanitizeConfiguration(ml_entity)
-    end
 end
 
 --------------------------------------------------------------------------------

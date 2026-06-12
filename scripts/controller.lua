@@ -302,21 +302,19 @@ end
 -- blueprinting
 ------------------------------------------------------------------------
 
---- in very rare cases, some entries in the filter array end up having string
---- keys. try to convert them to number keys, if there would be a conflict, drop
---- the key that comes second
----@param ml_entity miniloader.Data
-function Controller:sanitizeConfiguration(ml_entity)
+--- Blueprints are deserialized from json and the set of keys may be deserialized
+--- as strings. Turn them back into numbers.
+---
+---@param ml_config miniloader.Config
+function Controller:sanitizeConfiguration(ml_config)
     local filters = {}
-    for key, value in pairs(ml_entity.config.inserter_config.filters) do
+    for key, value in pairs(ml_config.inserter_config.filters) do
         local new_key = tonumber(key)
         if new_key then
             filters[new_key] = value
         end
     end
-    if table_size(ml_entity.config.inserter_config.filters) ~= table_size(filters) then
-        ml_entity.config.inserter_config.filters = filters
-    end
+    ml_config.inserter_config.filters = filters
 end
 
 --- Serializes the configuration suitable for blueprinting and tombstone management.
