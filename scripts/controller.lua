@@ -564,17 +564,22 @@ function Controller:readConfigFromBlueprintEntity(bp_entity, ml_entity)
     end
 
     if not ml_entity.config.nerf_mode then
-        inserter_config.loader_filter_mode = bp_entity.use_filters and (bp_entity.filter_mode or 'whitelist') or 'none'
+        inserter_config.inserter_filter_mode = bp_entity.use_filters and (bp_entity.filter_mode or 'whitelist') or nil
+        inserter_config.loader_filter_mode = inserter_config.inserter_filter_mode or 'none'
 
         inserter_config.read_transfers = control_behavior.circuit_read_hand_contents or false
 
         if bp_entity.filters then
-            for idx, filter in pairs(bp_entity.filters) do
-                inserter_config.filters[idx] = filter
+            for _, filter in pairs(bp_entity.filters) do
+                inserter_config.filters[filter.index] = {
+                    name = filter.name,
+                    quality = filter.quality,
+                    comparator = filter.comparator,
+                }
             end
         end
 
-        inserter_config.inserter_spoil_priority = self.spoiling and (bp_entity.spoil_priority or 'none') or nil
+        inserter_config.inserter_spoil_priority = self.spoiling and fix_spoil_prio[bp_entity.spoil_priority or 'none'] or nil
     else
         inserter_config.loader_filter_mode = 'none'
         inserter_config.inserter_spoil_priority = self.spoiling and 'none' or nil
