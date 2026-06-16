@@ -301,6 +301,10 @@ function Controller:setup(main, config)
         loader = loader,
         inserters = inserters,
         config = util.copy(config),
+        state = {
+            status = main.status,
+            filters = {},
+        },
     }
 
     if not (loader and success) then
