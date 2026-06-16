@@ -108,6 +108,23 @@ local function inspect_miniloaders(data)
     game.print { const:locale('command_inspect_miniloaders_removed'), removed.miniloader, removed.loader, removed.inserter, removed.entity }
 end
 
+function Console.resyncMiniloaders()
+    for entity_id, entity in pairs(This.MiniLoader:entities()) do
+        if not (entity.main.valid and entity.loader.valid) then
+            This.MiniLoader:destroy(entity_id)
+        else
+            entity.state = entity.state or {
+                ---@diagnostic disable-next-line: undefined-field
+                status = entity.config.status or entity.main.status,
+                filters = {}
+            }
+            local ml_config = This.Config:readConfigFromTag(entity.config)
+            entity.config = ml_config
+            This.MiniLoader:reconfigure(entity)
+        end
+    end
+end
+
 ---@param data CustomCommandData
 local function inserter_control(data)
     local mode
@@ -159,6 +176,7 @@ end
 
 function Console:register_commands()
     commands.add_command('inspect-miniloaders', { const:locale('command_inspect_miniloaders') }, inspect_miniloaders)
+    commands.add_command('resync-miniloaders', { const:locale('command_resync_miniloaders') }, Console.resyncMiniloaders)
     commands.add_command('control-miniloader-inserters', { const:locale('command_control_miniloader_inserters') }, inserter_control)
     commands.add_command('rebuild-miniloader-inserters', { const:locale('command_rebuild_miniloader_inserters') }, rebuild_inserter)
 end
