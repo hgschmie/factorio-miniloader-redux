@@ -137,6 +137,7 @@ function Gui.getUi(gui)
             {
                 type = 'frame',
                 style = 'entity_frame',
+                direction = 'vertical',
                 children = children,
             },
         },
