@@ -154,10 +154,10 @@ function Gui.onToggleSpoilage(event, gui)
 
     local element = event.element
     if element.state then
-        ml_entity.config.inserter_config.inserter_spoil_priority = gui_context.spoil_priority
+        ml_entity.config.spoil_priority = gui_context.spoil_priority
     else
-        gui_context.spoil_priority = ml_entity.config.inserter_config.inserter_spoil_priority
-        ml_entity.config.inserter_config.inserter_spoil_priority = 'none'
+        gui_context.spoil_priority = ml_entity.config.spoil_priority
+        ml_entity.config.spoil_priority = 'none'
     end
 end
 
@@ -168,7 +168,7 @@ function Gui.onSpoilPriority(event, gui)
     if not ml_entity then return end
 
     local element = event.element
-    ml_entity.config.inserter_config.inserter_spoil_priority = assert(element.tags.mode)
+    ml_entity.config.spoil_priority = assert(element.tags.mode)
 end
 
 ---@param event EventData.on_gui_checked_state_changed
@@ -184,7 +184,6 @@ function Gui.onToggleTurboMode(event, gui)
     ml_entity.config.turbo_mode = element.state or false
 end
 
-
 --------------------------------------------------------------------------------
 -- Gui Updater
 --------------------------------------------------------------------------------
@@ -199,7 +198,7 @@ local function update_spoilage(gui, ml_entity)
     if This.MiniLoader.spoiling then
         spoilage_priority.enabled = true
 
-        local inserter_spoil_priority = ml_entity.config.inserter_config.inserter_spoil_priority or 'none'
+        local inserter_spoil_priority = ml_entity.config.spoil_priority or 'none'
 
         spoilage_priority.state = (inserter_spoil_priority ~= 'none')
         spoiled_first.enabled = spoilage_priority.state
@@ -222,17 +221,18 @@ function Gui.guiUpdater(gui)
     local ml_entity = This.MiniLoader:getEntity(gui.entity_id)
     if not ml_entity then return false end
 
-    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromEntity(ml_entity.loader, ml_entity)
-    This.MiniLoader:resyncInserters(ml_entity)
+    This.Config:updateConfigFromLoader(ml_entity.config, ml_entity.loader)
 
     ---@type miniloader.GuiContext
     local context = gui.context
 
-    local refresh_config = not (context.last_inserter_config and table.compare(context.last_inserter_config, ml_entity.config.inserter_config))
+    local refresh_config = not (context.last_inserter_config and table.compare(context.last_inserter_config, ml_entity.config))
 
     if refresh_config then
+        This.Config:resyncEntities(ml_entity)
+        -- TODO ml_entity.loader.custom_status = ml_entity.state.status
         if This.MiniLoader.spoiling then update_spoilage(gui, ml_entity) end
-        context.last_inserter_config = util.copy(ml_entity.config.inserter_config)
+        context.last_inserter_config = util.copy(ml_entity.config)
     end
 
     return true
@@ -254,16 +254,15 @@ function Gui.openGui(entity, player_index)
     local ml_entity = This.MiniLoader:getEntity(entity.unit_number)
     if not ml_entity then return end
 
-    -- nerf mode
-    if ml_entity.config.nerf_mode then
-        game.players[player_index].opened = nil
-        return
-    end
-
     local player = Player.get(player_index)
     if not player then return end
 
-    This.MiniLoader:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
+
+    -- nerf mode
+    if ml_entity.config.nerf_mode then
+        player.opened = nil
+        return
+    end
 
     ---@class miniloader.GuiContext
     ---@field last_inserter_config table<string, any>?
@@ -297,8 +296,11 @@ local function on_gui_closed(event)
 
     if not ml_entity then return end
 
-    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromEntity(ml_entity.loader, ml_entity)
-    This.MiniLoader:reconfigure(ml_entity)
+    This.Config:updateConfigFromLoader(ml_entity.config, ml_entity.loader)
+    This.Config:resyncEntities(ml_entity)
+    -- TODO - this was This.MiniLoader:reconfigure(ml_entity) and probably still
+    -- needs to be as changing the type (turbo etc.) needs rebuilding the loader
+    -- keep it at resync for now.
 end
 
 --------------------------------------------------------------------------------

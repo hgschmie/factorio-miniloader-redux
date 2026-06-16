@@ -84,11 +84,11 @@ function Migration:migrateLoader(surface, loader)
     local ml_entity = assert(This.MiniLoader:setup(main))
 
     -- pull the config out of the loader that is migrating
-    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromEntity(loader, ml_entity)
+    This.Config:updateConfigFromLoader(ml_entity.config, loader)
 
     local has_wires = copy_wire_connections(loader, main)
     -- fix up config
-    if not has_wires then ml_entity.config.inserter_config.circuit_enable_disable = false end
+    if not has_wires then ml_entity.config.circuit_enable_disable = false end
     if loader_type then ml_entity.config.loader_type = loader_type end
 
     -- reconfigure the loader. This syncs the configuration across all the

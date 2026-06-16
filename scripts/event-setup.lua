@@ -155,7 +155,12 @@ local function on_entity_settings_pasted(event)
 
     if not (src_entity and dst_entity) then return end
 
-    This.MiniLoader:reconfigure(dst_entity, src_entity.config)
+    local config = util.copy(src_entity.config)
+    config.direction = dst_entity.config.direction
+    config.loader_type = dst_entity.config.loader_type
+    dst_entity.config = config
+
+    This.MiniLoader:reconfigure(dst_entity)
 end
 
 --------------------------------------------------------------------------------
@@ -170,7 +175,7 @@ local function on_undo_redo_applied(event)
             if inserter and inserter.valid then
                 local ml_entity = This.MiniLoader:getEntity(inserter.unit_number)
                 if ml_entity then
-                    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromBlueprintEntity(action.entity_with_previous_settings, ml_entity)
+                    This.Config:readConfigFromBlueprintInserter(ml_entity.config, action.entity_with_previous_settings)
                     This.MiniLoader:reconfigure(ml_entity)
                 end
             end
