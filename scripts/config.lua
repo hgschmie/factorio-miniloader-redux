@@ -95,6 +95,12 @@ function Config:updateConfigFromInserter(ml_config, inserter)
         end
     end
 
+    -- remove the fulfilled condition, otherwise compares will not work
+    ml_config.circuit_condition.fulfilled = nil
+    ml_config.logistic_condition.fulfilled = nil
+
+    ml_config.read_transfers = control.circuit_read_hand_contents
+
     if This.MiniLoader.spoiling then
         ml_config.spoil_priority = ml_config.nerf_mode and 'none' or inserter.inserter_spoil_priority
     else
@@ -145,6 +151,9 @@ function Config:updateConfigFromLoader(ml_config, loader)
     end
 
     ml_config.read_transfers = control.circuit_read_transfers
+    -- remove the fulfilled condition, otherwise compares will not work
+    ml_config.circuit_condition.fulfilled = nil
+    ml_config.logistic_condition.fulfilled = nil
 
     self:updateFiltersFromLoader(ml_config, loader)
 end
@@ -184,6 +193,9 @@ local function write_config_to_inserter(ml_config, inserter)
         end
     end
 
+    control.circuit_read_hand_contents = ml_config.read_transfers
+    control.circuit_hand_read_mode = defines.control_behavior.inserter.hand_read_mode.pulse
+
     if This.MiniLoader.spoiling then
         inserter.inserter_spoil_priority = (ml_config.nerf_mode and 'none') or (ml_config.spoil_priority or 'none')
     else
@@ -217,7 +229,7 @@ end
 -- Removes everything that is either on the loader on in the inserter hands. Try to push it into
 -- source or destination container if available, otherwise spill on the ground.
 ---@param ml_entity miniloader.Data
-local function flush_entities(ml_entity)
+function Config:flushEntities(ml_entity)
     -- worst case scenario: Sushi Belt (8 different stacks) on the loader, one stack per inserter
     local inventory = game.create_inventory(8 + table_size(ml_entity.inserters))
 
@@ -271,11 +283,7 @@ local function flush_entities(ml_entity)
     else
         local container_inventory = assert(container.get_inventory(defines.inventory.chest))
         for idx = 1, #inventory, 1 do
-            if inventory[idx].count > 0 then
-                if container_inventory.insert(inventory[idx]) ~= inventory[idx].count then
-                    game.print(("Lost some items out of %d of %s"):format(inventory[idx].count, inventory[idx].name))
-                end
-            end
+            if inventory[idx].count > 0 then container_inventory.insert(inventory[idx]) end
         end
     end
 
@@ -287,7 +295,7 @@ local function update_filters(ml_entity)
     if ml_entity.config.filter_mode == ml_entity.state.filter_mode and table.compare(ml_entity.config.filters, ml_entity.state.filters) then return end
 
     if table_size(ml_entity.config.filters) > 0 then
-        flush_entities(ml_entity)
+        Config:flushEntities(ml_entity)
     end
 
     local has_filters = (not ml_entity.config.nerf_mode) and (ml_entity.loader.filter_slot_count > 0)

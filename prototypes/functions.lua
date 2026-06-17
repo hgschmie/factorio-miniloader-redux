@@ -453,7 +453,7 @@ local function create_entity(params)
     apply_prototype_processors(params, loader)
 
     local turbo_loader = meld(util.copy(loader), {
-        name = loader.name .. '-turbo',
+        name = const.loader_name(entity_name, true, false),
         container_distance          = 1,
         allow_rail_interaction      = true,
         allow_container_interaction = true,

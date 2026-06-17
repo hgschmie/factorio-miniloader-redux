@@ -178,9 +178,6 @@ function Gui.onToggleTurboMode(event, gui)
     local ml_entity = This.MiniLoader:getEntity(gui.entity_id)
     if not ml_entity then return end
 
-    ---@type miniloader.GuiContext
-    local gui_context = gui.context
-
     local element = event.element
     ml_entity.config.turbo_mode = element.state or false
 end
@@ -196,7 +193,7 @@ local function update_spoilage(gui, ml_entity)
     local spoiled_first = assert(gui:findElement('spoiled_first'))
     local fresh_first = assert(gui:findElement('fresh_first'))
 
-    if This.MiniLoader.spoiling then
+    if This.MiniLoader.spoiling and not ml_entity.config.turbo_mode then
         spoilage_priority.enabled = true
 
         local inserter_spoil_priority = ml_entity.config.spoil_priority or 'none'
@@ -227,13 +224,15 @@ function Gui.guiUpdater(gui)
     ---@type miniloader.GuiContext
     local context = gui.context
 
-    local refresh_config = not (context.last_inserter_config and table.compare(context.last_inserter_config, ml_entity.config))
+    local refresh_config = not (context.last_config and table.compare(context.last_config, ml_entity.config))
 
     if refresh_config then
-        This.Config:resyncEntities(ml_entity)
+        -- if reconfiguration closed the gui, exit right away.
+        if This.MiniLoader:reconfigure(ml_entity) then return true end
+
         -- TODO ml_entity.loader.custom_status = ml_entity.state.status
         if This.MiniLoader.spoiling then update_spoilage(gui, ml_entity) end
-        context.last_inserter_config = util.copy(ml_entity.config)
+        context.last_config = util.copy(ml_entity.config)
     end
 
     return true
@@ -266,13 +265,11 @@ function Gui.openGui(entity, player_index)
     end
 
     ---@class miniloader.GuiContext
-    ---@field last_inserter_config table<string, any>?
+    ---@field last_config table<string, any>?
     ---@field spoil_priority SpoilPriority
-    ---@field turbo_mode boolean
     local gui_state = {
-        last_inserter_config = nil, -- first gui tick updates the UI
+        last_config = nil, -- first gui tick updates the UI
         spoil_priority = 'spoiled_first',
-        turbo_mode = ml_entity.config.turbo_mode,
     }
 
     Framework.gui_manager:createGui {
@@ -283,6 +280,8 @@ function Gui.openGui(entity, player_index)
         context = gui_state,
         entity_id = ml_entity.main.unit_number,
     }
+
+    if game.players[player_index].opened == ml_entity.loader then return end
 
     game.players[player_index].opened = ml_entity.loader
 end

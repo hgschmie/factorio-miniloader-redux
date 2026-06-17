@@ -126,7 +126,7 @@ end
 ---@param config miniloader.Config
 ---@return LuaEntity? loader
 local function create_loader(main, config)
-    local name = const.loader_name(main.name) .. (config.turbo_mode and '-turbo' or '')
+    local name = const.loader_name(main.name, config.turbo_mode, config.lane_filter)
 
     -- create the loader with the same orientation as the inserter. Then look in front of the
     -- loader and snap the direction for it.
@@ -398,6 +398,7 @@ end
 
 --- Rebuild the loader entity and reconfigure it.
 ---@param ml_entity miniloader.Data
+---@return integer[]
 local function rebuild_loader(ml_entity)
     local player_guis = {}
 
@@ -408,93 +409,125 @@ local function rebuild_loader(ml_entity)
     assert(ml_entity.loader.destroy())
     ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
 
-    for _, player_index in pairs(player_guis) do
-        This.Gui.openGui(ml_entity.main, player_index)
+    return player_guis
+end
+
+---@param ml_entity miniloader.Data
+local function configure_regular_mode(ml_entity)
+    local config = ml_entity.config
+    local direction = assert(config.direction)
+
+    -- connect inserters and loader
+    local back_position = Position(ml_entity.main.position):translate(direction, -1)
+    local front_position = Position(ml_entity.main.position)     -- position is limited to 240 items/sec
+    local hs_front_position = Position(ml_entity.main.position):translate(direction, 0.375)
+
+    for inserter_index, inserter in pairs(ml_entity.inserters) do
+        -- non-turbo mode uses the inserters
+        inserter.disabled_by_script = false
+
+        local index = config.highspeed and (9 - inserter_index) or inserter_index
+
+        -- reorient inserter
+        inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
+        inserter.teleport(ml_entity.main.position)
+
+        -- normal speed: even inserters right
+        -- high speed: even inserters left
+        local right_lane = (inserter_index % 2) == (config.highspeed and 0 or 1)
+
+        inserter.pickup_from_left_lane = not right_lane
+        inserter.pickup_from_right_lane = right_lane
+
+        -- either pickup or drop position
+
+        local eight_mod = Math.one_mod(index, 8)
+        local outside_position = back_position + Controller.positions[direction][eight_mod]
+        local inside_position = front_position + Controller.positions[direction][eight_mod]
+        local hs_inside_position = hs_front_position + Controller.positions[direction][eight_mod]
+
+        local pickup_position = config.highspeed and hs_inside_position or inside_position
+        local drop_position = outside_position
+
+        -- loader gets items, inserter drop them off
+        if config.loader_type == const.loader_direction.input then
+            inserter.pickup_target = ml_entity.loader
+            inserter.drop_target = nil
+        else
+            -- inserter gets items, loader sends them down the belt
+            pickup_position = outside_position
+            drop_position = inside_position
+
+            inserter.pickup_target = nil
+            inserter.drop_target = ml_entity.loader
+        end
+
+        inserter.pickup_position = pickup_position
+        inserter.drop_position = drop_position
+
+        if Framework.settings:startup_setting('debug_mode') then
+            draw_position(ml_entity, inserter.drop_position, { r = 1, g = 0, b = 0 }, inserter_index)
+            draw_position(ml_entity, inserter.pickup_position, { r = 0, g = 1, b = 0 }, inserter_index)
+            draw_position(ml_entity, inserter.position, { r = 0, g = 0, b = 1 }, inserter_index)
+        end
     end
 end
 
 ---@param ml_entity miniloader.Data
-----@param cfg miniloader.Config?
-function Controller:reconfigure(ml_entity)
-    local config = ml_entity.config
-    local direction = assert(config.direction)
+local function configure_turbo_mode(ml_entity)
+    -- Turbo mode
+    for _, inserter in pairs(ml_entity.inserters) do
+        inserter.disabled_by_script = true
+    end
 
+    -- flush inserters
+    This.Config:flushEntities(ml_entity)
+end
+
+---@param ml_entity miniloader.Data
+---@return boolean closed_gui True if reconfiguration closed the GUI
+function Controller:reconfigure(ml_entity)
     assert(ml_entity.loader.valid)
 
+    local config = ml_entity.config
+
+    local state = ml_entity.state
+    local change_mode = (config.turbo_mode ~= state.turbo_mode) or (config.lane_filter ~= state.lane_filter)
+
     -- reorient loader
-    ml_entity.loader.loader_type = tostring(config.loader_type)
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    ml_entity.loader.loader_type = config.loader_type
     ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
-    if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
-        -- miniloader was moved
-        rebuild_loader(ml_entity)
+
+    local player_guis = {}
+
+    if change_mode or Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
+        -- miniloader was moved or mode was changed.
+        player_guis = rebuild_loader(ml_entity)
     end
 
     -- (re-)connect loader to belt if needed
     ml_entity.loader.update_connections()
 
-    if not config.turbo_mode then
-        -- connect inserters and loader
-        local back_position = Position(ml_entity.main.position):translate(direction, -1)
-        local front_position = Position(ml_entity.main.position) -- position is limited to 240 items/sec
-        local hs_front_position = Position(ml_entity.main.position):translate(direction, 0.375)
-
-        for inserter_index, inserter in pairs(ml_entity.inserters) do
-            -- non-turbo mode uses the inserters
-            inserter.active = true
-
-            local index = config.highspeed and (9 - inserter_index) or inserter_index
-
-            -- reorient inserter
-            inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
-            inserter.teleport(ml_entity.main.position)
-
-            -- normal speed: even inserters right
-            -- high speed: even inserters left
-            local right_lane = (inserter_index % 2) == (config.highspeed and 0 or 1)
-
-            inserter.pickup_from_left_lane = not right_lane
-            inserter.pickup_from_right_lane = right_lane
-
-            -- either pickup or drop position
-
-            local eight_mod = Math.one_mod(index, 8)
-            local outside_position = back_position + self.positions[direction][eight_mod]
-            local inside_position = front_position + self.positions[direction][eight_mod]
-            local hs_inside_position = hs_front_position + self.positions[direction][eight_mod]
-
-            local pickup_position = config.highspeed and hs_inside_position or inside_position
-            local drop_position = outside_position
-
-            -- loader gets items, inserter drop them off
-            if config.loader_type == const.loader_direction.input then
-                inserter.pickup_target = ml_entity.loader
-                inserter.drop_target = nil
-            else
-                -- inserter gets items, loader sends them down the belt
-                pickup_position = outside_position
-                drop_position = inside_position
-
-                inserter.pickup_target = nil
-                inserter.drop_target = ml_entity.loader
-            end
-
-            inserter.pickup_position = pickup_position
-            inserter.drop_position = drop_position
-
-            if Framework.settings:startup_setting('debug_mode') then
-                draw_position(ml_entity, inserter.drop_position, { r = 1, g = 0, b = 0 }, inserter_index)
-                draw_position(ml_entity, inserter.pickup_position, { r = 0, g = 1, b = 0 }, inserter_index)
-                draw_position(ml_entity, inserter.position, { r = 0, g = 0, b = 1 }, inserter_index)
-            end
-        end
+    if config.turbo_mode then
+        configure_turbo_mode(ml_entity)
     else
-        -- Turbo mode
-        for _, inserter in pairs(ml_entity.inserters) do
-            inserter.active = false
-        end
+        configure_regular_mode(ml_entity)
     end
 
+    state.turbo_mode = config.turbo_mode
+    state.lane_filter = config.lane_filter
+
     This.Config:resyncEntities(ml_entity)
+
+    -- we changed the loader which closed the GUI. Reopen them for the new
+    -- entity. This needs to happen after updating the state, otherwise it
+    -- is an endless recursion.
+    for _, player_index in pairs(player_guis) do
+        This.Gui.openGui(ml_entity.main, player_index)
+    end
+
+    return #player_guis > 0
 end
 
 ------------------------------------------------------------------------

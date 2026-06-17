@@ -83,6 +83,8 @@
 ---@field status defines.entity_status?                  The miniloader status. (FIXME - gets initialized from main and then nothing is done with it)
 ---@field filters ItemFilter[]                           1.0 Inserter/Loader maps to set_filter/get_filter
 ---@field filter_mode PrototypeFilterMode?               1.0 Inserter - filter_mode/use_filters Loader - loader_filter_mode
+---@field turbo_mode boolean?                            1.0 Run in "turbo" mode (only belt <-> container, but very fast)
+---@field lane_filter boolean?                           1.0 Only two filters, one for each lane
 
 ---@class miniloader.Data
 ---@field main LuaEntity              Main inserter. This is what is visible on screen and what is copied, blueprinted etc.
