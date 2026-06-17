@@ -170,7 +170,7 @@ local function find_loader_by_entity(entity)
     local ml_entities = {}
     for _, candidate in pairs(candidates) do
         local ml_entity = This.MiniLoader:getEntity(candidate.unit_number)
-        if ml_entity then table.insert(ml_entities, ml_entity) end
+        if ml_entity then ml_entities[#ml_entities + 1] = ml_entity end
     end
 
     return ml_entities

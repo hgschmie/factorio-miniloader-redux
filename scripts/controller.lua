@@ -187,7 +187,7 @@ function Controller:createInserters(main, speed_config, config)
             wire_connector.connect_to(main_wire_connectors[wire_connector_id], false, defines.wire_origin.script)
         end
 
-        table.insert(inserters, inserter)
+        inserters[#inserters + 1] = inserter
     end
 
     return inserters, true

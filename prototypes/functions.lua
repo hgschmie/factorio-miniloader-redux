@@ -360,7 +360,7 @@ local function create_entity(params)
         fast_replaceable_group = meld.delete(),
     })
 
-    table.insert(hidden_inserter.flags, 'placeable-off-grid')
+    hidden_inserter.flags[#hidden_inserter.flags + 1] = 'placeable-off-grid'
 
     apply_prototype_processors(params, hidden_inserter)
 
@@ -458,7 +458,6 @@ local function create_entity(params)
         allow_rail_interaction      = true,
         allow_container_interaction = true,
     })
-
 
     data:extend { inserter, hidden_inserter, loader, turbo_loader }
 end
@@ -580,8 +579,7 @@ local function create_debug(params)
         minable                        = { mining_time = 0.1, result = debug_name },
     })
 
-    table.insert(debug_inserter.flags, 'placeable-off-grid')
-
+    debug_inserter.flags[#debug_inserter.flags + 1] = 'placeable-off-grid'
     debug_inserter.platform_picture.sheet.tint = params.tint
 
     local debug_recipe = meld(util.copy(data.raw['recipe']['inserter']), {

@@ -666,18 +666,16 @@ local loaders = {
                         { type = 'item', name = 'bob-steam-inserter',              amount = 2 },
                     }
 
-                    if check_chute() then
-                        table.insert(ingredients, { type = 'item', name = const:name_from_prefix(previous), amount = 1 })
-                    else
-                        table.insert(ingredients, { type = 'item', name = 'iron-plate', amount = 4 })
-                    end
+                    ingredients[#ingredients + 1] = check_chute()
+                        and { type = 'item', name = const:name_from_prefix(previous), amount = 1 }
+                        or { type = 'item', name = 'iron-plate', amount = 4 }
 
                     return ingredients
                 end,
                 prerequisites = function()
                     local prerequisites = { 'logistics-0' }
                     if check_chute() then
-                        table.insert(prerequisites, const:name_from_prefix(previous))
+                        prerequisites[#prerequisites + 1] = const:name_from_prefix(previous)
                     end
 
                     return prerequisites

@@ -204,7 +204,7 @@ if script then
         ---@diagnostic disable-next-line: undefined-field
         if prototype_name:starts_with(Constants.prefix) and Constants.miniloader_types[prototype.type] and prototype_name:ends_with(Constants.name) then
             Constants.supported_types[prototype_name] = true
-            table.insert(Constants.supported_type_names, prototype_name)
+            Constants.supported_type_names[#Constants.supported_type_names + 1] = prototype_name
 
             local loader_name = Constants.loader_name(prototype_name)
             Constants.supported_loaders[loader_name] = true
@@ -212,7 +212,7 @@ if script then
 
             local inserter_name = Constants.inserter_name(prototype_name)
             Constants.supported_inserters[inserter_name] = true
-            table.insert(Constants.supported_inserter_names, inserter_name)
+            Constants.supported_inserter_names[#Constants.supported_inserter_names + 1] = inserter_name
         end
     end
 end

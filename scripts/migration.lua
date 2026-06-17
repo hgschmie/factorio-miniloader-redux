@@ -27,7 +27,7 @@ for prefix, migration in pairs(const:migrations()) do
     local name = prefix .. 'miniloader-inserter'
     local entity = prototypes.entity[name]
     if entity then
-        table.insert(Migration.ml_entities, entity)
+        Migration.ml_entities[#Migration.ml_entities + 1] = entity
         Migration.migrations[name] = migration
     end
 end
