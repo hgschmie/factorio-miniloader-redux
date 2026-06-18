@@ -39,7 +39,7 @@
 ---@field corpse_gfx string? Optional, if missing use the prefix. Selects remnants graphics.
 ---@field belt_gfx string? Optional, if missing use the loader tier. Selects belt animation set.
 ---@field entity_gfx string? Graphics variant for miniloader graphics
----@field bulk boolean? If true, support bulk moves
+---@field stack boolean? If true, supports stacking
 ---@field nerf_mode boolean? Turn off all the nice features and make the loader really dumb.
 ---@field belt_color_selector fun(loader: data.LoaderPrototype, name: string)?
 ---@field prototype_processor miniloader.PrototypeProcessor?
@@ -78,6 +78,7 @@
 ---@field filter_mode PrototypeFilterMode                1.0 Inserter - filter_mode/use_filters Loader - loader_filter_mode
 ---@field read_transfers boolean                         1.0 Loader - maps to circuit_read_transfers
 ---@field spoil_priority SpoilPriority                   1.0 Inserter - maps to inserter_spoil_priority (not available in turbo mode)
+---@field stack_size integer                             1.0 Stack size if stacking is supported
 
 ---@class miniloader.State
 ---@field status defines.entity_status?                  The miniloader status. (FIXME - gets initialized from main and then nothing is done with it)

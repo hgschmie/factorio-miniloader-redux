@@ -206,7 +206,7 @@ local function create_entity(params)
         render_no_network_icon = true,
     }
 
-    local consumption_amount = math.sqrt(math.pow(speed_config.items_per_second, 2) / 8) * (params.bulk and 2 or 1) * 5
+    local consumption_amount = math.sqrt(math.pow(speed_config.items_per_second, 2) / 8) * (params.stack and 2 or 1) * 5
     local drain_amount = 0.4 + (speed_config.items_per_second / 150) * speed_config.inserter_pairs
 
     if Framework.settings:startup_setting(const.settings_names.no_power) then
@@ -231,64 +231,65 @@ local function create_entity(params)
 
     local inserter = {
         -- Prototype Base
-        type                           = 'inserter',
-        name                           = entity_name,
-        order                          = params.order,
-        localised_name                 = params.localised_name,
-        localised_description          = description,
-        subgroup                       = params.subgroup,
-        hidden                         = false,
-        hidden_in_factoriopedia        = false,
+        type                                  = 'inserter',
+        name                                  = entity_name,
+        order                                 = params.order,
+        localised_name                        = params.localised_name,
+        localised_description                 = description,
+        subgroup                              = params.subgroup,
+        hidden                                = false,
+        hidden_in_factoriopedia               = false,
 
         -- InserterPrototype
-        extension_speed                = speed_config.rotation_speed * 5,
-        rotation_speed                 = speed_config.rotation_speed,
-        insert_position                = { 0, 0 },
-        pickup_position                = { 0, 0 },
+        extension_speed                       = speed_config.rotation_speed * 5,
+        rotation_speed                        = speed_config.rotation_speed,
+        insert_position                       = { 0, 0 },
+        pickup_position                       = { 0, 0 },
 
-        platform_picture               = {
+        platform_picture                      = {
             sheets = entity_sheets_gfx(params.tint, params.entity_gfx),
         },
 
-        hand_base_picture              = util.copy(game_inserter.hand_base_picture), -- DEBUG util.empty_sprite(),
-        hand_open_picture              = util.copy(game_inserter.hand_open_picture), -- DEBUG util.empty_sprite(),
-        hand_closed_picture            = util.copy(game_inserter.hand_closed_picture), -- DEBUG util.empty_sprite(),
-        hand_base_shadow               = util.copy(game_inserter.hand_base_shadow), -- DEBUG util.empty_sprite(),
-        hand_open_shadow               = util.copy(game_inserter.hand_open_shadow), -- DEBUG util.empty_sprite(),
-        hand_closed_shadow             = util.copy(game_inserter.hand_closed_shadow), -- DEBUG util.empty_sprite(),
-        energy_source                  = primary_energy,
-        energy_per_movement            = consumption,
-        energy_per_rotation            = consumption,
-        uses_inserter_stack_size_bonus = false, -- otherwise does not match belt speed
-        allow_custom_vectors           = true,
-        draw_held_item                 = true, -- DEBUG false,
-        use_easter_egg                 = false,
-        filter_count                   = params.nerf_mode and 0 or 5,
+        hand_base_picture                     = util.empty_sprite(),
+        hand_open_picture                     = util.empty_sprite(),
+        hand_closed_picture                   = util.empty_sprite(),
+        hand_base_shadow                      = util.empty_sprite(),
+        hand_open_shadow                      = util.empty_sprite(),
+        hand_closed_shadow                    = util.empty_sprite(),
+        energy_source                         = primary_energy,
+        energy_per_movement                   = consumption,
+        energy_per_rotation                   = consumption,
+        uses_inserter_stack_size_bonus        = false, -- otherwise does not match belt speed
+        allow_custom_vectors                  = true,
+        draw_held_item                        = false,
+        use_easter_egg                        = false,
+        filter_count                          = params.nerf_mode and 0 or 5,
 
-        -- handle stacking
-        bulk                           = params.bulk or false,
-        wait_for_full_hand             = params.bulk or false,
-        grab_less_to_match_belt_stack  = params.bulk or false,
-        stack_size_bonus               = params.bulk and 4 or speed_config.stack_size_bonus,
-        max_belt_stack_size            = params.bulk and 4 or 1,
+        -- handle stacking, settings match the stack inserter prototype
+        bulk                                  = params.stack or false,
+        wait_for_full_hand                    = params.stack or false,
+        grab_less_to_match_belt_stack         = params.stack or false,
+        stack_size_bonus                      = params.stack and 4 or speed_config.stack_size_bonus,
+        max_belt_stack_size                   = params.stack and 4 or 1,
+        enter_drop_mode_if_held_stack_spoiled = params.stack or false,
 
         ---@diagnostic disable-next-line: undefined-global
-        circuit_wire_max_distance      = not params.nerf_mode and default_circuit_wire_max_distance or 0,
-        draw_inserter_arrow            = false,
-        chases_belt_items              = false,
-        circuit_connector              = not params.nerf_mode and inserter_connector_definitions or nil,
+        circuit_wire_max_distance             = (not params.nerf_mode) and default_circuit_wire_max_distance or 0,
+        draw_inserter_arrow                   = false,
+        chases_belt_items                     = false,
+        circuit_connector                     = (not params.nerf_mode) and inserter_connector_definitions or nil,
 
         -- EntityWitHealthPrototype
-        max_health                     = 170,
-        damaged_trigger_effect         = {
+        max_health                            = 170,
+        damaged_trigger_effect                = {
             type = 'create-entity',
             entity_name = 'spark-explosion',
             offset_deviation = { { -0.5, -0.5 }, { 0.5, 0.5 } },
             offsets = { { 0, 1 } },
             damage_type_filters = 'fire'
         },
-        dying_explosion                = compute_dash_prefix(explosion_gfx) .. 'underground-belt-explosion',
-        resistances                    = {
+        dying_explosion                       = compute_dash_prefix(explosion_gfx) .. 'underground-belt-explosion',
+        resistances                           = {
             {
                 type = 'fire',
                 percent = 60
@@ -298,28 +299,28 @@ local function create_entity(params)
                 percent = 30
             }
         },
-        corpse                         = compute_dash_prefix(corpse_gfx) .. 'underground-belt-remnants',
+        corpse                                = compute_dash_prefix(corpse_gfx) .. 'underground-belt-remnants',
 
         -- EntityPrototype
-        icons                          = icon_gfx(params.tint, params.entity_gfx),
+        icons                                 = icon_gfx(params.tint, params.entity_gfx),
 
-        collision_box                  = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-        collision_mask                 = collision_mask_util.get_default_mask('inserter'),
-        selection_box                  = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-        flags                          = { 'placeable-neutral', 'placeable-player', 'player-creation' },
-        minable                        = { mining_time = 0.1, result = entity_name },
-        selection_priority             = 50,
-        impact_category                = 'metal',
-        open_sound                     = { filename = '__base__/sound/open-close/inserter-open.ogg', volume = 0.6 },
-        close_sound                    = { filename = '__base__/sound/open-close/inserter-close.ogg', volume = 0.5 },
-        working_sound                  = {
+        collision_box                         = { { -0.4, -0.4 }, { 0.4, 0.4 } },
+        collision_mask                        = collision_mask_util.get_default_mask('inserter'),
+        selection_box                         = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+        flags                                 = { 'placeable-neutral', 'placeable-player', 'player-creation' },
+        minable                               = { mining_time = 0.1, result = entity_name },
+        selection_priority                    = 50,
+        impact_category                       = 'metal',
+        open_sound                            = { filename = '__base__/sound/open-close/inserter-open.ogg', volume = 0.6 },
+        close_sound                           = { filename = '__base__/sound/open-close/inserter-close.ogg', volume = 0.5 },
+        working_sound                         = {
             match_progress_to_activity = true,
             ---@diagnostic disable-next-line: undefined-global
             sound = sound_variations('__base__/sound/inserter-basic', 5, 0.5, { volume_multiplier('main-menu', 2), volume_multiplier('tips-and-tricks', 1.8) }),
             audible_distance_modifier = 0.3
         },
-        fast_replaceable_group         = 'mini-loader',
-        icon_draw_specification        = {
+        fast_replaceable_group                = 'mini-loader',
+        icon_draw_specification               = {
             scale = 0.5,
             scale_for_many = 0.75,
         },
@@ -410,6 +411,10 @@ local function create_entity(params)
         per_lane_filters            = false,
         energy_source               = void_energy,
         energy_per_item             = '0.0000001W',
+
+        max_belt_stack_size         = params.stack and 4 or 1,
+        adjustable_belt_stack_size  = params.stack or false,
+        wait_for_full_stack         = params.stack or false,
 
         ---@diagnostic disable-next-line: undefined-global
         circuit_wire_max_distance   = default_circuit_wire_max_distance,

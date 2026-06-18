@@ -26,7 +26,8 @@ local DEFAULT_CONFIG = {
     filters = {},
     filter_mode = 'none',
     read_transfers = false,
-    spoil_priority = This.MiniLoader.spoiling and 'none' or nil
+    spoil_priority = This.MiniLoader.spoiling and 'none' or nil,
+    stack_size = 1, -- 1 is always supported
 }
 
 --- loader and inserter control behavior keys
@@ -43,7 +44,7 @@ local CONTROL_BEHAVIOR_KEYS = {
 -- all keys except the control behavior keys and 'filters'
 local CONFIG_KEYS = {
     'enabled', 'loader_type', 'highspeed', 'nerf_mode', 'turbo_mode', 'lane_filter',
-    'filter_mode', 'read_transfers', 'spoil_priority',
+    'filter_mode', 'read_transfers', 'spoil_priority', 'stack_size',
 }
 
 --- see https://forums.factorio.com/viewtopic.php?t=133512
@@ -100,6 +101,7 @@ function Config:updateConfigFromInserter(ml_config, inserter)
     ml_config.logistic_condition.fulfilled = nil
 
     ml_config.read_transfers = control.circuit_read_hand_contents
+    ml_config.stack_size = inserter.inserter_stack_size_override
 
     if This.MiniLoader.spoiling then
         ml_config.spoil_priority = ml_config.nerf_mode and 'none' or inserter.inserter_spoil_priority
@@ -150,10 +152,12 @@ function Config:updateConfigFromLoader(ml_config, loader)
         end
     end
 
-    ml_config.read_transfers = control.circuit_read_transfers
     -- remove the fulfilled condition, otherwise compares will not work
     ml_config.circuit_condition.fulfilled = nil
     ml_config.logistic_condition.fulfilled = nil
+
+    ml_config.read_transfers = control.circuit_read_transfers
+    ml_config.stack_size = loader.loader_belt_stack_size_override
 
     self:updateFiltersFromLoader(ml_config, loader)
 end
@@ -196,14 +200,18 @@ local function write_config_to_inserter(ml_config, inserter)
     control.circuit_read_hand_contents = ml_config.read_transfers
     control.circuit_hand_read_mode = defines.control_behavior.inserter.hand_read_mode.pulse
 
+    inserter.inserter_stack_size_override = inserter.prototype.bulk
+        -- input loader has no GUI for stack size. Set to max so that any amount coming in is moved.
+        and (ml_config.loader_type == 'input'
+            and inserter.prototype.inserter_max_belt_stack_size
+            or ml_config.stack_size)
+        or 1
+
     if This.MiniLoader.spoiling then
         inserter.inserter_spoil_priority = (ml_config.nerf_mode and 'none') or (ml_config.spoil_priority or 'none')
     else
         inserter.inserter_spoil_priority = 'none'
     end
-
-    -- TODO
-    inserter.inserter_stack_size_override = inserter.prototype.bulk and 4 or 0 -- 0 resets to inserter default
 end
 
 ---@param ml_config miniloader.Config
@@ -224,6 +232,10 @@ local function write_config_to_loader(ml_config, loader)
     end
 
     control.circuit_read_transfers = ml_config.read_transfers
+
+    if loader.prototype.loader_adjustable_belt_stack_size then
+        loader.loader_belt_stack_size_override = ml_config.stack_size
+    end
 end
 
 -- Removes everything that is either on the loader on in the inserter hands. Try to push it into
