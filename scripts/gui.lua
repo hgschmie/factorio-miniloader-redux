@@ -118,15 +118,15 @@ end
 ---@param gui framework.gui
 ---@return framework.gui.element_definition? ui
 function Gui.getUi(gui)
-    local gui_events = gui.gui_events
-
     local ml_entity = assert(This.MiniLoader:getEntity(gui.entity_id))
 
     if ml_entity.config.nerf_mode then return nil end
 
     local children = {}
 
-    children[#children + 1] = turbo_gui(gui)
+    if not ml_entity.config.nerf_mode then
+        children[#children + 1] = turbo_gui(gui)
+    end
 
     if This.MiniLoader.spoiling then
         children[#children + 1] = spoilage_gui(gui)

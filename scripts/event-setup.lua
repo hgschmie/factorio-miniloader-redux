@@ -155,11 +155,7 @@ local function on_entity_settings_pasted(event)
 
     if not (src_entity and dst_entity) then return end
 
-    local config = util.copy(src_entity.config)
-    config.direction = dst_entity.config.direction
-    config.loader_type = dst_entity.config.loader_type
-    dst_entity.config = config
-
+    This.Config:copyConfig(src_entity.config, dst_entity.config)
     This.MiniLoader:reconfigure(dst_entity)
 end
 

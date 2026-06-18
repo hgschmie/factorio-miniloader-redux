@@ -289,7 +289,7 @@ function Controller:setup(main, config)
     local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
 
     -- if tags were passed in and they contain a config, use that.
-    config = This.Config:createConfiguration(config, inserter_data) -- OLD: create_config(config, inserter_data)
+    config = This.Config:createConfiguration(config, inserter_data)
     config.direction = config.direction or This.Snapping:direction_from_inserter(main.direction, config.loader_type)
 
     local loader = create_loader(main, config)

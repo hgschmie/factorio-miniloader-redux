@@ -43,7 +43,7 @@ local CONTROL_BEHAVIOR_KEYS = {
 
 -- all keys except the control behavior keys and 'filters'
 local CONFIG_KEYS = {
-    'enabled', 'loader_type', 'highspeed', 'nerf_mode', 'turbo_mode', 'lane_filter',
+    'enabled', 'turbo_mode', 'lane_filter',
     'filter_mode', 'read_transfers', 'spoil_priority', 'stack_size',
 }
 
@@ -79,6 +79,38 @@ function Config:createConfiguration(parent_config, inserter_data)
     return config
 end
 
+---@param src_config miniloader.Config
+---@param dst_config miniloader.Config
+function Config:copyConfig(src_config, dst_config)
+    local ml_config = util.copy(src_config)
+
+    for _, key in pairs(CONFIG_KEYS) do
+        if dst_config.nerf_mode then
+            dst_config[key] = DEFAULT_CONFIG[key]
+        else
+            dst_config[key] = ml_config[key]
+        end
+    end
+
+    -- copy shared control keys over
+    for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
+        if dst_config.nerf_mode then
+            dst_config[control_key] = DEFAULT_CONFIG[control_key]
+        else
+            dst_config[control_key] = ml_config[control_key]
+        end
+    end
+
+    -- copy filter over
+    dst_config.filters = {}
+    if not dst_config.nerf_mode then
+        for key, value in pairs(ml_config.filters) do
+            local new_key = tonumber(key)
+            if new_key then dst_config.filters[new_key] = value end
+        end
+    end
+end
+
 ---@param ml_config miniloader.Config
 ---@param inserter LuaEntity
 function Config:updateConfigFromInserter(ml_config, inserter)
@@ -101,7 +133,11 @@ function Config:updateConfigFromInserter(ml_config, inserter)
     ml_config.logistic_condition.fulfilled = nil
 
     ml_config.read_transfers = control.circuit_read_hand_contents
-    ml_config.stack_size = inserter.inserter_stack_size_override
+    local stack_size = inserter.inserter_stack_size_override
+
+    if stack_size > 0 then -- do not reset to default
+        ml_config.stack_size = stack_size
+    end
 
     if This.MiniLoader.spoiling then
         ml_config.spoil_priority = ml_config.nerf_mode and 'none' or inserter.inserter_spoil_priority
@@ -157,7 +193,11 @@ function Config:updateConfigFromLoader(ml_config, loader)
     ml_config.logistic_condition.fulfilled = nil
 
     ml_config.read_transfers = control.circuit_read_transfers
-    ml_config.stack_size = loader.loader_belt_stack_size_override
+    local stack_size = loader.loader_belt_stack_size_override
+
+    if stack_size > 0 then -- do not reset to default
+        ml_config.stack_size = stack_size
+    end
 
     self:updateFiltersFromLoader(ml_config, loader)
 end
@@ -388,9 +428,14 @@ function Config:readConfigFromTag(tag_value)
 
         config.read_transfers = config.inserter_config.read_transfers or false
         config.inserter_config.read_transfers = nil
+        config.filter_mode = config.inserter_config.loader_filter_mode or 'none'
+        config.inserter_config.loader_filter_mode = nil
+
         config.inserter_config = nil
 
-        config.status = nil
+        config.status = {
+            filters = {},
+        }
     end
 
     -- sanitize all the config keys that are not common control behavior
