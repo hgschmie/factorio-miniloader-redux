@@ -126,7 +126,7 @@ end
 ---@param config miniloader.Config
 ---@return LuaEntity? loader
 local function create_loader(main, config)
-    local name = const.loader_name(main.name, config.turbo_mode, config.lane_filter)
+    local name = const.loader_name(main.name, config.turbo_mode, config.lane_filter and config.turbo_mode)
 
     -- create the loader with the same orientation as the inserter. Then look in front of the
     -- loader and snap the direction for it.
@@ -408,6 +408,7 @@ local function rebuild_loader(ml_entity)
 
     assert(ml_entity.loader.destroy())
     ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
+    ml_entity.state.filters = {}
 
     return player_guis
 end

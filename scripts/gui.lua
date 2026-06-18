@@ -24,6 +24,7 @@ local function get_gui_event_definition()
             onToggleSpoilage = Gui.onToggleSpoilage,
             onSpoilPriority = Gui.onSpoilPriority,
             onToggleTurboMode = Gui.onToggleTurboMode,
+            onToggleLaneFilter = Gui.onToggleLaneFilter,
         },
         callback = Gui.guiUpdater,
     }
@@ -100,6 +101,15 @@ local function turbo_gui(gui)
                     horizontally_stretchable = true,
                     horizontally_squashable = true,
                 },
+            },
+            {
+                type = 'checkbox',
+                caption = { '', { const:locale('lane_filter') }, ' [img=info]' },
+                tooltip = { const:locale('lane_filter_tooltip') },
+                name = 'lane_filter',
+                handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onToggleLaneFilter },
+                state = ml_entity.config.lane_filter or false,
+                enabled = true,
             },
         },
     }
@@ -182,6 +192,16 @@ function Gui.onToggleTurboMode(event, gui)
     ml_entity.config.turbo_mode = element.state or false
 end
 
+---@param event EventData.on_gui_checked_state_changed
+---@param gui framework.gui
+function Gui.onToggleLaneFilter(event, gui)
+    local ml_entity = This.MiniLoader:getEntity(gui.entity_id)
+    if not ml_entity then return end
+
+    local element = event.element
+    ml_entity.config.lane_filter = element.state or false
+end
+
 --------------------------------------------------------------------------------
 -- Gui Updater
 --------------------------------------------------------------------------------
@@ -214,6 +234,19 @@ local function update_spoilage(gui, ml_entity)
 end
 
 ---@param gui framework.gui
+---@param ml_entity miniloader.Data
+local function update_gui(gui, ml_entity)
+    local turbo_mode = assert(gui:findElement('turbo_mode'))
+    local lane_filter = assert(gui:findElement('lane_filter'))
+
+    turbo_mode.state = ml_entity.config.turbo_mode
+
+    lane_filter.state = ml_entity.config.lane_filter
+    lane_filter.enabled = turbo_mode.state
+end
+
+
+---@param gui framework.gui
 ---@return boolean
 function Gui.guiUpdater(gui)
     local ml_entity = This.MiniLoader:getEntity(gui.entity_id)
@@ -232,6 +265,8 @@ function Gui.guiUpdater(gui)
 
         -- TODO ml_entity.loader.custom_status = ml_entity.state.status
         if This.MiniLoader.spoiling then update_spoilage(gui, ml_entity) end
+
+        update_gui(gui, ml_entity)
         context.last_config = util.copy(ml_entity.config)
     end
 

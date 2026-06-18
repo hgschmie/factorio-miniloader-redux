@@ -453,13 +453,19 @@ local function create_entity(params)
     apply_prototype_processors(params, loader)
 
     local turbo_loader = meld(util.copy(loader), {
-        name = const.loader_name(entity_name, true, false),
+        name                        = const.loader_name(entity_name, true, false),
         container_distance          = 1,
         allow_rail_interaction      = true,
         allow_container_interaction = true,
     })
 
-    data:extend { inserter, hidden_inserter, loader, turbo_loader }
+    local lane_filter_loader = meld(util.copy(turbo_loader), {
+        name = const.loader_name(entity_name, true, true),
+        filter_count = 2,
+        per_lane_filters = true,
+    })
+
+    data:extend { inserter, hidden_inserter, loader, turbo_loader, lane_filter_loader }
 end
 
 local function create_recipe(params)
