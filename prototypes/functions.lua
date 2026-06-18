@@ -367,17 +367,17 @@ local function create_entity(params)
 
     local loader = {
         -- Prototype Base
-        name                        = loader_name,
-        localised_name              = { 'entity-name.' .. loader_name },
-        description                 = { 'entity-description.' .. loader_name },
-        type                        = 'loader-1x1',
-        order                       = params.order,
-        subgroup                    = params.subgroup,
-        hidden                      = true,
-        hidden_in_factoriopedia     = true,
+        name                         = loader_name,
+        localised_name               = { 'entity-name.' .. loader_name },
+        description                  = { 'entity-description.' .. loader_name },
+        type                         = 'loader-1x1',
+        order                        = params.order,
+        subgroup                     = params.subgroup,
+        hidden                       = true,
+        hidden_in_factoriopedia      = true,
 
         -- LoaderPrototype
-        structure                   = {
+        structure                    = {
             direction_in = {
                 sheets = entity_sheets_gfx(params.tint, params.entity_gfx)
             },
@@ -403,38 +403,39 @@ local function create_entity(params)
                 }
             }
         },
-        filter_count                = params.nerf_mode and 0 or 5,
-        structure_render_layer      = 'object',
-        container_distance          = 0,
-        allow_rail_interaction      = false,
-        allow_container_interaction = false,
-        per_lane_filters            = false,
-        energy_source               = void_energy,
-        energy_per_item             = '0.0000001W',
+        filter_count                 = params.nerf_mode and 0 or 5,
+        structure_render_layer       = 'object',
+        container_distance           = 0,
+        allow_rail_interaction       = false,
+        allow_container_interaction  = false,
+        per_lane_filters             = false,
+        energy_source                = void_energy,
+        energy_per_item              = '0.0000001W',
 
-        max_belt_stack_size         = params.stack and 4 or 1,
-        adjustable_belt_stack_size  = params.stack or false,
-        wait_for_full_stack         = params.stack or false,
+        max_belt_stack_size          = params.stack and 4 or 1,
+        adjustable_belt_stack_size   = params.stack or false,
+        wait_for_full_stack          = params.stack or false,
+        loader_respect_insert_limits = true,
 
         ---@diagnostic disable-next-line: undefined-global
-        circuit_wire_max_distance   = default_circuit_wire_max_distance,
-        circuit_connector           = loader_connector_definitions,
+        circuit_wire_max_distance    = default_circuit_wire_max_distance,
+        circuit_connector            = loader_connector_definitions,
 
         -- EntityWitHealthPrototype
-        max_health                  = 10,
+        max_health                   = 10,
 
         -- TransportBeltConnectablePrototype
-        belt_animation_set          = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
-        animation_speed_coefficient = 32,
-        speed                       = params.speed,
+        belt_animation_set           = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
+        animation_speed_coefficient  = 32,
+        speed                        = params.speed,
 
         -- EntityPrototype
-        icons                       = icon_gfx(params.tint, 'internal', 'internal'),
+        icons                        = icon_gfx(params.tint, 'internal', 'internal'),
 
-        collision_box               = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-        collision_mask              = { layers = { transport_belt = true, } },
-        selection_box               = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-        flags                       = {
+        collision_box                = { { -0.4, -0.4 }, { 0.4, 0.4 } },
+        collision_mask               = { layers = { transport_belt = true, } },
+        selection_box                = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+        flags                        = {
             'placeable-neutral',
             'placeable-player',
             'not-on-map',
@@ -446,10 +447,10 @@ local function create_entity(params)
             'not-in-kill-statistics',
             'not-in-made-in',
         },
-        minable                     = nil,
-        selection_priority          = 0,
-        allow_copy_paste            = false,
-        selectable_in_game          = false,
+        minable                      = nil,
+        selection_priority           = 0,
+        allow_copy_paste             = false,
+        selectable_in_game           = false,
     }
 
     -- hack to get the belt color right
