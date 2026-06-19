@@ -325,7 +325,9 @@ end
 local function on_gui_closed(event)
     if not (event.entity and event.entity.valid) then return end
 
-    local ml_entity = This.MiniLoader:getEntity(event.entity.unit_number)
+    local gui = Framework.gui_manager:findGui(event.player_index, Gui.AUX_GUI_NAME)
+
+    local ml_entity = gui and This.MiniLoader:getEntity(gui.entity_id)
 
     Framework.gui_manager:destroyGui(event.player_index, Gui.AUX_GUI_NAME)
 
@@ -333,9 +335,6 @@ local function on_gui_closed(event)
 
     This.Config:updateConfigFromLoader(ml_entity.config, ml_entity.loader)
     This.Config:resyncEntities(ml_entity)
-    -- TODO - this was This.MiniLoader:reconfigure(ml_entity) and probably still
-    -- needs to be as changing the type (turbo etc.) needs rebuilding the loader
-    -- keep it at resync for now.
 end
 
 --------------------------------------------------------------------------------
