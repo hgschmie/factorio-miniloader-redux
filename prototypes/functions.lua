@@ -207,7 +207,7 @@ local function create_entity(params)
     }
 
     -- calculate loader power draw
-    local per_item_amount = 1.5 * math.log(speed_config.items_per_second)/math.log(15)
+    local per_item_amount = 1.5 * math.log(speed_config.items_per_second) / math.log(15)
 
     -- calculate inserter power draw
     -- normalize for slowest inserter (15 items/sec), then divide by rotation speed (and apply power correction if necessary)
@@ -465,6 +465,8 @@ local function create_entity(params)
 
     local turbo_loader = meld(util.copy(loader), {
         name                        = const.loader_name(entity_name, true, false),
+        icons                       = icon_gfx(params.tint, params.entity_gfx),
+        localised_description       = description,
         container_distance          = 1,
         allow_rail_interaction      = true,
         allow_container_interaction = true,
