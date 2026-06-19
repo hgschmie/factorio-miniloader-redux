@@ -18,6 +18,8 @@ local SUPPORTED_MODS = {
     ['TurboBelt'] = 'turbo_belt',
 }
 
+local STACKING_ENABLED = feature_flags.space_travel
+
 ---@type table<string, miniloader.SpeedConfig>
 local SPEED_SETTINGS = {
     speed_3_75 = {
@@ -188,7 +190,7 @@ local function allow_in_space(prototype)
 end
 
 -- highest available loader tier in the base / space age game
-local max_loader = game_mode.space_age and 'turbo' or 'express'
+local max_loader = check_space_age() and 'turbo' or 'express'
 
 ---@param data table<string, any>
 local function select_data(data)
@@ -230,7 +232,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('ffc340d9'),
                 speed = data.raw['transport-belt']['transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
@@ -263,7 +265,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('e31717d9'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
@@ -300,7 +302,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('43c0fad9'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
@@ -342,7 +344,7 @@ local loaders = {
                 stack_size = 50,
                 tint = check_bob() and util.color('b700ff') or util.color('A8D550d9'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = ((check_space_age() or check_turbo_belt()) and 'turbo') or 'express',
                 ingredients = function()
@@ -428,7 +430,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('2ac217'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -461,7 +463,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('c34722'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -494,7 +496,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('5a17c2'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -527,7 +529,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('1146d4'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -560,7 +562,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('a6a6a6'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -598,7 +600,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('22ec17'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 explosion_gfx = '',
                 ingredients = function()
@@ -630,7 +632,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('d201f7'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 explosion_gfx = '',
                 ingredients = function()
@@ -720,7 +722,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('1aeb2e'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
@@ -756,7 +758,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('eea500'),
                 speed = data.raw['transport-belt']['transport-belt-pro'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
@@ -791,7 +793,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('00fd53'),
                 speed = data.raw['transport-belt']['transport-belt-pro2'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
@@ -829,7 +831,7 @@ local loaders = {
                 stack_size = 50,
                 tint = { r = 240 / 255, g = 240 / 255, b = 240 / 255, a = 125 / 255 },
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 corpse_gfx = 'express',
                 ingredients = function()
                     return select_data {
@@ -863,7 +865,7 @@ local loaders = {
                 stack_size = 50,
                 tint = { r = 25 / 255, g = 25 / 255, b = 25 / 255, a = 200 / 255 },
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt' .. color].speed,
-                stack = check_space_age(),
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = 'express',
 
