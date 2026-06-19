@@ -429,10 +429,6 @@ local function configure_regular_mode(ml_entity)
 
         local index = config.highspeed and (9 - inserter_index) or inserter_index
 
-        -- reorient inserter
-        inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
-        inserter.teleport(ml_entity.main.position)
-
         -- normal speed: even inserters right
         -- high speed: even inserters left
         local right_lane = (inserter_index % 2) == (config.highspeed and 0 or 1)
@@ -509,6 +505,12 @@ function Controller:reconfigure(ml_entity)
 
     -- (re-)connect loader to belt if needed
     ml_entity.loader.update_connections()
+
+    for _, inserter in pairs(ml_entity.inserters) do
+        -- reorient inserter
+        inserter.direction = config.direction
+        inserter.teleport(ml_entity.main.position)
+    end
 
     if config.turbo_mode then
         configure_turbo_mode(ml_entity)

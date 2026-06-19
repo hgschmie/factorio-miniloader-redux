@@ -72,13 +72,6 @@ function Snapping:compute_loader_direction(config)
     return config.loader_type == const.loader_direction.output and config.direction or Direction.opposite(config.direction)
 end
 
----@param config miniloader.Config
----@return defines.direction
-function Snapping:compute_inserter_direction(config)
-    -- for input loaders, the inserter points in the same direction as the miniloader, for output loaders it points in opposite direction
-    return config.loader_type == const.loader_direction.input and config.direction or Direction.opposite(config.direction)
-end
-
 ---@param direction defines.direction
 ---@param loader_type miniloader.LoaderDirection
 function Snapping:direction_from_inserter(direction, loader_type)
