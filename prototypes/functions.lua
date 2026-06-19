@@ -12,7 +12,7 @@ require 'sound-util'
 
 local const = require('lib.constants')
 
-local FORMAT_STRING = '%.2fkW'
+local FORMAT_STRING = '%.2fk%s'
 
 -- similar to the original miniloader module, this uses an inserter as the "main" entity.
 -- unlike the miniloader, it manages all other entities fully. It also uses different inserter entities for
@@ -206,24 +206,29 @@ local function create_entity(params)
         render_no_network_icon = true,
     }
 
-    local consumption_amount = math.sqrt(math.pow(speed_config.items_per_second, 2) / 8) * (params.stack and 2 or 1) * 5
-    local drain_amount = 0.4 + (speed_config.items_per_second / 150) * speed_config.inserter_pairs
+    -- calculate loader power draw
+    local per_item_amount = 1.5 * math.log(speed_config.items_per_second)/math.log(15)
+
+    -- calculate inserter power draw
+    -- normalize for slowest inserter (15 items/sec), then divide by rotation speed (and apply power correction if necessary)
+    local per_rotation_amount = (per_item_amount * (speed_config.items_per_second / 15)) / (speed_config.rotation_speed * (speed_config.power_correction or 1))
+
+    local drain_amount = math.ceil(speed_config.items_per_second / 15)
 
     if Framework.settings:startup_setting(const.settings_names.no_power) then
         primary_energy = void_energy
-        consumption_amount = 0
         drain_amount = 0
     elseif params.energy_source then
         primary_energy, consumption_amount, drain_amount = params.energy_source()
     end
 
-    local consumption = FORMAT_STRING:format(consumption_amount)
-    local hidden_consumption = FORMAT_STRING:format(consumption_amount / (speed_config.inserter_pairs * 2 - 1))
-    local drain = FORMAT_STRING:format(drain_amount)
+    local drain_primary_energy = util.copy(primary_energy)
 
-    if drain_amount > 0 then primary_energy.drain = drain end
+    local drain = FORMAT_STRING:format(drain_amount, 'W')
+    local per_item = FORMAT_STRING:format(per_item_amount, 'J')
+    local per_rotation = FORMAT_STRING:format(per_rotation_amount, 'J')
 
-    local game_inserter = data.raw['inserter']['inserter']
+    if drain_amount > 0 then drain_primary_energy.drain = drain end
 
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
@@ -257,8 +262,8 @@ local function create_entity(params)
         hand_open_shadow                      = util.empty_sprite(),
         hand_closed_shadow                    = util.empty_sprite(),
         energy_source                         = primary_energy,
-        energy_per_movement                   = consumption,
-        energy_per_rotation                   = consumption,
+        energy_per_movement                   = '0.0001J',
+        energy_per_rotation                   = per_rotation,
         uses_inserter_stack_size_bonus        = false, -- otherwise does not match belt speed
         allow_custom_vectors                  = true,
         draw_held_item                        = false,
@@ -269,7 +274,7 @@ local function create_entity(params)
         bulk                                  = params.stack or false,
         wait_for_full_hand                    = params.stack or false,
         grab_less_to_match_belt_stack         = params.stack or false,
-        stack_size_bonus                      = params.stack and 4 or speed_config.stack_size_bonus,
+        stack_size_bonus                      = params.stack and math.max(speed_config.stack_size_bonus, 4) or speed_config.stack_size_bonus,
         max_belt_stack_size                   = params.stack and 4 or 1,
         enter_drop_mode_if_held_stack_spoiled = params.stack or false,
 
@@ -337,8 +342,8 @@ local function create_entity(params)
 
         hidden = true,
         hidden_in_factoriopedia = true,
-        energy_per_movement = hidden_consumption,
-        energy_per_rotation = hidden_consumption,
+        energy_per_movement = '0.0001J',
+        energy_per_rotation = '0.0001J',
         platform_picture = meld.overwrite(util.empty_sprite()),
         collision_mask = meld.overwrite(collision_mask_util.new_mask()),
         selection_box = { { 0, 0 }, { 0, 0 } },
@@ -409,8 +414,8 @@ local function create_entity(params)
         allow_rail_interaction       = false,
         allow_container_interaction  = false,
         per_lane_filters             = false,
-        energy_source                = void_energy,
-        energy_per_item              = '0.0000001W',
+        energy_source                = drain_primary_energy,
+        energy_per_item              = per_item,
 
         max_belt_stack_size          = params.stack and 4 or 1,
         adjustable_belt_stack_size   = params.stack or false,

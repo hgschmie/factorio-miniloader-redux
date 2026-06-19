@@ -8,10 +8,11 @@
 ----------------------------------------------------------------------------------------------------
 
 ---@class miniloader.SpeedConfig
----@field rotation_speed number
----@field items_per_second number
----@field inserter_pairs integer
----@field stack_size_bonus integer
+---@field items_per_second number       Items per second moved
+---@field rotation_speed number         Rotation speed for embedded inserters
+---@field inserter_pairs integer        Number of inserter pairs in standard mode
+---@field stack_size_bonus integer      Stack size bonus to move enough items
+---@field power_correction number?      Power correction to make standard and speed mode power consumption match
 
 ---@class miniloader.LoaderDefinition
 ---@field condition (fun():boolean)?
