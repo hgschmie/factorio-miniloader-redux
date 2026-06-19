@@ -14,36 +14,15 @@ local const = require('lib.constants')
 
 local FORMAT_STRING = '%.2fk%s'
 
--- similar to the original miniloader module, this uses an inserter as the "main" entity.
--- unlike the miniloader, it manages all other entities fully. It also uses different inserter entities for
--- primary and hidden inserters which allows for correct power stats and blueprints.
-
----@diagnostic disable-next-line: undefined-global
-local loader_connector_definitions = circuit_connector_definitions.create_vector(
----@diagnostic disable-next-line: undefined-global
-    universal_connector_template,
-    {
-        { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = util.by_pixel(1, 12), show_shadow = true },  -- North
-        { variation = 24, main_offset = util.by_pixel(-15, 0), shadow_offset = { 0, 0 }, },                                 -- East
-        { variation = 24, main_offset = util.by_pixel(-17, 0), shadow_offset = { 0, 0 }, },                                 -- South
-        { variation = 31, main_offset = util.by_pixel(15, 0),  shadow_offset = { 0, 0 }, },                                 -- West
-
-        { variation = 31, main_offset = util.by_pixel(17, 0),  shadow_offset = { 0, 0 }, },                                 -- South
-        { variation = 31, main_offset = util.by_pixel(15, 0),  shadow_offset = { 0, 0 }, },                                 -- West
-        { variation = 30, main_offset = util.by_pixel(0, 11),  shadow_offset = util.by_pixel(0, 12), show_shadow = true, }, -- North
-        { variation = 24, main_offset = util.by_pixel(-15, 0), shadow_offset = { 0, 0 }, },                                 -- East
-    }
-)
-
 ---@diagnostic disable-next-line: undefined-global
 local inserter_connector_definitions = circuit_connector_definitions.create_vector(
 ---@diagnostic disable-next-line: undefined-global
     universal_connector_template,
     {
-        { variation = 31, main_offset = util.by_pixel(17, 0),  shadow_offset = { 0, 0 }, }, -- North
-        { variation = 30, main_offset = util.by_pixel(0, 11),  shadow_offset = { 0, 0 }, }, -- West
-        { variation = 24, main_offset = util.by_pixel(-17, 0), shadow_offset = { 0, 0 }, }, -- South
-        { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = { 0, 0 }, }, -- East
+        { variation = 0, main_offset = util.by_pixel(5, -3),  shadow_offset = util.by_pixel(9, 1),  show_shadow = false, }, -- North
+        { variation = 6, main_offset = util.by_pixel(0, -2),  shadow_offset = util.by_pixel(4, 3),  show_shadow = false, }, -- West
+        { variation = 4, main_offset = util.by_pixel(-4, -5), shadow_offset = util.by_pixel(0, -1), show_shadow = false, }, -- South
+        { variation = 2, main_offset = util.by_pixel(1, -10), shadow_offset = util.by_pixel(5, -6), show_shadow = false, }, -- East
     }
 )
 
@@ -409,7 +388,7 @@ local function create_entity(params)
             }
         },
         filter_count                 = params.nerf_mode and 0 or 5,
-        structure_render_layer       = 'object',
+        structure_render_layer       = 'floor-mechanics',
         container_distance           = 0,
         allow_rail_interaction       = false,
         allow_container_interaction  = false,
@@ -424,7 +403,6 @@ local function create_entity(params)
 
         ---@diagnostic disable-next-line: undefined-global
         circuit_wire_max_distance    = default_circuit_wire_max_distance,
-        circuit_connector            = loader_connector_definitions,
 
         -- EntityWitHealthPrototype
         max_health                   = 10,
