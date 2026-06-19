@@ -142,7 +142,6 @@ end
 ---@return (miniloader.Data[]) ml_entities
 local function find_loader_by_entity(entity)
     local area = Area(entity.prototype.selection_box):offset(entity.position):expand(1)
-    local area2 = Position(entity.position):expand_to_area(1)
     if Framework.settings:startup_setting('debug_mode') then
         rendering.draw_rectangle {
             color = { r = 1, g = 0.5, b = 0.5 },
