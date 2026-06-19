@@ -14,7 +14,7 @@ local FrameworkRuntime = {}
 ---@return table<string,any?> framework_storage
 function FrameworkRuntime:storage()
     storage.framework = storage.framework or {}
-    return storage.framework --[[@as table<string, any?>>]]
+    return storage.framework
 end
 
 --- Returns framework managed per-player storage
@@ -24,7 +24,7 @@ function FrameworkRuntime:player_storage(player_index)
     local player_data = Player.pdata(player_index)
 
     player_data.framework = player_data.framework or {}
-    return player_data.framework --[[@as table<string, any?>>]]
+    return player_data.framework
 end
 
 local function get_id(self, name, initial_function)
