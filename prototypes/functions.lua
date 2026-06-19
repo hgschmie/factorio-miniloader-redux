@@ -272,7 +272,7 @@ local function create_entity(params)
 
         -- handle stacking, settings match the stack inserter prototype
         bulk                                  = params.stack or false,
-        wait_for_full_hand                    = params.stack or false,
+        wait_for_full_hand                    = false,
         grab_less_to_match_belt_stack         = params.stack or false,
         stack_size_bonus                      = params.stack and math.max(speed_config.stack_size_bonus, 4) or speed_config.stack_size_bonus,
         max_belt_stack_size                   = params.stack and 4 or 1,
@@ -419,7 +419,7 @@ local function create_entity(params)
 
         max_belt_stack_size          = params.stack and 4 or 1,
         adjustable_belt_stack_size   = params.stack or false,
-        wait_for_full_stack          = params.stack or false,
+        wait_for_full_stack          = false,
         loader_respect_insert_limits = true,
 
         ---@diagnostic disable-next-line: undefined-global
