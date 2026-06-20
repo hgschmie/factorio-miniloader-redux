@@ -56,14 +56,16 @@ local FIX_SPOIL_PRIO = {
     none = 'none',
 }
 
+---@param main LuaEntity
 ---@param parent_config miniloader.Config?
----@param inserter_data miniloader.ModData
 ---@return miniloader.Config config
-function Config:createConfiguration(parent_config, inserter_data)
+function Config:createConfiguration(main, parent_config)
     local config = util.copy(DEFAULT_CONFIG)
 
+    self:configureFromInserter(main, config)
+
     -- nerf mode just uses the defaults
-    if inserter_data.nerf_mode or (parent_config and parent_config.nerf_mode) then
+    if config.nerf_mode or (parent_config and parent_config.nerf_mode) then
         config.nerf_mode = true
         return config
     end
@@ -134,7 +136,7 @@ function Config:updateConfigFromInserter(ml_config, inserter)
         end
     end
 
-    -- remove the fulfilled condition, otherwise compares will not work
+    -- remove fulfilled flag, otherwise comparing configs won't work
     ml_config.circuit_condition.fulfilled = nil
     ml_config.logistic_condition.fulfilled = nil
 
@@ -194,7 +196,7 @@ function Config:updateConfigFromLoader(ml_config, loader)
         end
     end
 
-    -- remove the fulfilled condition, otherwise compares will not work
+    -- remove fulfilled flag, otherwise comparing configs won't work
     ml_config.circuit_condition.fulfilled = nil
     ml_config.logistic_condition.fulfilled = nil
 
@@ -491,6 +493,10 @@ function Config:readConfigFromBlueprintInserter(ml_config, inserter)
             ml_config[control_key] = (control_behavior[bp_key] ~= nil) and control_behavior[bp_key] or DEFAULT_CONFIG[control_key]
         end
     end
+
+    -- remove fulfilled flag, otherwise comparing configs won't work
+    ml_config.circuit_condition.fulfilled = nil
+    ml_config.logistic_condition.fulfilled = nil
 
     if This.MiniLoader.spoiling then
         ml_config.spoil_priority = ml_config.nerf_mode and 'none' or FIX_SPOIL_PRIO[inserter.spoil_priority]

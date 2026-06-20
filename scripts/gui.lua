@@ -263,7 +263,6 @@ function Gui.guiUpdater(gui)
         -- if reconfiguration closed the gui, exit right away.
         if This.MiniLoader:reconfigure(ml_entity) then return true end
 
-        -- TODO ml_entity.loader.custom_status = ml_entity.state.status
         if This.MiniLoader.spoiling then update_spoilage(gui, ml_entity) end
 
         update_gui(gui, ml_entity)
@@ -335,6 +334,8 @@ local function on_gui_closed(event)
 
     This.Config:updateConfigFromLoader(ml_entity.config, ml_entity.loader)
     This.Config:resyncEntities(ml_entity)
+
+    ml_entity.state.status = ml_entity.loader.status
 end
 
 --------------------------------------------------------------------------------

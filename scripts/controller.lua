@@ -285,14 +285,14 @@ end
 function Controller:setup(main, config)
     local entity_id = main.unit_number
 
-    ---@type miniloader.ModData
-    local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
-
     -- if tags were passed in and they contain a config, use that.
-    config = This.Config:createConfiguration(config, inserter_data)
+    config = This.Config:createConfiguration(main, config)
     config.direction = config.direction or This.Snapping:direction_from_inserter(main.direction, config.loader_type)
 
     local loader = create_loader(main, config)
+
+    ---@type miniloader.ModData
+    local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
     local inserters, success = self:createInserters(main, inserter_data.speed_config, config)
 
     ---@type miniloader.Data
@@ -309,6 +309,8 @@ function Controller:setup(main, config)
         main.destroy()
         return nil
     end
+
+    ml_entity.state.status = loader.status
 
     self:setEntity(entity_id, ml_entity)
 
