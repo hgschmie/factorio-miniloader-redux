@@ -406,6 +406,9 @@ local function rebuild_loader(ml_entity)
         player_guis[#player_guis + 1] = gui.player_index
     end
 
+    -- flush entities, otherwise items on the loader are lost
+    This.Config:flushEntities(ml_entity)
+
     assert(ml_entity.loader.destroy())
     ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
     ml_entity.state.filters = {}
@@ -471,17 +474,6 @@ local function configure_regular_mode(ml_entity)
 end
 
 ---@param ml_entity miniloader.Data
-local function configure_turbo_mode(ml_entity)
-    -- Turbo mode
-    for _, inserter in pairs(ml_entity.inserters) do
-        inserter.disabled_by_script = true
-    end
-
-    -- flush inserters
-    This.Config:flushEntities(ml_entity)
-end
-
----@param ml_entity miniloader.Data
 ---@return boolean closed_gui True if reconfiguration closed the GUI
 function Controller:reconfigure(ml_entity)
     assert(ml_entity.loader.valid)
@@ -490,18 +482,17 @@ function Controller:reconfigure(ml_entity)
 
     local state = ml_entity.state
     local change_mode = (config.turbo_mode ~= state.turbo_mode) or (config.lane_filter ~= state.lane_filter)
-
-    -- reorient loader
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    ml_entity.loader.loader_type = config.loader_type
-    ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
-
     local player_guis = {}
 
     if change_mode or Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
         -- miniloader was moved or mode was changed.
         player_guis = rebuild_loader(ml_entity)
     end
+
+    -- reorient loader
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    ml_entity.loader.loader_type = config.loader_type
+    ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
 
     -- (re-)connect loader to belt if needed
     ml_entity.loader.update_connections()
@@ -510,11 +501,10 @@ function Controller:reconfigure(ml_entity)
         -- reorient inserter
         inserter.direction = config.direction
         inserter.teleport(ml_entity.main.position)
+        inserter.disabled_by_script = config.turbo_mode
     end
 
-    if config.turbo_mode then
-        configure_turbo_mode(ml_entity)
-    else
+    if not config.turbo_mode then
         configure_regular_mode(ml_entity)
     end
 
