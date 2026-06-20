@@ -113,13 +113,13 @@ function Console.resyncMiniloaders()
         if not (entity.main.valid and entity.loader.valid) then
             This.MiniLoader:destroy(entity_id)
         else
-            entity.state = entity.state or {
-                ---@diagnostic disable-next-line: undefined-field
-                status = entity.config.status or entity.main.status,
-                filters = {}
-            }
-            local ml_config = This.Config:readConfigFromTag(entity.config)
-            entity.config = ml_config
+            entity.state = entity.state or This.Config:createState()
+            ---@diagnostic disable-next-line: undefined-field
+            entity.state.status = entity.config.status or entity.loader.status
+
+            entity.config = This.Config:readConfigFromTag(entity.config)
+            This.Config:configureFromInserter(entity.main, entity.config)
+
             This.MiniLoader:reconfigure(entity)
         end
     end

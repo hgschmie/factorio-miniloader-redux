@@ -74,9 +74,15 @@ function Config:createConfiguration(parent_config, inserter_data)
         end
     end
 
-    config.highspeed = inserter_data.speed_config.items_per_second > 240 -- 240 is max speed for one lane
-
     return config
+end
+
+---@return miniloader.State
+function Config:createState()
+    return {
+        status = defines.entity_status.disabled,
+        filters = {}
+    }
 end
 
 ---@param src_config miniloader.Config
@@ -408,56 +414,67 @@ function Config:sanitizeConfiguration(ml_config)
     ml_config.filters = filters
 end
 
+---@param entity LuaEntity
+---@param ml_config miniloader.Config
+function Config:configureFromInserter(entity, ml_config)
+    ---@type miniloader.ModData
+    local inserter_data = assert(prototypes.mod_data[const.name].data[entity.name])
+    -- 240 is max speed for one lane
+    ml_config.highspeed = inserter_data.speed_config.items_per_second > 240
+    ml_config.nerf_mode = inserter_data.nerf_mode
+end
+
 ---@param tag_value table<string, any>?
 ---@return miniloader.Config
 function Config:readConfigFromTag(tag_value)
     assert(tag_value)
-    local config = util.copy(tag_value)
+    local ml_config = util.copy(tag_value)
 
-    if config.inserter_config then
+    if ml_config.inserter_config then
         -- pre-1.0 configuration
         for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
-            config[control_key] = config.inserter_config[control_key]
-            config.inserter_config[control_key] = nil
+            ml_config[control_key] = ml_config.inserter_config[control_key]
+            ml_config.inserter_config[control_key] = nil
         end
 
-        if config.inserter_config.filters then
-            config.filters = util.copy(config.inserter_config.filters)
-            config.inserter_config.filters = nil
+        if ml_config.inserter_config.filters then
+            ml_config.filters = util.copy(ml_config.inserter_config.filters)
+            ml_config.inserter_config.filters = nil
         end
 
-        config.read_transfers = config.inserter_config.read_transfers or false
-        config.inserter_config.read_transfers = nil
-        config.filter_mode = config.inserter_config.loader_filter_mode or 'none'
-        config.inserter_config.loader_filter_mode = nil
+        ml_config.read_transfers = ml_config.inserter_config.read_transfers or false
+        ml_config.inserter_config.read_transfers = nil
+        ml_config.filter_mode = ml_config.inserter_config.loader_filter_mode or 'none'
+        ml_config.inserter_config.loader_filter_mode = nil
 
-        config.inserter_config = nil
-
-        config.status = {
-            filters = {},
-        }
+        assert(table_size(ml_config.inserter_config) == 0, 'Remaining keys: ' .. serpent.line(ml_config.inserter_config))
+        ml_config.inserter_config = nil
     end
 
     -- sanitize all the config keys that are not common control behavior
     for _, config_key in pairs(CONFIG_KEYS) do
-        if config[config_key] == nil then
-            config[config_key] = DEFAULT_CONFIG[config_key]
+        if ml_config[config_key] == nil then
+            ml_config[config_key] = DEFAULT_CONFIG[config_key]
         end
     end
 
     -- new config keys for 1.0 - sanitize all the control behavior keys
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
-        if config.nerf_mode or (config[control_key] == nil) then
-            config[control_key] = DEFAULT_CONFIG[control_key]
+        if ml_config.nerf_mode or (ml_config[control_key] == nil) then
+            ml_config[control_key] = DEFAULT_CONFIG[control_key]
         end
     end
 
+    -- remove fulfilled flag, otherwise comparing configs won't work
+    ml_config.circuit_condition.fulfilled = nil
+    ml_config.logistic_condition.fulfilled = nil
+
     -- finally fix the filters
-    if config.nerf_mode then config.filters = {} end
+    if ml_config.nerf_mode then ml_config.filters = {} end
 
-    self:sanitizeConfiguration(config)
+    self:sanitizeConfiguration(ml_config)
 
-    return config
+    return ml_config
 end
 
 ---@param ml_config miniloader.Config
