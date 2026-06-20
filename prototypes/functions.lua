@@ -163,6 +163,9 @@ local function create_entity(params)
     -- can not go faster than 0.5 (max half a rotation per tick - see https://wiki.factorio.com/inserters#Rotation_Speed)
     assert(speed_config.rotation_speed <= 0.5, ('Rotation speed: %.2f'):format(speed_config.rotation_speed))
 
+    local can_stack = params.stack and speed_config.stack_size_bonus == 0
+
+
     local description = { '',
         { 'entity-description.' .. entity_name },
         '\n',
@@ -250,12 +253,12 @@ local function create_entity(params)
         filter_count                          = params.nerf_mode and 0 or 5,
 
         -- handle stacking, settings match the stack inserter prototype
-        bulk                                  = params.stack or false,
+        bulk                                  = can_stack or false,
         wait_for_full_hand                    = false,
-        grab_less_to_match_belt_stack         = params.stack or false,
-        stack_size_bonus                      = params.stack and math.max(speed_config.stack_size_bonus, 4) or speed_config.stack_size_bonus,
-        max_belt_stack_size                   = params.stack and 4 or 1,
-        enter_drop_mode_if_held_stack_spoiled = params.stack or false,
+        grab_less_to_match_belt_stack         = can_stack or false,
+        stack_size_bonus                      = can_stack and 4 or speed_config.stack_size_bonus,
+        max_belt_stack_size                   = can_stack and 4 or 1,
+        enter_drop_mode_if_held_stack_spoiled = can_stack or false,
 
         ---@diagnostic disable-next-line: undefined-global
         circuit_wire_max_distance             = (not params.nerf_mode) and default_circuit_wire_max_distance or 0,
@@ -396,8 +399,8 @@ local function create_entity(params)
         energy_source                = drain_primary_energy,
         energy_per_item              = per_item,
 
-        max_belt_stack_size          = params.stack and 4 or 1,
-        adjustable_belt_stack_size   = params.stack or false,
+        max_belt_stack_size          = can_stack and 4 or 1,
+        adjustable_belt_stack_size   = can_stack or false,
         wait_for_full_stack          = false,
         loader_respect_insert_limits = true,
 

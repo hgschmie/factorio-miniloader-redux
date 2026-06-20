@@ -251,7 +251,7 @@ local function write_config_to_inserter(ml_config, inserter)
         and (ml_config.loader_type == 'input'
             and inserter.prototype.inserter_max_belt_stack_size
             or ml_config.stack_size)
-        or 1
+        or 0 -- set to the default stack size, this is needed for some inserter speeds
 
     if This.MiniLoader.spoiling then
         inserter.inserter_spoil_priority = (ml_config.nerf_mode and 'none') or (ml_config.spoil_priority or 'none')
