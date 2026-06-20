@@ -388,7 +388,7 @@ local function create_entity(params)
             }
         },
         filter_count                 = params.nerf_mode and 0 or 5,
-        structure_render_layer       = 'floor-mechanics',
+        structure_render_layer       = 'object',
         container_distance           = 0,
         allow_rail_interaction       = false,
         allow_container_interaction  = false,
