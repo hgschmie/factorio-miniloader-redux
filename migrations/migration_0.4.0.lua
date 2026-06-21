@@ -5,7 +5,7 @@ local table = require('stdlib.utils.table')
 
 local const = require('lib.constants')
 
-if storage.ml_data and storage.ml_data.VERSION >= const.CURRENT_VERSION then return end
+if storage.ml_data and (not storage.ml_data.VERSION) or (storage.ml_data.VERSION >= const.CURRENT_VERSION) then return end
 
 -- add gui reference
 storage.ml_data.open_guis = storage.ml_data.open_guis or {}

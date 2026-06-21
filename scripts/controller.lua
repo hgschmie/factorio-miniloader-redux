@@ -35,7 +35,7 @@ local Controller = {
 --- Keys are the keys in the inserter_config and control behavior
 --- Values in this table are keys in the blueprint entity
 ---@type table<string, string>
-local CONTROL_ATTRIBUTES = {
+Controller.CONTROL_ATTRIBUTES = {
     circuit_set_filters = 'circuit_set_filters',
     circuit_enable_disable = 'circuit_enabled',
     circuit_condition = 'circuit_condition',
@@ -119,7 +119,7 @@ local function create_config(parent_config, inserter_data)
     end
 
     local control = parent_config.inserter_config or {}
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
+    for control_key in pairs(Controller.CONTROL_ATTRIBUTES) do
         if inserter_data.nerf_mode then
             config.inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
         else
@@ -309,14 +309,16 @@ end
 function Controller:sanitizeConfiguration(ml_config)
     if not ml_config then return end
 
-    local filters = {}
-    for key, value in pairs(ml_config.inserter_config.filters) do
-        local new_key = tonumber(key)
-        if new_key then
-            filters[new_key] = value
+    if ml_config.inserter_config then
+        local filters = {}
+        for key, value in pairs(ml_config.inserter_config.filters) do
+            local new_key = tonumber(key)
+            if new_key then
+                filters[new_key] = value
+            end
         end
+        ml_config.inserter_config.filters = filters
     end
-    ml_config.inserter_config.filters = filters
 end
 
 --- Serializes the configuration suitable for blueprinting and tombstone management.
@@ -494,7 +496,7 @@ function Controller:readConfigFromEntity(entity, ml_entity)
     }
 
     -- copy control attributes
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
+    for control_key in pairs(self.CONTROL_ATTRIBUTES) do
         if ml_entity.config.nerf_mode then
             inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
         else
@@ -555,7 +557,7 @@ function Controller:readConfigFromBlueprintEntity(bp_entity, ml_entity)
     }
 
     -- copy blueprint attributes
-    for control_key, bp_key in pairs(CONTROL_ATTRIBUTES) do
+    for control_key, bp_key in pairs(self.CONTROL_ATTRIBUTES) do
         if ml_entity.config.nerf_mode then
             inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
         else
@@ -599,7 +601,7 @@ function Controller:writeConfigToEntity(inserter_config, entity)
     if not control.valid then return end
 
     -- copy control attributes
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
+    for control_key in pairs(self.CONTROL_ATTRIBUTES) do
         control[control_key] = inserter_config[control_key]
     end
 
@@ -714,16 +716,15 @@ function Controller:reconfigure(ml_entity, cfg)
     local direction = config.direction
     assert(direction)
 
-    assert(ml_entity.loader.valid)
-
-    -- reorient loader
-    ml_entity.loader.loader_type = tostring(config.loader_type)
-    ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
-    if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
+    if (not ml_entity.loader.valid) or (Position(ml_entity.main.position) ~= Position(ml_entity.loader.position)) then
         -- miniloader was moved
         ml_entity.loader.destroy()
         ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
     end
+
+    -- reorient loader
+    ml_entity.loader.loader_type = tostring(config.loader_type)
+    ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
 
     -- connect loader to belt if needed
     ml_entity.loader.update_connections()
@@ -739,6 +740,8 @@ function Controller:reconfigure(ml_entity, cfg)
         -- reorient inserter
         inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
         inserter.teleport(ml_entity.main.position)
+
+        inserter.disabled_by_script = false
 
         -- normal speed: even inserters right
         -- high speed: even inserters left

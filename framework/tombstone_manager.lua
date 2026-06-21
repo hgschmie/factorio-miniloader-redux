@@ -247,6 +247,12 @@ end
 -- event registration
 --------------------------------------------------------------------------------
 
+local function reset_storage()
+    local state = Framework.tombstone:state()
+    state.tombstones = {}
+    state.tombstone_count = nil
+end
+
 local function register_events()
     Event.register(defines.events.on_undo_applied, process_undo_redo_event)
     Event.register(defines.events.on_redo_applied, process_undo_redo_event)
@@ -256,5 +262,6 @@ end
 
 Event.on_init(register_events)
 Event.on_load(register_events)
+Event.on_configuration_changed(reset_storage)
 
 return FrameworkTombstoneManager
