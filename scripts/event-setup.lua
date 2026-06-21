@@ -37,13 +37,16 @@ local function ghost_callback(attached_entity)
     ---@type miniloader.PreBuild?
     local pre_build = pdata and pdata.pre_build
 
-    local config = This.MiniLoader:deserializeConfiguration(attached_entity.tags)
+    local tags = util.copy(attached_entity.tags)
+    local config = This.MiniLoader:deserializeConfiguration(tags)
 
     -- correct config direction in the ml_config tag
     if config and config.direction then
         config.direction = This.Snapping:correct_direction(config.direction, pre_build)
         -- reassign tags to entity
-        attached_entity.entity.tags = util.copy(attached_entity.tags)
+        tags[const.config_tag_name] = config
+        -- must be replaced with direct assignment
+        attached_entity.entity.tags = tags
     end
 end
 
