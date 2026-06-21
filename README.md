@@ -2,33 +2,42 @@
 
 A compact loader that can replace inserters in many situations when loading from/to a belt.
 
-Miniloader supports three different modes:
+Miniloaders can have different modes:
 
-- _Standard mode_ (which is the default) supports loading from/to anything onto a belt. In this mode, the miniloader can do sideloading. It will struggle to match the speed of belts that move faster than 120 items/sec (The fastest "official" in-game belts are Space Age Turbo Belts, which move at 60 items/sec). In Space Age, it also supports Spoiling priority.
-- _Speed mode_ is activated in the GUI. It moves items faster than the Standard mode. In Speed Mode, the Miniloader can keep up with the fastest possible belts (which move 480 items/sec).
-- _Lane filter mode_ is available in Speed Mode. This mode has only two filter slots. The first slot applies to the left lane, the second applies to the right lane. This allows creating belts with two different items on the left and right lane by just pulling out of a chest.
+- _Normal mode_ (which is the default)
+  - supports sideloading from/to a belt
+  - In Space Age, supports spoilage priority
+  - degrades with belts above 240 items/sec(The fastest "official" in-game belts are Space Age Turbo Belts, which move at 60 items/sec)
+- _Speed mode_
+  - can interact only with entities that are a container or container-like (e.g. cargo wagons or assembly machines)
+  - spupports speeds up to 480 items/sec
+- _Lane filter mode_
+  - only available in Speed Mode
+  - has a single filter for each lane, one for the left lane and one for the right lane
 
+- All modes
+  - 1x1 compact size
+  - Extended UI
+  - can be moved with [Even Pickier Dollies](https://mods.factorio.com/mod/even-pickier-dollies)
+  - flips through belt directions and orientation when rotating
+  - supports Fast replacement, Blueprinting, Copy&Paste, Cloning
+  - supports undo/redo for configuration changes
+  - supports parameterized blueprints
+  - supports migrating 1.1 games from the "old" Miniloaders to Miniloader (Redux) with a startup setting
+  - when stacking is available (Space Age), stacking is supported by "Vanilla", Fast and Turbo loaders
+
+There are three tiers in the base game ("Vanilla", Fast and Express) and four when playing Space Age (adds Turbo mode) which match the belt speeds.
+
+A simple "chute" loader is available early in the game (enable in Startup settings). The chute loader only supports normal mode and has no GUI.
+
+![All supported Loader types](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/all-belts.gif)
+![All supported Stacking Loader types](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/all-belts-stacked.gif)
+![Lane Filter Mode](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/lane-filter.gif)
 ![Sideloading from/to a belt](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/sideloading.gif)
 ![Extended rotation](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/extended_rotation.gif)
 ![Moving Miniloaders](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/picker-dollies.gif)
-![All supported Loader types](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/all_belts.gif)
-
-## Features
-
-- 1x1 compact size.
-- In Standard mode can pick up/drop off anywhere an inserter can, especially from adjacent belts.
-- Can be moved with [Even Pickier Dollies](https://mods.factorio.com/mod/even-pickier-dollies)
-- Extended UI
-- In Standard mode, supports spoilage priority
-- Flips through belt directions and orientation when rotating/
-- Supports Fast replacement, Blueprinting, Copy&Paste, Cloning.
-- Supports a simple "chute" loader that is available early in the game (configurable).
-- Supports undo/redo for configuration changes
-- Supports parameterized blueprints
-- Supports migrating 1.1 games from the "old" Miniloaders to Miniloader (Redux) with a startup setting.
-- When stacking is available (Space Age), stacking is supported by "Vanilla", Fast and Turbo loaders.
-
-There are three available tiers in the base game ("Vanilla", Fast and Express) and four when playing Space Age (adds Turbo mode).
+![Normal Mode GUI](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/normal-mode-gui.png)
+![Speed Mode GUI](https://raw.githubusercontent.com/hgschmie/factorio-miniloader-redux/refs/heads/main/portal/speed-mode-gui.png)
 
 Miniloader supports some other mods:
 
@@ -47,9 +56,9 @@ I am open to support additional tiers from other mods from PRs (see below) but I
 
 ## Limitations
 
-- High speed (> 120 items/sec) miniloaders will only achieve maximum throughput if using Speed Mode.
-- When sideloading onto a belt with High speed miniloaders, they may spray items across both lanes of the belt they are loading to.
-- Stacking (in Space Age) is only available for some Miniloaders. Stacking for the "Turbo" miniloader is equivalent to the pre-1.0 Stacking miniloader.
+- High speed (> 120 items/sec) miniloaders will only achieve maximum throughput when using Speed Mode.
+- When sideloading in Normal Mode onto a belt with High speed miniloaders, they may spray items across both lanes of the belt they are loading to.
+- Stacking (in Space Age) is only available for some Miniloaders. Stacking for the "Turbo" miniloader is equivalent to the pre-1.0 Stacking miniloader. Existing Stacking Miniloaders are converted to "Turbo" Miniloaders.
 
 ### Fixing Collision mask failures
 
@@ -70,8 +79,12 @@ If you encounter this error, try enabling this setting first. It has no permanen
 To enable this setting, when the game fails to start:
 
 - first disable the _other_ mod that causes the problem. Keep Miniloader enabled
-- set the startup setting
+- set the startup setting and restart the game
 - re-enable the other mod
+
+### Pre-1.0 Blueprints
+
+Miniloader can read blueprints that were created with pre-1.0 versions of the Miniloader. However, any pre-1.0 Miniloader will not be able to read 1.0 or later Blueprints (and will, in fact, crash the game).
 
 ## How you can help
 
