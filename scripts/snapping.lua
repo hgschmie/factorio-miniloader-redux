@@ -72,13 +72,6 @@ function Snapping:compute_loader_direction(config)
     return config.loader_type == const.loader_direction.output and config.direction or Direction.opposite(config.direction)
 end
 
----@param config miniloader.Config
----@return defines.direction
-function Snapping:compute_inserter_direction(config)
-    -- for input loaders, the inserter points in the same direction as the miniloader, for output loaders it points in opposite direction
-    return config.loader_type == const.loader_direction.input and config.direction or Direction.opposite(config.direction)
-end
-
 ---@param direction defines.direction
 ---@param loader_type miniloader.LoaderDirection
 function Snapping:direction_from_inserter(direction, loader_type)
@@ -149,7 +142,6 @@ end
 ---@return (miniloader.Data[]) ml_entities
 local function find_loader_by_entity(entity)
     local area = Area(entity.prototype.selection_box):offset(entity.position):expand(1)
-
     if Framework.settings:startup_setting('debug_mode') then
         rendering.draw_rectangle {
             color = { r = 1, g = 0.5, b = 0.5 },
@@ -170,7 +162,7 @@ local function find_loader_by_entity(entity)
     local ml_entities = {}
     for _, candidate in pairs(candidates) do
         local ml_entity = This.MiniLoader:getEntity(candidate.unit_number)
-        if ml_entity then table.insert(ml_entities, ml_entity) end
+        if ml_entity then ml_entities[#ml_entities + 1] = ml_entity end
     end
 
     return ml_entities
@@ -183,7 +175,7 @@ local function find_neighbor_entity(ml_entity, direction)
     direction = direction or ml_entity.config.direction
 
     -- find area to look at in front of the miniloader (the miniloader points in 'direction')
-    local area = Area(ml_entity.main.prototype.selection_box):offset(Position(ml_entity.main.position)):translate(direction, 1)
+    local area = Position(ml_entity.main.position):translate(direction, 1):expand_to_area(0.5)
 
     if Framework.settings:startup_setting('debug_mode') then
         rendering.draw_rectangle {

@@ -12,38 +12,17 @@ require 'sound-util'
 
 local const = require('lib.constants')
 
-local FORMAT_STRING = '%.2fkW'
-
--- similar to the original miniloader module, this uses an inserter as the "main" entity.
--- unlike the miniloader, it manages all other entities fully. It also uses different inserter entities for
--- primary and hidden inserters which allows for correct power stats and blueprints.
-
----@diagnostic disable-next-line: undefined-global
-local loader_connector_definitions = circuit_connector_definitions.create_vector(
----@diagnostic disable-next-line: undefined-global
-    universal_connector_template,
-    {
-        { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = util.by_pixel(1, 12), show_shadow = true },  -- North
-        { variation = 24, main_offset = util.by_pixel(-15, 0), shadow_offset = { 0, 0 }, },                                 -- East
-        { variation = 24, main_offset = util.by_pixel(-17, 0), shadow_offset = { 0, 0 }, },                                 -- South
-        { variation = 31, main_offset = util.by_pixel(15, 0),  shadow_offset = { 0, 0 }, },                                 -- West
-
-        { variation = 31, main_offset = util.by_pixel(17, 0),  shadow_offset = { 0, 0 }, },                                 -- South
-        { variation = 31, main_offset = util.by_pixel(15, 0),  shadow_offset = { 0, 0 }, },                                 -- West
-        { variation = 30, main_offset = util.by_pixel(0, 11),  shadow_offset = util.by_pixel(0, 12), show_shadow = true, }, -- North
-        { variation = 24, main_offset = util.by_pixel(-15, 0), shadow_offset = { 0, 0 }, },                                 -- East
-    }
-)
+local FORMAT_STRING = '%.2fk%s'
 
 ---@diagnostic disable-next-line: undefined-global
 local inserter_connector_definitions = circuit_connector_definitions.create_vector(
 ---@diagnostic disable-next-line: undefined-global
     universal_connector_template,
     {
-        { variation = 31, main_offset = util.by_pixel(17, 0),  shadow_offset = { 0, 0 }, }, -- North
-        { variation = 30, main_offset = util.by_pixel(0, 11),  shadow_offset = { 0, 0 }, }, -- West
-        { variation = 24, main_offset = util.by_pixel(-17, 0), shadow_offset = { 0, 0 }, }, -- South
-        { variation = 26, main_offset = util.by_pixel(1, 11),  shadow_offset = { 0, 0 }, }, -- East
+        { variation = 0, main_offset = util.by_pixel(5, -3),  shadow_offset = util.by_pixel(9, 1),  show_shadow = false, }, -- North
+        { variation = 6, main_offset = util.by_pixel(0, -2),  shadow_offset = util.by_pixel(4, 3),  show_shadow = false, }, -- West
+        { variation = 4, main_offset = util.by_pixel(-4, -5), shadow_offset = util.by_pixel(0, -1), show_shadow = false, }, -- South
+        { variation = 2, main_offset = util.by_pixel(1, -10), shadow_offset = util.by_pixel(5, -6), show_shadow = false, }, -- East
     }
 )
 
@@ -184,6 +163,9 @@ local function create_entity(params)
     -- can not go faster than 0.5 (max half a rotation per tick - see https://wiki.factorio.com/inserters#Rotation_Speed)
     assert(speed_config.rotation_speed <= 0.5, ('Rotation speed: %.2f'):format(speed_config.rotation_speed))
 
+    local can_stack = params.stack and speed_config.stack_size_bonus == 0
+
+
     local description = { '',
         { 'entity-description.' .. entity_name },
         '\n',
@@ -206,22 +188,29 @@ local function create_entity(params)
         render_no_network_icon = true,
     }
 
-    local consumption_amount = math.sqrt(math.pow(speed_config.items_per_second, 2) / 8) * (params.bulk and 2 or 1) * 5
-    local drain_amount = 0.4 + (speed_config.items_per_second / 150) * speed_config.inserter_pairs
+    -- calculate loader power draw
+    local per_item_amount = 1.5 * math.log(speed_config.items_per_second) / math.log(15)
+
+    -- calculate inserter power draw
+    -- normalize for slowest inserter (15 items/sec), then divide by rotation speed (and apply power correction if necessary)
+    local per_rotation_amount = (per_item_amount * (speed_config.items_per_second / 15)) / (speed_config.rotation_speed * (speed_config.power_correction or 1))
+
+    local drain_amount = math.ceil(speed_config.items_per_second / 15)
 
     if Framework.settings:startup_setting(const.settings_names.no_power) then
         primary_energy = void_energy
-        consumption_amount = 0
         drain_amount = 0
     elseif params.energy_source then
         primary_energy, consumption_amount, drain_amount = params.energy_source()
     end
 
-    local consumption = FORMAT_STRING:format(consumption_amount)
-    local hidden_consumption = FORMAT_STRING:format(consumption_amount / (speed_config.inserter_pairs * 2 - 1))
-    local drain = FORMAT_STRING:format(drain_amount)
+    local drain_primary_energy = util.copy(primary_energy)
 
-    if drain_amount > 0 then primary_energy.drain = drain end
+    local drain = FORMAT_STRING:format(drain_amount, 'W')
+    local per_item = FORMAT_STRING:format(per_item_amount, 'J')
+    local per_rotation = FORMAT_STRING:format(per_rotation_amount, 'J')
+
+    if drain_amount > 0 then drain_primary_energy.drain = drain end
 
     -- This is the entity that is used to represent the miniloader.
     -- - it can be rotated
@@ -229,63 +218,65 @@ local function create_entity(params)
 
     local inserter = {
         -- Prototype Base
-        type                           = 'inserter',
-        name                           = entity_name,
-        order                          = params.order,
-        localised_name                 = params.localised_name,
-        localised_description          = description,
-        subgroup                       = params.subgroup,
-        hidden                         = false,
-        hidden_in_factoriopedia        = false,
+        type                                  = 'inserter',
+        name                                  = entity_name,
+        order                                 = params.order,
+        localised_name                        = params.localised_name,
+        localised_description                 = description,
+        subgroup                              = params.subgroup,
+        hidden                                = false,
+        hidden_in_factoriopedia               = false,
 
         -- InserterPrototype
-        extension_speed                = speed_config.rotation_speed * 5,
-        rotation_speed                 = speed_config.rotation_speed,
-        insert_position                = { 0, 0 },
-        pickup_position                = { 0, 0 },
+        extension_speed                       = speed_config.rotation_speed * 5,
+        rotation_speed                        = speed_config.rotation_speed,
+        insert_position                       = { 0, 0 },
+        pickup_position                       = { 0, 0 },
 
-        platform_picture               = {
+        platform_picture                      = {
             sheets = entity_sheets_gfx(params.tint, params.entity_gfx),
         },
-        hand_base_picture              = util.empty_sprite(),
-        hand_open_picture              = util.empty_sprite(),
-        hand_closed_picture            = util.empty_sprite(),
-        hand_base_shadow               = util.empty_sprite(),
-        hand_open_shadow               = util.empty_sprite(),
-        hand_closed_shadow             = util.empty_sprite(),
-        energy_source                  = primary_energy,
-        energy_per_movement            = consumption,
-        energy_per_rotation            = consumption,
-        uses_inserter_stack_size_bonus = false, -- otherwise does not match belt speed
-        allow_custom_vectors           = true,
-        draw_held_item                 = false,
-        use_easter_egg                 = false,
-        filter_count                   = params.nerf_mode and 0 or 5,
 
-        -- handle stacking
-        bulk                           = params.bulk or false,
-        wait_for_full_hand             = params.bulk or false,
-        grab_less_to_match_belt_stack  = params.bulk or false,
-        stack_size_bonus               = params.bulk and 4 or speed_config.stack_size_bonus,
-        max_belt_stack_size            = params.bulk and 4 or 1,
+        hand_base_picture                     = util.empty_sprite(),
+        hand_open_picture                     = util.empty_sprite(),
+        hand_closed_picture                   = util.empty_sprite(),
+        hand_base_shadow                      = util.empty_sprite(),
+        hand_open_shadow                      = util.empty_sprite(),
+        hand_closed_shadow                    = util.empty_sprite(),
+        energy_source                         = primary_energy,
+        energy_per_movement                   = '0.0001J',
+        energy_per_rotation                   = per_rotation,
+        uses_inserter_stack_size_bonus        = false, -- otherwise does not match belt speed
+        allow_custom_vectors                  = true,
+        draw_held_item                        = false,
+        use_easter_egg                        = false,
+        filter_count                          = params.nerf_mode and 0 or 5,
+
+        -- handle stacking, settings match the stack inserter prototype
+        bulk                                  = can_stack or false,
+        wait_for_full_hand                    = false,
+        grab_less_to_match_belt_stack         = can_stack or false,
+        stack_size_bonus                      = can_stack and 4 or speed_config.stack_size_bonus,
+        max_belt_stack_size                   = can_stack and 4 or 1,
+        enter_drop_mode_if_held_stack_spoiled = can_stack or false,
 
         ---@diagnostic disable-next-line: undefined-global
-        circuit_wire_max_distance      = not params.nerf_mode and default_circuit_wire_max_distance or 0,
-        draw_inserter_arrow            = false,
-        chases_belt_items              = false,
-        circuit_connector              = not params.nerf_mode and inserter_connector_definitions or nil,
+        circuit_wire_max_distance             = (not params.nerf_mode) and default_circuit_wire_max_distance or 0,
+        draw_inserter_arrow                   = false,
+        chases_belt_items                     = false,
+        circuit_connector                     = (not params.nerf_mode) and inserter_connector_definitions or nil,
 
         -- EntityWitHealthPrototype
-        max_health                     = 170,
-        damaged_trigger_effect         = {
+        max_health                            = 170,
+        damaged_trigger_effect                = {
             type = 'create-entity',
             entity_name = 'spark-explosion',
             offset_deviation = { { -0.5, -0.5 }, { 0.5, 0.5 } },
             offsets = { { 0, 1 } },
             damage_type_filters = 'fire'
         },
-        dying_explosion                = compute_dash_prefix(explosion_gfx) .. 'underground-belt-explosion',
-        resistances                    = {
+        dying_explosion                       = compute_dash_prefix(explosion_gfx) .. 'underground-belt-explosion',
+        resistances                           = {
             {
                 type = 'fire',
                 percent = 60
@@ -295,28 +286,28 @@ local function create_entity(params)
                 percent = 30
             }
         },
-        corpse                         = compute_dash_prefix(corpse_gfx) .. 'underground-belt-remnants',
+        corpse                                = compute_dash_prefix(corpse_gfx) .. 'underground-belt-remnants',
 
         -- EntityPrototype
-        icons                          = icon_gfx(params.tint, params.entity_gfx),
+        icons                                 = icon_gfx(params.tint, params.entity_gfx),
 
-        collision_box                  = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-        collision_mask                 = collision_mask_util.get_default_mask('inserter'),
-        selection_box                  = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-        flags                          = { 'placeable-neutral', 'placeable-player', 'player-creation' },
-        minable                        = { mining_time = 0.1, result = entity_name },
-        selection_priority             = 50,
-        impact_category                = 'metal',
-        open_sound                     = { filename = '__base__/sound/open-close/inserter-open.ogg', volume = 0.6 },
-        close_sound                    = { filename = '__base__/sound/open-close/inserter-close.ogg', volume = 0.5 },
-        working_sound                  = {
+        collision_box                         = { { -0.4, -0.4 }, { 0.4, 0.4 } },
+        collision_mask                        = collision_mask_util.get_default_mask('inserter'),
+        selection_box                         = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+        flags                                 = { 'placeable-neutral', 'placeable-player', 'player-creation' },
+        minable                               = { mining_time = 0.1, result = entity_name },
+        selection_priority                    = 50,
+        impact_category                       = 'metal',
+        open_sound                            = { filename = '__base__/sound/open-close/inserter-open.ogg', volume = 0.6 },
+        close_sound                           = { filename = '__base__/sound/open-close/inserter-close.ogg', volume = 0.5 },
+        working_sound                         = {
             match_progress_to_activity = true,
             ---@diagnostic disable-next-line: undefined-global
             sound = sound_variations('__base__/sound/inserter-basic', 5, 0.5, { volume_multiplier('main-menu', 2), volume_multiplier('tips-and-tricks', 1.8) }),
             audible_distance_modifier = 0.3
         },
-        fast_replaceable_group         = 'mini-loader',
-        icon_draw_specification        = {
+        fast_replaceable_group                = 'mini-loader',
+        icon_draw_specification               = {
             scale = 0.5,
             scale_for_many = 0.75,
         },
@@ -333,8 +324,8 @@ local function create_entity(params)
 
         hidden = true,
         hidden_in_factoriopedia = true,
-        energy_per_movement = hidden_consumption,
-        energy_per_rotation = hidden_consumption,
+        energy_per_movement = '0.0001J',
+        energy_per_rotation = '0.0001J',
         platform_picture = meld.overwrite(util.empty_sprite()),
         collision_mask = meld.overwrite(collision_mask_util.new_mask()),
         selection_box = { { 0, 0 }, { 0, 0 } },
@@ -357,23 +348,23 @@ local function create_entity(params)
         fast_replaceable_group = meld.delete(),
     })
 
-    table.insert(hidden_inserter.flags, 'placeable-off-grid')
+    hidden_inserter.flags[#hidden_inserter.flags + 1] = 'placeable-off-grid'
 
     apply_prototype_processors(params, hidden_inserter)
 
     local loader = {
         -- Prototype Base
-        name                        = loader_name,
-        localised_name              = { 'entity-name.' .. loader_name },
-        description                 = { 'entity-description.' .. loader_name },
-        type                        = 'loader-1x1',
-        order                       = params.order,
-        subgroup                    = params.subgroup,
-        hidden                      = true,
-        hidden_in_factoriopedia     = true,
+        name                         = loader_name,
+        localised_name               = { 'entity-name.' .. loader_name },
+        description                  = { 'entity-description.' .. loader_name },
+        type                         = 'loader-1x1',
+        order                        = params.order,
+        subgroup                     = params.subgroup,
+        hidden                       = true,
+        hidden_in_factoriopedia      = true,
 
         -- LoaderPrototype
-        structure                   = {
+        structure                    = {
             direction_in = {
                 sheets = entity_sheets_gfx(params.tint, params.entity_gfx)
             },
@@ -399,34 +390,38 @@ local function create_entity(params)
                 }
             }
         },
-        filter_count                = params.nerf_mode and 0 or 5,
-        structure_render_layer      = 'object',
-        container_distance          = 0,
-        allow_rail_interaction      = false,
-        allow_container_interaction = false,
-        per_lane_filters            = false,
-        energy_source               = void_energy,
-        energy_per_item             = '0.0000001W',
+        filter_count                 = params.nerf_mode and 0 or 5,
+        structure_render_layer       = 'object',
+        container_distance           = 0,
+        allow_rail_interaction       = false,
+        allow_container_interaction  = false,
+        per_lane_filters             = false,
+        energy_source                = drain_primary_energy,
+        energy_per_item              = per_item,
+
+        max_belt_stack_size          = can_stack and 4 or 1,
+        adjustable_belt_stack_size   = can_stack or false,
+        wait_for_full_stack          = false,
+        loader_respect_insert_limits = true,
 
         ---@diagnostic disable-next-line: undefined-global
-        circuit_wire_max_distance   = default_circuit_wire_max_distance,
-        circuit_connector           = loader_connector_definitions,
+        circuit_wire_max_distance    = default_circuit_wire_max_distance,
 
         -- EntityWitHealthPrototype
-        max_health                  = 10,
+        max_health                   = 10,
 
         -- TransportBeltConnectablePrototype
-        belt_animation_set          = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
-        animation_speed_coefficient = 32,
-        speed                       = params.speed,
+        belt_animation_set           = util.copy(data.raw['underground-belt']['underground-belt'].belt_animation_set),
+        animation_speed_coefficient  = 32,
+        speed                        = params.speed,
 
         -- EntityPrototype
-        icons                       = icon_gfx(params.tint, 'internal', 'internal'),
+        icons                        = icon_gfx(params.tint, 'internal', 'internal'),
 
-        collision_box               = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-        collision_mask              = { layers = { transport_belt = true, } },
-        selection_box               = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-        flags                       = {
+        collision_box                = { { -0.4, -0.4 }, { 0.4, 0.4 } },
+        collision_mask               = { layers = { transport_belt = true, } },
+        selection_box                = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+        flags                        = {
             'placeable-neutral',
             'placeable-player',
             'not-on-map',
@@ -438,10 +433,10 @@ local function create_entity(params)
             'not-in-kill-statistics',
             'not-in-made-in',
         },
-        minable                     = nil,
-        selection_priority          = 0,
-        allow_copy_paste            = false,
-        selectable_in_game          = false,
+        minable                      = nil,
+        selection_priority           = 0,
+        allow_copy_paste             = false,
+        selectable_in_game           = false,
     }
 
     -- hack to get the belt color right
@@ -449,7 +444,22 @@ local function create_entity(params)
 
     apply_prototype_processors(params, loader)
 
-    data:extend { inserter, hidden_inserter, loader }
+    local turbo_loader = meld(util.copy(loader), {
+        name                        = const.loader_name(entity_name, true, false),
+        icons                       = icon_gfx(params.tint, params.entity_gfx),
+        localised_description       = description,
+        container_distance          = 1,
+        allow_rail_interaction      = true,
+        allow_container_interaction = true,
+    })
+
+    local lane_filter_loader = meld(util.copy(turbo_loader), {
+        name = const.loader_name(entity_name, true, true),
+        filter_count = 2,
+        per_lane_filters = true,
+    })
+
+    data:extend { inserter, hidden_inserter, loader, turbo_loader, lane_filter_loader }
 end
 
 local function create_recipe(params)
@@ -569,8 +579,7 @@ local function create_debug(params)
         minable                        = { mining_time = 0.1, result = debug_name },
     })
 
-    table.insert(debug_inserter.flags, 'placeable-off-grid')
-
+    debug_inserter.flags[#debug_inserter.flags + 1] = 'placeable-off-grid'
     debug_inserter.platform_picture.sheet.tint = params.tint
 
     local debug_recipe = meld(util.copy(data.raw['recipe']['inserter']), {

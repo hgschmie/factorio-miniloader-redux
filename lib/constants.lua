@@ -23,15 +23,11 @@ local table = require('stdlib.utils.table')
 ---@field supported_loader_names string[]
 ---@field supported_inserters table<string, true>
 ---@field supported_inserter_names string[]
----@field CURRENT_VERSION number
 ---@field prefix string
 ---@field name string
 ---@field root string
---_@field order string
+---@field order string
 local Constants = {
-    -- the current version that is the result of the latest migration
-    CURRENT_VERSION = 2,
-
     prefix = 'hps__ml-',
     name = 'miniloader',
     root = '__miniloader-redux__',
@@ -101,10 +97,15 @@ end
 -- Base name
 Constants.miniloader_name = Constants:with_prefix(Constants.name)
 
+
+local loader_postfix = { '-l', '-turbo-l', '-lf-l', '-turbo-lf-l', }
+
 ---@param name string
----@return string
-function Constants.loader_name(name)
-    return name .. '-l'
+---@param turbo boolean?
+---@param lane_filter boolean?
+---@return string loader_name
+function Constants.loader_name(name, turbo, lane_filter)
+    return name .. loader_postfix[(turbo and 1 or 0) + (lane_filter and 2 or 0) + 1]
 end
 
 ---@param name string
@@ -163,6 +164,7 @@ Constants.settings_keys = {
     'sanitize_loaders',
     'no_power',
     'double_recipes',
+    'check_speed_mode',
 }
 
 Constants.settings_names = {}
@@ -205,17 +207,29 @@ end
 
 if script then
     for prototype_name, prototype in pairs(prototypes.entity) do
+        ---@diagnostic disable-next-line: undefined-field
         if prototype_name:starts_with(Constants.prefix) and Constants.miniloader_types[prototype.type] and prototype_name:ends_with(Constants.name) then
             Constants.supported_types[prototype_name] = true
-            table.insert(Constants.supported_type_names, prototype_name)
+            Constants.supported_type_names[#Constants.supported_type_names + 1] = prototype_name
 
-            local loader_name = Constants.loader_name(prototype_name)
-            Constants.supported_loaders[loader_name] = true
-            table.insert(Constants.supported_loader_names, loader_name)
+            ---@type miniloader.ModData
+            local inserter_data = assert(prototypes.mod_data[Constants.name].data[prototype_name])
+
+            if inserter_data.nerf_mode then
+                local loader_name = Constants.loader_name(prototype_name)
+                Constants.supported_loaders[loader_name] = true
+                Constants.supported_loader_names[#Constants.supported_loader_names + 1] = loader_name
+            else
+                for _, postfix in pairs(loader_postfix) do
+                    local loader_name = prototype_name .. postfix
+                    Constants.supported_loaders[loader_name] = true
+                    Constants.supported_loader_names[#Constants.supported_loader_names + 1] = loader_name
+                end
+            end
 
             local inserter_name = Constants.inserter_name(prototype_name)
             Constants.supported_inserters[inserter_name] = true
-            table.insert(Constants.supported_inserter_names, inserter_name)
+            Constants.supported_inserter_names[#Constants.supported_inserter_names + 1] = inserter_name
         end
     end
 end

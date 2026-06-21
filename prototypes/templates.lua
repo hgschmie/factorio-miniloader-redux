@@ -5,7 +5,8 @@
 local util = require('util')
 local const = require('lib.constants')
 
-local supported_mods = {
+---@type table<string, string>
+local SUPPORTED_MODS = {
     ['base'] = 'base',
     ['space-age'] = 'space_age',
     ['matts-logistics'] = 'matt',
@@ -17,11 +18,109 @@ local supported_mods = {
     ['TurboBelt'] = 'turbo_belt',
 }
 
+local STACKING_ENABLED = feature_flags.space_travel
+
+---@type table<string, miniloader.SpeedConfig>
+local SPEED_SETTINGS = {
+    speed_3_75 = {
+        items_per_second = 3.75,
+        rotation_speed = 0.01875,
+        inserter_pairs = 1,
+        stack_size_bonus = 0,
+        power_correction = 1,
+    },
+    speed_7_5 = {
+        items_per_second = 7.5,
+        rotation_speed = 0.046875,
+        inserter_pairs = 1,
+        stack_size_bonus = 0,
+        power_correction = 1,
+    },
+    speed_15 = {
+        items_per_second = 15,
+        rotation_speed = 0.075,
+        inserter_pairs = 1,
+        stack_size_bonus = 0,
+        power_correction = 90/181,
+    },
+    speed_30 = {
+        items_per_second = 30,
+        rotation_speed = 0.125,
+        inserter_pairs = 1,
+        stack_size_bonus = 0,
+        power_correction = 226/228, -- Fast
+    },
+    speed_45 = {
+        items_per_second = 45,
+        rotation_speed = 0.125,
+        inserter_pairs = 1,
+        stack_size_bonus = 1,
+        power_correction = 380/256, -- 1.43,
+    },
+    speed_60 = {
+        items_per_second = 60,
+        rotation_speed = 0.25,
+        inserter_pairs = 1,
+        stack_size_bonus = 0,
+        power_correction = 544/276, -- Turbo
+    },
+    speed_75 = {
+        items_per_second = 75,
+        rotation_speed = 0.1875,
+        inserter_pairs = 1,
+        stack_size_bonus = 3,
+        power_correction = 717/292, -- PRO-1
+    },
+    speed_90 = {
+        items_per_second = 90,
+        rotation_speed = 0.25,
+        inserter_pairs = 1,
+        stack_size_bonus = 3,
+        power_correction = 897/305, -- Ultra fast
+    },
+    speed_105 = {
+        items_per_second = 105,
+        rotation_speed = 0.25,
+        inserter_pairs = 1,
+        stack_size_bonus = 5,
+        power_correction = 1080/317, -- PRO-2
+    },
+    speed_180 = {
+        items_per_second = 180,
+        rotation_speed = 0.5,
+        inserter_pairs = 2,
+        stack_size_bonus = 2,
+        power_correction = 2070/703, -- Extreme fast
+    },
+    speed_270 = {
+        items_per_second = 270,
+        rotation_speed = 0.5,
+        inserter_pairs = 3,
+        stack_size_bonus = 2,
+        power_correction = 3350/1130, -- Ultra express
+    },
+    speed_360 = {
+        items_per_second = 360,
+        rotation_speed = 0.5,
+        inserter_pairs = 4,
+        stack_size_bonus = 2,
+        power_correction = 4700/1200, -- Extreme express
+    },
+    speed_450 = {
+        items_per_second = 450,
+        rotation_speed = 0.5,
+        inserter_pairs = 4,
+        stack_size_bonus = 7,
+        power_correction = 6090/1650, -- Ultimate
+    },
+}
+
+
 -- contains switches for all enabled game modes. The keys are the canonical
 -- values stores in the supported_mods table above.
 ---@type table<string, boolean>
 local game_mode = {}
-for mod_name, name in pairs(supported_mods) do
+for mod_name, name in pairs(SUPPORTED_MODS) do
     if mods[mod_name] then
         game_mode[name] = true
     else
@@ -91,7 +190,7 @@ local function allow_in_space(prototype)
 end
 
 -- highest available loader tier in the base / space age game
-local max_loader = game_mode.space_age and 'turbo' or 'express'
+local max_loader = check_space_age() and 'turbo' or 'express'
 
 ---@param data table<string, any>
 local function select_data(data)
@@ -133,6 +232,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('ffc340d9'),
                 speed = data.raw['transport-belt']['transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
@@ -149,12 +249,7 @@ local loaders = {
                         bob_electronics = { 'logistics', 'steel-processing', 'bob-electronics' },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 15,
-                    rotation_speed = 0.075,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
+                speed_config = SPEED_SETTINGS.speed_15,
             }
         end,
     },
@@ -170,6 +265,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('e31717d9'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
@@ -190,12 +286,7 @@ local loaders = {
                         base = { 'logistics-2', const:name_from_prefix(''), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 30,
-                    rotation_speed = 0.125,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
+                speed_config = SPEED_SETTINGS.speed_30,
             }
         end,
     },
@@ -211,6 +302,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('43c0fad9'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 ingredients = function()
                     return select_data {
@@ -231,12 +323,7 @@ local loaders = {
                         base = { 'logistics-3', const:name_from_prefix('fast'), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 45,
-                    rotation_speed = 0.125,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 1,
-                },
+                speed_config = SPEED_SETTINGS.speed_45,
             }
         end,
     },
@@ -257,6 +344,7 @@ local loaders = {
                 stack_size = 50,
                 tint = check_bob() and util.color('b700ff') or util.color('A8D550d9'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = ((check_space_age() or check_turbo_belt()) and 'turbo') or 'express',
                 ingredients = function()
@@ -282,52 +370,7 @@ local loaders = {
                         bob = { 'logistics-4', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 60,
-                    rotation_speed = 0.25,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
-            }
-        end,
-    },
-
-    -- stack miniloader, space age game
-    ['stack'] = {
-        condition = check_space_age,
-        data = function()
-            local previous = 'turbo'
-
-            return {
-                order = 'd[a]-t',
-                subgroup = 'belt',
-                stack_size = 50,
-                tint = util.color('ffffffd9'),
-                speed = data.raw['transport-belt']['turbo-transport-belt'].speed,
-                bulk = true,
-                upgrade_from = const:name_from_prefix(previous),
-                corpse_gfx = 'turbo', -- use turbo animations, explosion etc.
-                belt_gfx = 'turbo',
-                ingredients = function()
-                    return select_data {
-                        space_age = {
-                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
-                            { type = 'item', name = 'turbo-underground-belt',         amount = 1 },
-                            { type = 'item', name = 'stack-inserter',                 amount = 2 },
-                        },
-                    }
-                end,
-                prerequisites = function()
-                    return select_data {
-                        space_age = { 'logistics-3', 'stack-inserter', const:name_from_prefix('turbo'), },
-                    }
-                end,
-                speed_config = {
-                    items_per_second = 60,
-                    rotation_speed = 0.25,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
+                speed_config = SPEED_SETTINGS.speed_60,
             }
         end,
     },
@@ -344,6 +387,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('b7410e'),
                 speed = data.raw['transport-belt']['transport-belt'].speed / 4,
+                stack = false,
                 energy_source = energy_void,
                 research_trigger = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 100,
@@ -366,12 +410,7 @@ local loaders = {
                         base = { technology },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 3.75,
-                    rotation_speed = 0.01875,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
+                speed_config = SPEED_SETTINGS.speed_3_75,
             }
         end,
     },
@@ -391,6 +430,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('2ac217'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -408,12 +448,7 @@ local loaders = {
                         matt = { 'logistics-4', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 90,
-                    rotation_speed = 0.25,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 3,
-                },
+                speed_config = SPEED_SETTINGS.speed_90,
             }
         end,
     },
@@ -428,6 +463,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('c34722'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -445,12 +481,7 @@ local loaders = {
                         matt = { 'logistics-5', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 180,
-                    rotation_speed = 0.5,
-                    inserter_pairs = 2,
-                    stack_size_bonus = 2,
-                },
+                speed_config = SPEED_SETTINGS.speed_180,
             }
         end,
     },
@@ -465,6 +496,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('5a17c2'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -482,12 +514,7 @@ local loaders = {
                         matt = { 'logistics-6', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 270,
-                    rotation_speed = 0.5,
-                    inserter_pairs = 3,
-                    stack_size_bonus = 2,
-                },
+                speed_config = SPEED_SETTINGS.speed_270,
             }
         end,
     },
@@ -502,6 +529,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('1146d4'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -519,12 +547,7 @@ local loaders = {
                         matt = { 'logistics-7', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 360,
-                    rotation_speed = 0.5,
-                    inserter_pairs = 4,
-                    stack_size_bonus = 2,
-                },
+                speed_config = SPEED_SETTINGS.speed_360,
             }
         end,
     },
@@ -539,6 +562,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('a6a6a6'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = max_loader, -- animations, explosion etc.
                 entity_gfx = 'matt',
@@ -556,12 +580,7 @@ local loaders = {
                         matt = { 'logistics-8', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 450,
-                    rotation_speed = 0.5,
-                    inserter_pairs = 4,
-                    stack_size_bonus = 7,
-                },
+                speed_config = SPEED_SETTINGS.speed_450,
             }
         end,
     },
@@ -581,6 +600,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('22ec17'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 explosion_gfx = '',
                 ingredients = function()
@@ -597,12 +617,7 @@ local loaders = {
                         krastorio = { 'kr-logistic-4', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 60,
-                    rotation_speed = 0.25,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
+                speed_config = SPEED_SETTINGS.speed_60,
             }
         end,
     },
@@ -617,6 +632,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('d201f7'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 explosion_gfx = '',
                 ingredients = function()
@@ -633,12 +649,7 @@ local loaders = {
                         krastorio = { 'kr-logistic-5', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 90,
-                    rotation_speed = 0.25,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 3,
-                },
+                speed_config = SPEED_SETTINGS.speed_90,
             }
         end,
     },
@@ -666,18 +677,16 @@ local loaders = {
                         { type = 'item', name = 'bob-steam-inserter',              amount = 2 },
                     }
 
-                    if check_chute() then
-                        table.insert(ingredients, { type = 'item', name = const:name_from_prefix(previous), amount = 1 })
-                    else
-                        table.insert(ingredients, { type = 'item', name = 'iron-plate', amount = 4 })
-                    end
+                    ingredients[#ingredients + 1] = check_chute()
+                        and { type = 'item', name = const:name_from_prefix(previous), amount = 1 }
+                        or { type = 'item', name = 'iron-plate', amount = 4 }
 
                     return ingredients
                 end,
                 prerequisites = function()
                     local prerequisites = { 'logistics-0' }
                     if check_chute() then
-                        table.insert(prerequisites, const:name_from_prefix(previous))
+                        prerequisites[#prerequisites + 1] = const:name_from_prefix(previous)
                     end
 
                     return prerequisites
@@ -698,12 +707,7 @@ local loaders = {
 
                 --     return energy_source, 25, 0
                 -- end
-                speed_config = {
-                    items_per_second = 7.5,
-                    rotation_speed = 0.046875,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
+                speed_config = SPEED_SETTINGS.speed_7_5,
             }
         end,
     },
@@ -718,6 +722,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('1aeb2e'),
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
@@ -737,12 +742,7 @@ local loaders = {
                         bob = { 'logistics-5', const:name_from_prefix(previous), },
                     }
                 end,
-                speed_config = {
-                    items_per_second = 75,
-                    rotation_speed = 0.1875,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 3,
-                },
+                speed_config = SPEED_SETTINGS.speed_75,
             }
         end,
 
@@ -758,6 +758,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('eea500'),
                 speed = data.raw['transport-belt']['transport-belt-pro'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
@@ -777,12 +778,7 @@ local loaders = {
                 belt_color_selector = function(loader)
                     loader.belt_animation_set = util.copy(assert(data.raw['underground-belt']['underground-belt-pro'].belt_animation_set))
                 end,
-                speed_config = {
-                    items_per_second = 75,
-                    rotation_speed = 0.1875,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 3,
-                },
+                speed_config = SPEED_SETTINGS.speed_75,
             }
         end,
     },
@@ -797,6 +793,7 @@ local loaders = {
                 stack_size = 50,
                 tint = util.color('00fd53'),
                 speed = data.raw['transport-belt']['transport-belt-pro2'].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = '', -- use basic graphics for explosion and remnants
                 ingredients = function()
@@ -816,12 +813,7 @@ local loaders = {
                 belt_color_selector = function(loader)
                     loader.belt_animation_set = util.copy(assert(data.raw['underground-belt']['underground-belt-pro2'].belt_animation_set))
                 end,
-                speed_config = {
-                    items_per_second = 105,
-                    rotation_speed = 0.25,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 5,
-                },
+                speed_config = SPEED_SETTINGS.speed_105,
             }
         end,
     },
@@ -839,6 +831,7 @@ local loaders = {
                 stack_size = 50,
                 tint = { r = 240 / 255, g = 240 / 255, b = 240 / 255, a = 125 / 255 },
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt'].speed,
+                stack = STACKING_ENABLED,
                 corpse_gfx = 'express',
                 ingredients = function()
                     return select_data {
@@ -855,12 +848,7 @@ local loaders = {
                     }
                 end,
                 prototype_processor = allow_in_space,
-                speed_config = {
-                    items_per_second = 45,
-                    rotation_speed = 0.125,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 1,
-                }
+                speed_config = SPEED_SETTINGS.speed_45,
             }
         end,
     },
@@ -877,6 +865,7 @@ local loaders = {
                 stack_size = 50,
                 tint = { r = 25 / 255, g = 25 / 255, b = 25 / 255, a = 200 / 255 },
                 speed = data.raw['transport-belt'][dash_prefix .. 'transport-belt' .. color].speed,
+                stack = STACKING_ENABLED,
                 upgrade_from = const:name_from_prefix(previous),
                 corpse_gfx = 'express',
 
@@ -902,12 +891,7 @@ local loaders = {
                     )
                 end,
                 prototype_processor = allow_in_space,
-                speed_config = {
-                    items_per_second = 90,
-                    rotation_speed = 0.25,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 3,
-                }
+                speed_config = SPEED_SETTINGS.speed_90,
             }
         end
     },

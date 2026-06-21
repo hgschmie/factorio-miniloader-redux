@@ -72,6 +72,7 @@ local event_handler_template = {
 
 -- predefine arrays for all supported events
 for name, id in pairs(defines.events) do
+    ---@diagnostic disable-next-line: undefined-field
     if name:starts_with('on_gui_') then
         event_handler_template[id] = {}
     end
@@ -241,7 +242,7 @@ function FrameworkGui:addChildElements(parent, children, existing_elements)
             gui_element = self:createChildElement(parent, child)
         elseif child.tab and child.content then
             gui_element = self:addTab(parent, child)
-        else
+        elseif table_size(child) > 0 then
             error('Invalid element: ' .. serpent.line(child))
         end
         root = root or gui_element

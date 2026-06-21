@@ -6,41 +6,49 @@ This is the documentation on how the template system works. It is not perfect an
 
 There was a long explanation here on how to compute throughput and speed. Doing this makes the inserters run much too fast. So this turned into straight up trial-and-error with measurement...
 
-Going faster than 240 items/s required some reconfiguration of the pickup and dropoff points.
+Going faster than 240 items/s required some reconfiguration of the pickup and dropoff points in normal mode.
 
-| Belt Tier            | Speed (items/sec) | Rotation Speed | Inserter Count | Hand Size | Speed (in/out/both)|
-|----------------------|-------------------|----------------|----------------|-----------|--------------------|
-| Chute                | 3.75              | 0.01875        | 2              | 1         | 3/4/4              |
-| Standard             | 15                | 0.075          | 2              | 1         | 15/15/15           |
-| Fast                 | 30                | 0.125          | 2              | 1         | 30/30/30           |
-| Express              | 45                | 0.125          | 2              | 2         | 48/48/45           |
-| Turbo #)             | 60                | 0.25           | 2              | 1         | 60/60/60           |
-| Stack                | 60                | 0.25           | 2              | 1 *)      | 60/60/60           |
-| Bob Basic            | 7.5               | 0.046875       | 2              | 1         | 8/9/7.5            |
-| Bob Ultimate         | 75                | 0.1875         | 2              | 3         | 75/75/75           |
-| Krastorio Advanced   | 60                | 0.25           | 2              | 1         | 60/60/60           |
-| Krastorio Superior   | 90                | 0.25           | 2              | 4         | 90/90/90           |
-| Matt Ultra Fast      | 90                | 0.25           | 2              | 4         | 96/96/90           |
-| Matt Extreme Fast    | 180               | 0.5            | 4              | 3         | 180/180/180        |
-| Matt Ultra Express   | 270               | 0.5            | 6              | 3         | 270/270/270  +)    |
-| Matt Extreme Express | 360               | 0.5            | 8              | 3         | 360/300/330  +)    |
-| Matt Ultimate        | 450               | 0.5            | 8              | 8         | 425/425/425  +)    |
-| Adv. Furnaces PRO-1  | 75                | 0.1875         | 2              | 3         | 75/75/75           |
-| Adv. Furnaces PRO-2  | 105               | 0.25           | 2              | 6         | 102/104/105        |
-| SE Space Belt        | 45                | 0.125          | 2              | 2         | 48/48/45           |
-| SE Deep Space Belt   | 90                | 0.25           | 2              | 4         | 90/90/90           |
+| Belt Tier            | Speed (items/sec) | Rotation Speed | Inserter Count | Hand Size | Speed (in/out/both)| Stacking capable |
+|----------------------|-------------------|----------------|----------------|-----------|--------------------|------------------|
+| Chute                | 3.75              | 0.01875        | 2              | 1         | 3/4/4              | nerfed           |
+| Standard             | 15                | 0.075          | 2              | 1         | 15/15/15           | yes              |
+| Fast                 | 30                | 0.125          | 2              | 1         | 30/30/30           | yes              |
+| Express              | 45                | 0.125          | 2              | 2         | 48/48/45           |                  |
+| Turbo (*)            | 60                | 0.25           | 2              | 1         | 60/60/60           | yes              |
+| Bob Basic            | 7.5               | 0.046875       | 2              | 1         | 8/9/7.5            | nerfed           |
+| Bob Ultimate         | 75                | 0.1875         | 2              | 3         | 75/75/75           |                  |
+| Krastorio Advanced   | 60                | 0.25           | 2              | 1         | 60/60/60           | yes              |
+| Krastorio Superior   | 90                | 0.25           | 2              | 4         | 90/90/90           |                  |
+| Matt Ultra Fast      | 90                | 0.25           | 2              | 4         | 96/96/90           |                  |
+| Matt Extreme Fast    | 180               | 0.5            | 4              | 3         | 180/180/180        |                  |
+| Matt Ultra Express   | 270               | 0.5            | 6              | 3         | 270/270/270  (+)   |                  |
+| Matt Extreme Express | 360               | 0.5            | 8              | 3         | 360/300/330  (+)   |                  |
+| Matt Ultimate        | 450               | 0.5            | 8              | 8         | 425/425/425  (+)   |                  |
+| Adv. Furnaces PRO-1  | 75                | 0.1875         | 2              | 3         | 75/75/75           |                  |
+| Adv. Furnaces PRO-2  | 105               | 0.25           | 2              | 6         | 102/104/105        |                  |
+| SE Space Belt        | 45                | 0.125          | 2              | 2         | 48/48/45           |                  |
+| SE Deep Space Belt   | 90                | 0.25           | 2              | 4         | 90/90/90           |                  |
+
+Only Miniloaders with a Hand Size of 1 can enable stack mode. "nerfed" means that the loader would support stacking but it is explicitly disabled.
 
 Speed measured:
 
-in:  Output from a fast belt (faster than the miniloader), onto a chest<br/>
-out: Output to a fast best (faster than the miniloader), from a chest<br/>
-both: Input/Output from/to a belt of the same tier, chest at both ends
+- in:  Output from a fast belt (faster than the miniloader), onto a chest
+- out: Output to a fast best (faster than the miniloader), from a chest
+- both: Input/Output from/to a belt of the same tier, chest at both ends
 
-*) Stacking loaders are a special case; they are locked into 4x (max stack size) stack<br/>
-+) Using high speed mode. This shifts the pickup points for some loaders to allow going past 240 items/sec.
-#) Starting with 0.13.1, bob will activate the "turbo" loader instead of using a dedicated "bob-turbo" loader. Old entities will be transparently migrated.
+(+) Using high speed mode. This shifts the pickup points for some loaders to allow going past 240 items/sec.
+(*) Starting with 0.13.1, bob will activate the "turbo" loader instead of using a dedicated "bob-turbo" loader. Old entities will be transparently migrated.
 
-For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed). The maximum that seems to be possible with inserters (which need time to swing around and can drop only one item per tick on a belt) seems to be the 425 items/sec measured for the Matt Ultimate loader.
+For non-stacking belts, the theoretical maximum throughput is 480 items/sec (max belt speed).
+
+In Speed mode, the Miniloaders match the speed of the belts.
+
+### Loader properties
+
+The miniloader consists of inserters (at least two) and a loader entity. It has three modes: "Normal Mode", "Speed Mode" and "Lane filter Mode". Selecting a different mode destroys and rebuilds the internal loader entity.
+
+In "normal mode", items are moved by the inserters on the left and right lane of the loader and the loader moves it to the belt. In Speed and Lane filter mode, the inserters are not used and the loader connects directly to an entity supported by the loader and a belt. Most entities that have a "chest" inventory can be used with a loader.
 
 ## Adding new miniloaders
 
@@ -357,14 +365,17 @@ The basic loader is very early in the game, so it should be triggered by a resea
     },
 ```
 
-Finally, the inserter speed needs to be configured. For the basic belt, the desired speed is 7.5 items per second. This can be accomplished with two inserters that move 3.75 items per second each. With some measuring, the actual rotation speed for an inserter is 0.046875.
+Finally, the inserter speed needs to be configured. Most mods define some standard speed. The `templates.lua` file contains the `SPEED_SETTINGS` table which has for most speeds predefined elements. Only try to calculate the speed if no ready made speed element is available.
 
-Speed is defined as a table with four attributes:
+For the basic belt, the desired speed is 7.5 items per second. This can be accomplished with two inserters that move 3.75 items per second each. With some measuring, the actual rotation speed for an inserter is 0.046875.
+
+Speed is defined as a table with five attributes:
 
 - `items_per_second` - only used for the display text. For Bob Basic this is 7.5
 - `rotation_speed` - defines how quick the inserters move. For Bob Basic, the right value is 0.046875
 - `inserter_pairs` - number of inserter pairs used. Usually 1 but for higher speeds, more than pair might be needed
 - `stack_size_bonus` - number of additional items moved with each inserter rotation. Must be a positive integer.
+- `power_correction` - difference between max power consumption of the loader in Speed mode and the inserters in normal mode. It is the peak consumption of the inserters divided by the peak consumption of the loader.
 
 ``` lua
     ['bob-basic'] = {
@@ -397,32 +408,28 @@ Speed is defined as a table with four attributes:
                 research_trigger = {
                     type = 'craft-item', item = 'iron-gear-wheel', count = 200,
                 },
-                speed_config = {
-                    items_per_second = 7.5,
-                    rotation_speed = 0.046875,
-                    inserter_pairs = 1,
-                    stack_size_bonus = 0,
-                },
+                speed_config = SPEED_SETTINGS.speed_7_5,
             }
         end,
     },
 ```
-
 
 Additional things that can be defined in a loader template:
 
 - `localized_name` - controls the localized name of the mini loader. Rarely needed to change.
 - `unit` - defines the [TechnologyUnit](https://lua-api.factorio.com/latest/types/TechnologyUnit.html) to research this miniloader. If undefined and no `research_trigger` is defined, the value of the first prerequisite is used.
 - `energy_source` - set the energy source and consumption. This is normally auto-computed based on the loader speed. It can be set here to adjust or use a different energy source (e.g. the chute uses `void` as it does not need electric energy). It should be a function that returns two values, one [EnergySource](https://lua-api.factorio.com/latest/types/BaseEnergySource.html) and an [Energy](https://lua-api.factorio.com/latest/types/Energy.html) value.
-- `bulk` - enable [bulk](https://wiki.factorio.com/Bulk_inserter) support for the internal inserters. Bulk support is tuned towards the space age stack inserter and may behave wrong/strange if enabled for other belt speeds. When `bulk` is enabled, some settings are locked:
-  - `wait_for_full_hand` is `true`
+- `stack` - enable stacking support for the internal inserters. When `stack` is enabled and no hand size bonus is defined in the speed settings, some settings are locked:
+  - `bulk` is `true`
   - `grab_less_to_match_belt_stack` is `true`
   - `stack_size_bonus` is 4
   - `max_belt_stack_size` is 4
-  - the inserter uses 50% more power
+  - `enter_drop_mode_if_held_stack_spoiled` is `true`
 - `nerf_mode` - Turn off some inserter features:
+  - Only normal mode is available
   - Filtering is disabled
   - No wires can be connected
+  - UI is not available
 
 ## Doing really obscure things (prototype processing)
 

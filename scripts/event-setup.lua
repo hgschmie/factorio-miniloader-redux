@@ -10,6 +10,7 @@ local Player = require('stdlib.event.player')
 local table = require('stdlib.utils.table')
 
 local Matchers = require('framework.matchers')
+local tools = require('framework.tools')
 
 local const = require('lib.constants')
 
@@ -51,23 +52,41 @@ local function on_entity_created(event)
     local entity = event and event.entity
     if not (entity and entity.valid) then return end
 
+    -- pre_build as player and build as player is only possible in editor -> build blueprints directly.
+    -- Otherwise, the pre_build happens as player and the build is done by a robot.
     local pdata = event.player_index and Player.pdata(event.player_index)
     ---@type miniloader.PreBuild?
     local pre_build = pdata and pdata.pre_build
 
     local tags = event.tags
     local config, no_snapping = This.MiniLoader:deserializeConfiguration(tags)
-    -- correct config direction in the ml_config tag
-    if config and config.direction then
-        config.direction = This.Snapping:correct_direction(config.direction, pre_build)
-    end
+    if config then
+        -- correct config direction in the ml_config tag
+        if config.direction then config.direction = This.Snapping:correct_direction(config.direction, pre_build) end
+    else
+        -- normal builds happens here.
 
-    local entity_ghost = Framework.ghost_manager:findGhostForEntity(entity)
-    if entity_ghost then
-        tags = tags or entity_ghost.tags
-    end
+        -- see if a ghost (with tags) from a blueprint is replaced
+        local entity_ghost = Framework.ghost_manager:findGhostForEntity(entity)
+        if entity_ghost then
+            tags = tags or entity_ghost.tags
+        end
 
-    config, no_snapping = This.MiniLoader:deserializeConfiguration(tags)
+        if tags then
+            config, no_snapping = This.MiniLoader:deserializeConfiguration(tags)
+        else
+            -- was it a fast upgrade, which leaves no traces. Pick up a tombstone that was dropped
+            -- when the old entity was destroyed
+            local tombstone = Framework.Tombstone:retrieveLatestTombstoneByType {
+                position = entity.position,
+                surface_index = entity.surface_index,
+                type = tools.getType(entity)
+            }
+            if tombstone then
+                config, no_snapping = This.MiniLoader:deserializeConfiguration(tombstone.data)
+            end
+        end
+    end
 
     This.MiniLoader:create(entity, config, no_snapping)
 end
@@ -136,7 +155,8 @@ local function on_entity_settings_pasted(event)
 
     if not (src_entity and dst_entity) then return end
 
-    This.MiniLoader:reconfigure(dst_entity, src_entity.config)
+    This.Config:copyConfig(src_entity.config, dst_entity.config)
+    This.MiniLoader:reconfigure(dst_entity)
 end
 
 --------------------------------------------------------------------------------
@@ -151,7 +171,7 @@ local function on_undo_redo_applied(event)
             if inserter and inserter.valid then
                 local ml_entity = This.MiniLoader:getEntity(inserter.unit_number)
                 if ml_entity then
-                    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromBlueprintEntity(action.entity_with_previous_settings, ml_entity)
+                    This.Config:readConfigFromBlueprintInserter(ml_entity.config, action.entity_with_previous_settings)
                     This.MiniLoader:reconfigure(ml_entity)
                 end
             end
@@ -193,6 +213,24 @@ local function on_configuration_changed()
                 force.recipes[name].enabled = force.technologies[name].researched
             end
         end
+    end
+
+    if Framework.settings:startup_setting(const.settings_names.check_speed_mode) then
+        local enabled_count = 0
+        local ignored_count = 0
+
+        for _, ml_entity in pairs(This.MiniLoader:entities()) do
+            if ml_entity.main.valid and ml_entity.loader.valid then
+                if This.Console.checkContainerInteraction(ml_entity) then
+                    enabled_count = enabled_count + 1
+                    This.MiniLoader:reconfigure(ml_entity)
+                else
+                    ignored_count = ignored_count + 1
+                end
+            end
+        end
+
+        game.print { const:locale('check_speed_mode_result'), enabled_count, ignored_count }
     end
 
     if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
@@ -293,7 +331,7 @@ local function register_events()
     Framework.blueprint:registerCallbackForTypes(const.snapping_type_names, add_snapping_tag)
 
     -- manage tombstones for undo/redo and dead entities
-    Framework.tombstone:registerCallback(const.supported_type_names, {
+    Framework.Tombstone:registerCallback(const.supported_type_names, {
         create_tombstone = serialize_config,
         apply_tombstone = Framework.ghost_manager.mapTombstoneToGhostTags,
     })
@@ -304,7 +342,6 @@ local function register_events()
 
     -- Entity settings pasting
     Event.register(defines.events.on_entity_settings_pasted, on_entity_settings_pasted, match_all_main_entities)
-
 
     -- entity rotation
     Event.register(defines.events.on_player_rotated_entity, on_entity_rotated, match_all_main_entities)

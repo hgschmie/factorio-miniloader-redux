@@ -1,0 +1,13 @@
+{
+    "item": [
+        ["hps__ml-stack-miniloader", "hps__ml-turbo-miniloader"]
+    ],
+    "recipe": [
+        ["hps__ml-stack-miniloader", "hps__ml-turbo-miniloader"]
+    ],
+    "entity": [
+        ["hps__ml-stack-miniloader", "hps__ml-turbo-miniloader"],
+        ["hps__ml-stack-miniloader-i", "hps__ml-turbo-miniloader-i"],
+        ["hps__ml-stack-miniloader-l", "hps__ml-turbo-miniloader-l"]
+    ]
+}

@@ -40,7 +40,7 @@ local mod_data = {
 local global_prototype_processors = {}
 for key, value in pairs(templates.game_mode) do
     if value and templates.prototype_processors[key] then
-        table.insert(global_prototype_processors, templates.prototype_processors[key])
+        global_prototype_processors[#global_prototype_processors + 1] = templates.prototype_processors[key]
     end
 end
 
