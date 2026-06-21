@@ -287,7 +287,8 @@ function Controller:setup(main, config)
 
     -- if tags were passed in and they contain a config, use that.
     config = This.Config:createConfiguration(main, config)
-    config.direction = config.direction or This.Snapping:direction_from_inserter(main.direction, config.loader_type)
+    config.direction = config.direction or main.direction
+    config.loader_type = config.loader_type or 'output'
 
     local loader = create_loader(main, config)
 

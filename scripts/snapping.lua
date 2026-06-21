@@ -72,12 +72,6 @@ function Snapping:compute_loader_direction(config)
     return config.loader_type == const.loader_direction.output and config.direction or Direction.opposite(config.direction)
 end
 
----@param direction defines.direction
----@param loader_type miniloader.LoaderDirection
-function Snapping:direction_from_inserter(direction, loader_type)
-    return loader_type == const.loader_direction.input and direction or Direction.opposite(direction)
-end
-
 --- Corrects a given direction based on the prebuild information about rotation and flipping.
 --- This is most useful when building entities from a blueprint.
 ---@param direction defines.direction

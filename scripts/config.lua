@@ -64,11 +64,13 @@ function Config:createConfiguration(main, parent_config)
 
     self:configureFromInserter(main, config)
 
+    -- always copy the direction keys and nerf_mode if present
+    config.direction = parent_config and parent_config.direction
+    config.loader_type = parent_config and parent_config.loader_type
+    config.nerf_mode = config.nerf_mode or (parent_config and parent_config.nerf_mode)
+
     -- nerf mode just uses the defaults
-    if config.nerf_mode or (parent_config and parent_config.nerf_mode) then
-        config.nerf_mode = true
-        return config
-    end
+    if config.nerf_mode then return config end
 
     if parent_config then
         for key, parent_value in pairs(parent_config) do
