@@ -164,6 +164,7 @@ Constants.settings_keys = {
     'sanitize_loaders',
     'no_power',
     'double_recipes',
+    'check_speed_mode',
 }
 
 Constants.settings_names = {}

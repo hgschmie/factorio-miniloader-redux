@@ -215,6 +215,24 @@ local function on_configuration_changed()
         end
     end
 
+    if Framework.settings:startup_setting(const.settings_names.check_speed_mode) then
+        local enabled_count = 0
+        local ignored_count = 0
+
+        for _, ml_entity in pairs(This.MiniLoader:entities()) do
+            if ml_entity.main.valid and ml_entity.loader.valid then
+                if This.Console.checkContainerInteraction(ml_entity) then
+                    enabled_count = enabled_count + 1
+                    This.MiniLoader:reconfigure(ml_entity)
+                else
+                    ignored_count = ignored_count + 1
+                end
+            end
+        end
+
+        game.print { const:locale('check_speed_mode_result'), enabled_count, ignored_count }
+    end
+
     if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
         assert(migration)
         migration:migrateMiniloaders()

@@ -15,6 +15,7 @@ local Settings = {
         [const.settings_names.sanitize_loaders] = { key = const.settings.sanitize_loaders, value = false, },
         [const.settings_names.no_power] = { key = const.settings.no_power, value = false, },
         [const.settings_names.double_recipes] = { key = const.settings.double_recipes, value = false },
+        [const.settings_names.check_speed_mode] = { key = const.settings.check_speed_mode, value = false },
     },
 }
 

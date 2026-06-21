@@ -5,6 +5,7 @@ assert(script)
 
 local Event = require('stdlib.event.event')
 local Is = require('stdlib.utils.is')
+local Position = require('stdlib.area.position')
 
 local const = require('lib.constants')
 
@@ -108,20 +109,70 @@ local function inspect_miniloaders(data)
     game.print { const:locale('command_inspect_miniloaders_removed'), removed.miniloader, removed.loader, removed.inserter, removed.entity }
 end
 
-function Console.resyncMiniloaders()
-    for entity_id, entity in pairs(This.MiniLoader:entities()) do
-        if not (entity.main.valid and entity.loader.valid) then
+---@param ml_entity miniloader.Data
+---@return boolean container_interaction True if a container was found
+function Console.checkContainerInteraction(ml_entity)
+    if ml_entity.config.nerf_mode then return false end
+
+    local back_area = Position(ml_entity.main.position):translate(ml_entity.config.direction, -1):expand_to_area(0.5)
+    local entities = ml_entity.main.surface.find_entities_filtered {
+        type = {
+            'container',
+            'infinity-container',
+            'linked-container',
+            'logistic-container',
+            'assembling-machine',
+        },
+        area = back_area,
+        force = ml_entity.main.force,
+    }
+
+    if table_size(entities) == 0 then return false end
+    ml_entity.config.turbo_mode = true
+    return true
+end
+
+---@param data CustomCommandData?
+function Console.resyncMiniloaders(data)
+    local mode
+
+    if (not data) or #(data.parameter or '') == 0 then
+        mode = false
+    elseif data.parameter == 'speed' then
+        mode = true
+        game.print { const:locale('command_resync_miniloaders_speed') }
+    else
+        game.print { const:locale('command_resync_miniloaders_invalid'), data.parameter }
+        return
+    end
+
+    local enabled_count = 0
+    local ignored_count = 0
+
+    for entity_id, ml_entity in pairs(This.MiniLoader:entities()) do
+        if not (ml_entity.main.valid and ml_entity.loader.valid) then
             This.MiniLoader:destroy(entity_id)
         else
-            entity.state = entity.state or This.Config:createState()
+            ml_entity.state = ml_entity.state or This.Config:createState()
             ---@diagnostic disable-next-line: undefined-field
-            entity.state.status = entity.config.status or entity.loader.status
+            ml_entity.state.status = ml_entity.config.status or ml_entity.loader.status
 
-            entity.config = This.Config:readConfigFromTag(entity.config)
-            This.Config:configureFromInserter(entity.main, entity.config)
+            ml_entity.config = This.Config:readConfigFromTag(ml_entity.config)
+            This.Config:configureFromInserter(ml_entity.main, ml_entity.config)
 
-            This.MiniLoader:reconfigure(entity)
+            if mode then
+                if Console.checkContainerInteraction(ml_entity) then
+                    enabled_count = enabled_count + 1
+                else
+                    ignored_count = ignored_count + 1
+                end
+            end
+
+            This.MiniLoader:reconfigure(ml_entity)
         end
+    end
+    if mode then
+        game.print { const:locale('check_speed_mode_result'), enabled_count, ignored_count }
     end
 end
 
@@ -148,8 +199,7 @@ local function inserter_control(data)
     end
 end
 
----@param data CustomCommandData
-local function rebuild_inserter(data)
+local function rebuild_inserter()
     for entity_id, entity in pairs(This.MiniLoader:entities()) do
         if not (entity.main.valid and entity.loader.valid) then
             This.MiniLoader:destroy(entity_id)
