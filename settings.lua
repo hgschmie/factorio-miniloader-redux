@@ -42,6 +42,13 @@ data:extend({
     {
         type = 'bool-setting',
         name = const.settings.sanitize_loaders,
+        order = 'aw',
+        setting_type = 'startup',
+        default_value = false,
+    },
+    {
+        type = 'bool-setting',
+        name = const.settings.fix_blueprint_mods,
         order = 'ax',
         setting_type = 'startup',
         default_value = false,

@@ -97,8 +97,7 @@ end
 -- Base name
 Constants.miniloader_name = Constants:with_prefix(Constants.name)
 
-
-local loader_postfix = { '-l', '-turbo-l', '-lf-l', '-turbo-lf-l', }
+local loader_postfix = { '-l', '-turbo-l', '-turbo-lf-l', }
 
 ---@param name string
 ---@param turbo boolean?
@@ -165,6 +164,7 @@ Constants.settings_keys = {
     'no_power',
     'double_recipes',
     'check_speed_mode',
+    'fix_blueprint_mods',
 }
 
 Constants.settings_names = {}

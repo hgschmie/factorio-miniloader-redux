@@ -8,6 +8,7 @@ Date: ????
   Minor Features:
     - add `/resync-miniloaders` console command
     - add "Check for Speed Mode" startup setting
+    - Add "Support Blueprint Mods" startup setting as workaround for some engine shortcomings with mods such as "Blueprint Sandboxes" and "Blueprint Shotgun"
   Changes:
     - The separate "stack miniloader" has been removed (see "Stack Mode" above). Existing stack miniloaders are replaced by turbo miniloaders.
     - Wire connections are less ambiguous when putting multiple loaders next to each other.

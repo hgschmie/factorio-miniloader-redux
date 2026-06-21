@@ -6,6 +6,7 @@ assert(script)
 local Direction = require('stdlib.area.direction')
 local Event = require('stdlib.event.event')
 local Position = require('stdlib.area.position')
+local Area = require('stdlib.area.area')
 local Player = require('stdlib.event.player')
 local table = require('stdlib.utils.table')
 
@@ -88,6 +89,18 @@ local function on_entity_created(event)
             if tombstone then
                 config, no_snapping = This.MiniLoader:deserializeConfiguration(tombstone.data)
             end
+        end
+    end
+
+    -- this is a workaround for https://forums.factorio.com/viewtopic.php?t=133860
+    if Framework.settings:startup_setting(const.settings_names.fix_blueprint_mods) then
+        local entities = entity.surface.find_entities_filtered {
+            area = Area(entity.prototype.selection_box):offset(entity.position),
+            name = table.array_combine(const.supported_inserter_names, const.supported_loader_names),
+            force = entity.force,
+        }
+        for _, found_entity in pairs(entities) do
+            found_entity.destroy()
         end
     end
 

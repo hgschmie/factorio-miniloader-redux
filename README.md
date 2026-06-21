@@ -118,6 +118,8 @@ Default value is "off".
 
 All miniloaders are checked whether they interact with a chest or an assembly machine. If yes, enable Speed Mode for that miniloader. This is useful when migrating a game that uses miniloaders before 1.0.
 
+Default value is "off".
+
 ### Migrate Factorio 1.1 Miniloaders (Startup)
 
 (This setting has not been tested in a while. If you use it and encounter errors, I am very interested in hearing about them)
@@ -135,6 +137,13 @@ Default value is "off".
 ### Sanitize non-Miniloader loader entities (Startup)
 
 Patch non-Miniloader loader-1x1 entities to collide with the `transport_belt` layer. See the section `Fixing Collision mask failures` above for an explanation. This is a highly experimental and dangerous setting. If you do not encounter any errors with other mods, do not enable.
+
+Default value is "off".
+
+### Support Blueprint Mods (Startup)
+
+This is a workaround for an issue with the Factorio game itself (see https://forums.factorio.com/viewtopic.php?t=133860). It allows Blueprinting mods such as [Blueprint Sandboxes](https://mods.factorio.com/mod/blueprint-sandboxes) or [Blueprint Shotgun](https://mods.factorio.com/mod/blueprint-shotgun)
+to upgrade/downgrade Miniloaders. This is a "best effort" working around the issue and a Miniloader may lose part or all of its configuration in the process. This is a highly experimental and dangerous setting. If you encounter any errors with this setting, do not enable.
 
 Default value is "off".
 
