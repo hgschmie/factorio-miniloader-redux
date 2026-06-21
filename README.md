@@ -60,6 +60,12 @@ I am open to support additional tiers from other mods from PRs (see below) but I
 - When sideloading in Normal Mode onto a belt with High speed miniloaders, they may spray items across both lanes of the belt they are loading to.
 - Stacking (in Space Age) is only available for some Miniloaders. Stacking for the "Turbo" miniloader is equivalent to the pre-1.0 Stacking miniloader. Existing Stacking Miniloaders are converted to "Turbo" Miniloaders.
 
+### Blueprint compatibility
+
+All Miniloader versions can read blueprints that were created with older versions of the Miniloader. Especially, any version after 1.0.0 can read blueprints created with versions before 1.0.0.
+
+When downgrading the Miniloader to a version before 1.0.0, it _must_ be the latest version before 1.0.0 (currently that is 0.13.2) as this will be the only version that supports reading newer blueprints and converting them back to the pre-1.0.0 format. Any other version may crash the game, not read the blueprint or behave in an undefined way.
+
 ### Fixing Collision mask failures
 
 When using Miniloaders with some other mods (most prominent offender seems to be the [Advanced Furnaces 2 SpaceAgeFix](https://mods.factorio.com/mod/Load-Furn-2-SpaceAgeFix) mod), the game fails to load with an error message like this:
@@ -81,10 +87,6 @@ To enable this setting, when the game fails to start:
 - first disable the _other_ mod that causes the problem. Keep Miniloader enabled
 - set the startup setting and restart the game
 - re-enable the other mod
-
-### Pre-1.0 Blueprints
-
-Miniloader can read blueprints that were created with pre-1.0 versions of the Miniloader. However, any pre-1.0 Miniloader will not be able to read 1.0 or later Blueprints (and will, in fact, crash the game).
 
 ## How you can help
 
