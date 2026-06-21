@@ -27,7 +27,7 @@ for prefix, migration in pairs(const:migrations()) do
     local name = prefix .. 'miniloader-inserter'
     local entity = prototypes.entity[name]
     if entity then
-        table.insert(Migration.ml_entities, entity)
+        Migration.ml_entities[#Migration.ml_entities + 1] = entity
         Migration.migrations[name] = migration
     end
 end
@@ -38,7 +38,7 @@ end
 local function copy_wire_connections(src, dst)
     local has_wire = false
     for wire_connector_id, wire_connector in pairs(src.get_wire_connectors(true)) do
-        local dst_connector = dst.get_wire_connector(wire_connector_id, true)
+        local dst_connector = assert(dst.get_wire_connector(wire_connector_id, true))
         for _, connection in pairs(wire_connector.connections) do
             if connection.origin == defines.wire_origin.player then
                 has_wire = true
@@ -84,11 +84,11 @@ function Migration:migrateLoader(surface, loader)
     local ml_entity = assert(This.MiniLoader:setup(main))
 
     -- pull the config out of the loader that is migrating
-    ml_entity.config.inserter_config = This.MiniLoader:readConfigFromEntity(loader, ml_entity)
+    This.Config:updateConfigFromLoader(ml_entity.config, loader)
 
     local has_wires = copy_wire_connections(loader, main)
     -- fix up config
-    if not has_wires then ml_entity.config.inserter_config.circuit_enable_disable = false end
+    if not has_wires then ml_entity.config.circuit_enable_disable = false end
     if loader_type then ml_entity.config.loader_type = loader_type end
 
     -- reconfigure the loader. This syncs the configuration across all the

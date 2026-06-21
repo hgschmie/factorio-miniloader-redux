@@ -7,6 +7,7 @@
 ---@field MiniLoader miniloader.Controller
 ---@field Snapping miniloader.Snapping
 ---@field Console miniloader.Console
+---@field Config miniloader.EntityConfig
 ---@field Gui miniloader.Gui
 This = {
     other_mods = {
@@ -22,5 +23,6 @@ if script then
     This.MiniLoader = require('scripts.controller')
     This.Snapping = require('scripts.snapping')
     This.Console = require('scripts.console')
+    This.Config = require('scripts.config')
     This.Gui = require('scripts.gui')
 end

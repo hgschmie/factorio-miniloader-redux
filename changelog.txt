@@ -1,7 +1,19 @@
 ---------------------------------------------------------------------------------------------------
-Version: 0.13.3
+Version: 1.0.0
 Date: ????
+  Major Features:
+    - Speed Mode: Move entities directly with the loader. Has some limitations but is able to keep up with the fastest belts.
+    - Lane Filter Mode: In Speed Mode, apply one filter to the left and another to the right lane.
+    - Stack Mode: If stacking is available, miniloaders support stacking and allow setting the stack size through the UI
+  Minor Features:
+    - add `/resync-miniloaders` console command
+    - add "Check for Speed Mode" startup setting
   Changes:
+    - The separate "stack miniloader" has been removed (see "Stack Mode" above). Existing stack miniloaders are replaced by turbo miniloaders.
+    - Wire connections are less ambiguous when putting multiple loaders next to each other.
+    - Power draw has been reworked and is now more linear with the number of items moved.
+    - When changing filters or settings, the miniloader "flushes" all its currently held items. If they can not be put into a container, it spills them on the ground.
+
 ---------------------------------------------------------------------------------------------------
 Version: 0.13.2
 Date: 2026-06-21

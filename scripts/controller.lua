@@ -32,38 +32,6 @@ local Controller = {
 --
 -- dropoff is 0/0.25 and 0/-0.25
 
---- Keys are the keys in the inserter_config and control behavior
---- Values in this table are keys in the blueprint entity
----@type table<string, string>
-local CONTROL_ATTRIBUTES = {
-    circuit_set_filters = 'circuit_set_filters',
-    circuit_enable_disable = 'circuit_enabled',
-    circuit_condition = 'circuit_condition',
-    connect_to_logistic_network = 'connect_to_logistic_network',
-    logistic_condition = 'logistic_condition',
-}
-
----@type table<string, any>
-local DEFAULT_LOADER_CONFIG = {
-    circuit_set_filters = false,
-    circuit_enable_disable = false,
-    circuit_condition = { constant = 0, comparator = '<', fulfilled = false },
-    connect_to_logistic_network = false,
-    logistic_condition = { constant = 0, comparator = '<', fulfilled = false },
-    loader_filter_mode = 'none',
-    filters = {},
-    read_transfers = false,
-}
-
----@type miniloader.Config
-local DEFAULT_CONFIG = {
-    enabled = true,
-    loader_type = const.loader_direction.input, -- freshly minted loader image is 'input'
-    inserter_config = {},
-    highspeed = false,
-}
-
-local CONFIG_ATTRIBUTES = { 'enabled', 'loader_type', 'direction', 'highspeed' }
 
 Controller.positions = {
     [defines.direction.north] = {},
@@ -97,62 +65,10 @@ end
 
 ------------------------------------------------------------------------
 
---- Creates a default configuration with some fields overridden by
---- an optional parent.
----
----@param parent_config miniloader.Config?
----@param inserter_data miniloader.ModData
----@return miniloader.Config
-local function create_config(parent_config, inserter_data)
-    local config = util.copy(DEFAULT_CONFIG)
-    config.inserter_config = util.copy(DEFAULT_LOADER_CONFIG)
-
-    if not parent_config then return config end
-
-    -- iterate over all field names given in the default_config
-    for _, field_name in pairs(CONFIG_ATTRIBUTES) do
-        if parent_config[field_name] ~= nil then
-            config[field_name] = util.copy(parent_config[field_name])
-        else
-            config[field_name] = util.copy(DEFAULT_CONFIG[field_name])
-        end
-    end
-
-    local control = parent_config.inserter_config or {}
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
-        if inserter_data.nerf_mode then
-            config.inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
-        else
-            config.inserter_config[control_key] = control[control_key] or DEFAULT_LOADER_CONFIG[control_key]
-        end
-    end
-
-    if not inserter_data.nerf_mode then
-        config.inserter_config.loader_filter_mode = control.loader_filter_mode or 'none'
-        config.inserter_config.read_transfers = control.read_transfers or false
-
-        if control.filters then
-            for idx, filter in pairs(control.filters) do
-                config.inserter_config.filters[idx] = filter
-            end
-        end
-
-        config.inserter_config.inserter_spoil_priority = Controller.spoiling and (control.inserter_spoil_priority or 'none') or nil
-    else
-        config.inserter_config.loader_filter_mode = 'none'
-        config.inserter_config.inserter_spoil_priority = Controller.spoiling and 'none' or nil
-    end
-
-    return config
-end
-
-------------------------------------------------------------------------
-
 --- Called when the mod is initialized
 function Controller:init()
     ---@type miniloader.Storage
     storage.ml_data = storage.ml_data or {
-        VERSION = const.CURRENT_VERSION,
         count = 0,
         by_main = {},
         open_guis = {},
@@ -210,15 +126,18 @@ end
 ---@param config miniloader.Config
 ---@return LuaEntity? loader
 local function create_loader(main, config)
+    local name = const.loader_name(main.name, config.turbo_mode, config.lane_filter and config.turbo_mode)
+
     -- create the loader with the same orientation as the inserter. Then look in front of the
     -- loader and snap the direction for it.
     local loader = main.surface.create_entity {
-        name = const.loader_name(main.name),
+        name = name,
         position = main.position,
         direction = This.Snapping:compute_loader_direction(config),
         force = main.force,
         type = tostring(config.loader_type),
     }
+
     if not loader then return nil end
 
     loader.destructible = false
@@ -268,7 +187,7 @@ function Controller:createInserters(main, speed_config, config)
             wire_connector.connect_to(main_wire_connectors[wire_connector_id], false, defines.wire_origin.script)
         end
 
-        table.insert(inserters, inserter)
+        inserters[#inserters + 1] = inserter
     end
 
     return inserters, true
@@ -302,23 +221,6 @@ end
 -- blueprinting
 ------------------------------------------------------------------------
 
---- Blueprints are deserialized from json and the set of keys may be deserialized
---- as strings. Turn them back into numbers.
----
----@param ml_config miniloader.Config
-function Controller:sanitizeConfiguration(ml_config)
-    if not ml_config then return end
-
-    local filters = {}
-    for key, value in pairs(ml_config.inserter_config.filters) do
-        local new_key = tonumber(key)
-        if new_key then
-            filters[new_key] = value
-        end
-    end
-    ml_config.inserter_config.filters = filters
-end
-
 --- Serializes the configuration suitable for blueprinting and tombstone management.
 ---
 ---@param entity LuaEntity
@@ -340,9 +242,7 @@ function Controller:deserializeConfiguration(tags)
     if not (tags and tags[const.config_tag_name]) then return nil, false end
 
     ---@type miniloader.Config
-    local ml_config = tags[const.config_tag_name]
-    self:sanitizeConfiguration(ml_config)
-
+    local ml_config = This.Config:readConfigFromTag(tags[const.config_tag_name])
     return ml_config, tostring(tags[const.no_snapping_tag_name]) == 'true'
 end
 
@@ -385,18 +285,15 @@ end
 function Controller:setup(main, config)
     local entity_id = main.unit_number
 
-    ---@type miniloader.ModData
-    local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
-
     -- if tags were passed in and they contain a config, use that.
-    config = create_config(config, inserter_data)
-    config.status = main.status
-    config.direction = config.direction or This.Snapping:direction_from_inserter(main.direction, config.loader_type)
-
-    config.highspeed = inserter_data.speed_config.items_per_second > 240 -- 240 is max speed for one lane
-    config.nerf_mode = inserter_data.nerf_mode
+    config = This.Config:createConfiguration(main, config)
+    config.direction = config.direction or main.direction
+    config.loader_type = config.loader_type or 'output'
 
     local loader = create_loader(main, config)
+
+    ---@type miniloader.ModData
+    local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
     local inserters, success = self:createInserters(main, inserter_data.speed_config, config)
 
     ---@type miniloader.Data
@@ -405,6 +302,7 @@ function Controller:setup(main, config)
         loader = loader,
         inserters = inserters,
         config = util.copy(config),
+        state = This.Config:createState(),
     }
 
     if not (loader and success) then
@@ -412,6 +310,8 @@ function Controller:setup(main, config)
         main.destroy()
         return nil
     end
+
+    ml_entity.state.status = loader.status
 
     self:setEntity(entity_id, ml_entity)
 
@@ -434,18 +334,9 @@ function Controller:create(main, config, no_snapping)
         -- support blueprint parameters. In this case, there is a config but the
         -- inserter also has filters set. Reset the filters from the config and read
         -- the actual filter values out of the inserter
-        if not ml_entity.config.nerf_mode then
-            local bp_filters = {}
-            for i = 1, ml_entity.main.filter_slot_count do
-                local value = ml_entity.main.get_filter(i)
-                if value then bp_filters[i] = value end
-            end
-            if table_size(bp_filters) > 0 then
-                ml_entity.config.inserter_config.filters = bp_filters
-            end
-        end
+        This.Config:updateFiltersFromInserter(ml_entity.config, main, true)
     else
-        ml_entity.config.inserter_config = self:readConfigFromEntity(main, ml_entity)
+        This.Config:updateConfigFromInserter(ml_entity.config, main)
     end
 
     if not no_snapping then
@@ -470,189 +361,6 @@ function Controller:destroy(entity_id)
     self:setEntity(entity_id, nil)
 
     return entity_destroy(ml_entity)
-end
-
-------------------------------------------------------------------------
--- sync control behavior
-------------------------------------------------------------------------
-
--- GUI updates the loader, loader config is synced to the inserters
--- entity creation / resurrection uses the primary inserter. config is synced from the inserter to the loader
--- all meet at ml_entity.config
-
----@param entity LuaEntity Loader or Inserter
----@param ml_entity miniloader.Data
----@return table<string, any> inserter_config
-function Controller:readConfigFromEntity(entity, ml_entity)
-    assert(entity)
-
-    local control = assert(entity.get_or_create_control_behavior()) --[[@as LuaGenericOnOffControlBehavior ]]
-    assert(control.valid)
-
-    local inserter_config = {
-        filters = {}
-    }
-
-    -- copy control attributes
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
-        if ml_entity.config.nerf_mode then
-            inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
-        else
-            inserter_config[control_key] = control[control_key]
-        end
-    end
-
-    if entity.type == 'inserter' then
-        if entity.filter_slot_count > 0 and not ml_entity.config.nerf_mode then
-            inserter_config.loader_filter_mode = entity.use_filters and entity.inserter_filter_mode or 'none'
-
-            local inserter_control = control --[[@as LuaInserterControlBehavior]]
-            inserter_config.read_transfers = inserter_control.circuit_read_hand_contents
-
-            for i = 1, entity.filter_slot_count, 1 do
-                inserter_config.filters[i] = entity.get_filter(i)
-            end
-
-            inserter_config.inserter_spoil_priority = self.spoiling and (entity.inserter_spoil_priority or 'none') or nil
-        else
-            inserter_config.loader_filter_mode = 'none'
-            inserter_config.inserter_spoil_priority = self.spoiling and 'none' or nil
-        end
-    else
-        inserter_config.loader_filter_mode = entity.loader_filter_mode
-        local loader_control = control --[[@as LuaLoaderControlBehavior ]]
-        inserter_config.read_transfers = loader_control.circuit_read_transfers
-
-        for i = 1, entity.filter_slot_count, 1 do
-            inserter_config.filters[i] = entity.get_filter(i)
-        end
-
-        -- Loader has no concept of spoil_priority, retain existing values
-        inserter_config.inserter_spoil_priority = self.spoiling and (ml_entity.config.inserter_config.inserter_spoil_priority or 'none') or nil
-    end
-
-    return inserter_config
-end
-
---- see https://forums.factorio.com/viewtopic.php?t=133512
-local fix_spoil_prio = {
-    ['fresh-first'] = 'fresh_first',
-    ['spoiled-first'] = 'spoiled_first',
-    fresh_first = 'fresh_first',
-    spoiled_first = 'spoiled_first',
-    none = 'none',
-}
-
----@param bp_entity BlueprintEntity.inserter
----@param ml_entity miniloader.Data
----@return table<string, any> inserter_config
-function Controller:readConfigFromBlueprintEntity(bp_entity, ml_entity)
-    ---@type InserterBlueprintControlBehavior
-    local control_behavior = bp_entity.control_behavior or {}
-
-    local inserter_config = {
-        filters = {}
-    }
-
-    -- copy blueprint attributes
-    for control_key, bp_key in pairs(CONTROL_ATTRIBUTES) do
-        if ml_entity.config.nerf_mode then
-            inserter_config[control_key] = DEFAULT_LOADER_CONFIG[control_key]
-        else
-            inserter_config[control_key] = (control_behavior[bp_key] ~= nil) and control_behavior[bp_key] or DEFAULT_LOADER_CONFIG[control_key]
-        end
-    end
-
-    if not ml_entity.config.nerf_mode then
-        inserter_config.inserter_filter_mode = bp_entity.use_filters and (bp_entity.filter_mode or 'whitelist') or nil
-        inserter_config.loader_filter_mode = inserter_config.inserter_filter_mode or 'none'
-
-        inserter_config.read_transfers = control_behavior.circuit_read_hand_contents or false
-
-        if bp_entity.filters then
-            for _, filter in pairs(bp_entity.filters) do
-                inserter_config.filters[filter.index] = {
-                    name = filter.name,
-                    quality = filter.quality,
-                    comparator = filter.comparator,
-                }
-            end
-        end
-
-        inserter_config.inserter_spoil_priority = self.spoiling and fix_spoil_prio[bp_entity.spoil_priority or 'none'] or nil
-    else
-        inserter_config.loader_filter_mode = 'none'
-        inserter_config.inserter_spoil_priority = self.spoiling and 'none' or nil
-    end
-
-    return inserter_config
-end
-
----@param inserter_config table<string, any?>
----@param entity LuaEntity Loader or Inserter
-function Controller:writeConfigToEntity(inserter_config, entity)
-    if not (entity and entity.valid) then return end
-
-    local control = entity.get_or_create_control_behavior() --[[@as LuaGenericOnOffControlBehavior ]]
-    assert(control)
-
-    if not control.valid then return end
-
-    -- copy control attributes
-    for control_key in pairs(CONTROL_ATTRIBUTES) do
-        control[control_key] = inserter_config[control_key]
-    end
-
-    if entity.type == 'inserter' then
-        if entity.filter_slot_count > 0 then
-            for i = 1, entity.filter_slot_count, 1 do
-                entity.set_filter(i, inserter_config.filters[i])
-            end
-
-            if inserter_config.loader_filter_mode and inserter_config.loader_filter_mode ~= 'none' then
-                entity.use_filters = true
-                entity.inserter_filter_mode = inserter_config.loader_filter_mode
-            else
-                entity.use_filters = false
-            end
-        end
-
-        entity.inserter_stack_size_override = entity.prototype.bulk and 4 or 0 -- 0 resets to inserter default
-
-        if self.spoiling then
-            -- only set spoil priority if there are some filter_slots (not nerfed)
-            entity.inserter_spoil_priority = (entity.filter_slot_count > 0) and inserter_config.inserter_spoil_priority or 'none'
-        end
-
-        local inserter_control = control --[[@as LuaInserterControlBehavior]]
-        inserter_control.circuit_set_stack_size = false
-
-        if inserter_config.read_transfers then
-            inserter_control.circuit_read_hand_contents = true
-            inserter_control.circuit_hand_read_mode = defines.control_behavior.inserter.hand_read_mode.pulse
-        end
-    else
-        if entity.filter_slot_count > 0 then
-            entity.loader_filter_mode = inserter_config.loader_filter_mode or 'none'
-
-            for i = 1, entity.filter_slot_count, 1 do
-                entity.set_filter(i, inserter_config.filters[i])
-            end
-        end
-
-        local loader_control = control --[[@as LuaLoaderControlBehavior ]]
-        loader_control.circuit_read_transfers = inserter_config.read_transfers or false
-    end
-end
-
----@param ml_entity miniloader.Data
----@param skip_main boolean?
-function Controller:resyncInserters(ml_entity, skip_main)
-    for _, inserter in pairs(ml_entity.inserters) do
-        if not (skip_main and inserter.unit_number == ml_entity.main.unit_number) then
-            self:writeConfigToEntity(ml_entity.config.inserter_config, inserter)
-        end
-    end
 end
 
 ------------------------------------------------------------------------
@@ -688,57 +396,42 @@ local function draw_position(ml_entity, position, color, index)
     }
 end
 
+--- Rebuild the loader entity and reconfigure it.
 ---@param ml_entity miniloader.Data
----@return boolean has_open_gui
-local function has_open_gui(ml_entity)
-    local guis = Framework.gui_manager:findGuisByEntityId(ml_entity.main.unit_number)
+---@return integer[]
+local function rebuild_loader(ml_entity)
+    local player_guis = {}
 
-    for _, gui in pairs(guis) do
-        if gui.entity_id == ml_entity.main.unit_number then return true end
+    for _, gui in pairs(Framework.gui_manager:findGuisByEntityId(ml_entity.main.unit_number)) do
+        player_guis[#player_guis + 1] = gui.player_index
     end
 
-    return false
+    -- flush entities, otherwise items on the loader are lost
+    This.Config:flushEntities(ml_entity)
+
+    assert(ml_entity.loader.destroy())
+    ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
+    ml_entity.state.filters = {}
+    ml_entity.state.filter_mode = 'none'
+
+    return player_guis
 end
 
 ---@param ml_entity miniloader.Data
----@param cfg miniloader.Config?
-function Controller:reconfigure(ml_entity, cfg)
-    if cfg and not ml_entity.config.nerf_mode then
-        -- do not overwrite any of the settings in the config object itself
-        -- only copy the inserter config.
-        ml_entity.config.inserter_config = util.copy(cfg.inserter_config)
-        ml_entity.config.enabled = cfg.enabled
-    end
-
+local function configure_regular_mode(ml_entity)
     local config = ml_entity.config
-    local direction = config.direction
-    assert(direction)
-
-    assert(ml_entity.loader.valid)
-
-    -- reorient loader
-    ml_entity.loader.loader_type = tostring(config.loader_type)
-    ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
-    if Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
-        -- miniloader was moved
-        ml_entity.loader.destroy()
-        ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
-    end
-
-    -- connect loader to belt if needed
-    ml_entity.loader.update_connections()
+    local direction = assert(config.direction)
 
     -- connect inserters and loader
     local back_position = Position(ml_entity.main.position):translate(direction, -1)
-    local front_position = Position(ml_entity.main.position) -- position is limited to 240 items/sec
+    local front_position = Position(ml_entity.main.position)     -- position is limited to 240 items/sec
     local hs_front_position = Position(ml_entity.main.position):translate(direction, 0.375)
 
     for inserter_index, inserter in pairs(ml_entity.inserters) do
-        local index = config.highspeed and (9 - inserter_index) or inserter_index
+        -- non-turbo mode uses the inserters
+        inserter.disabled_by_script = false
 
-        -- reorient inserter
-        inserter.direction = This.Snapping:compute_inserter_direction(ml_entity.config)
-        inserter.teleport(ml_entity.main.position)
+        local index = config.highspeed and (9 - inserter_index) or inserter_index
 
         -- normal speed: even inserters right
         -- high speed: even inserters left
@@ -750,9 +443,9 @@ function Controller:reconfigure(ml_entity, cfg)
         -- either pickup or drop position
 
         local eight_mod = Math.one_mod(index, 8)
-        local outside_position = back_position + self.positions[direction][eight_mod]
-        local inside_position = front_position + self.positions[direction][eight_mod]
-        local hs_inside_position = hs_front_position + self.positions[direction][eight_mod]
+        local outside_position = back_position + Controller.positions[direction][eight_mod]
+        local inside_position = front_position + Controller.positions[direction][eight_mod]
+        local hs_inside_position = hs_front_position + Controller.positions[direction][eight_mod]
 
         local pickup_position = config.highspeed and hs_inside_position or inside_position
         local drop_position = outside_position
@@ -779,15 +472,56 @@ function Controller:reconfigure(ml_entity, cfg)
             draw_position(ml_entity, inserter.position, { r = 0, g = 0, b = 1 }, inserter_index)
         end
     end
+end
 
-    self:resyncInserters(ml_entity)
+---@param ml_entity miniloader.Data
+---@return boolean closed_gui True if reconfiguration closed the GUI
+function Controller:reconfigure(ml_entity)
+    assert(ml_entity.loader.valid)
 
-    -- if a gui is open, copy the config also to the loader which is shown on the GUI right now
-    if has_open_gui(ml_entity) then
-        self:writeConfigToEntity(ml_entity.config.inserter_config, ml_entity.loader)
-    else
-        self:writeConfigToEntity(DEFAULT_LOADER_CONFIG, ml_entity.loader)
+    local config = ml_entity.config
+
+    local state = ml_entity.state
+    local change_mode = (config.turbo_mode ~= state.turbo_mode) or (config.lane_filter ~= state.lane_filter)
+    local player_guis = {}
+
+    if change_mode or Position(ml_entity.main.position) ~= Position(ml_entity.loader.position) then
+        -- miniloader was moved or mode was changed.
+        player_guis = rebuild_loader(ml_entity)
     end
+
+    -- reorient loader
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    ml_entity.loader.loader_type = config.loader_type
+    ml_entity.loader.direction = This.Snapping:compute_loader_direction(config)
+
+    -- (re-)connect loader to belt if needed
+    ml_entity.loader.update_connections()
+
+    for _, inserter in pairs(ml_entity.inserters) do
+        -- reorient inserter
+        inserter.direction = config.direction
+        inserter.teleport(ml_entity.main.position)
+        inserter.disabled_by_script = config.turbo_mode
+    end
+
+    if not config.turbo_mode then
+        configure_regular_mode(ml_entity)
+    end
+
+    state.turbo_mode = config.turbo_mode
+    state.lane_filter = config.lane_filter
+
+    This.Config:resyncEntities(ml_entity)
+
+    -- we changed the loader which closed the GUI. Reopen them for the new
+    -- entity. This needs to happen after updating the state, otherwise it
+    -- is an endless recursion.
+    for _, player_index in pairs(player_guis) do
+        This.Gui.openGui(ml_entity.main, player_index)
+    end
+
+    return #player_guis > 0
 end
 
 ------------------------------------------------------------------------

@@ -48,8 +48,15 @@ data:extend({
     },
     {
         type = 'bool-setting',
-        name = const.settings.migrate_loaders,
+        name = const.settings.check_speed_mode,
         order = 'ay',
+        setting_type = 'startup',
+        default_value = false,
+    },
+    {
+        type = 'bool-setting',
+        name = const.settings.migrate_loaders,
+        order = 'az',
         setting_type = 'startup',
         default_value = false,
     },
