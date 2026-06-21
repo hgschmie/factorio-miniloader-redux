@@ -195,36 +195,6 @@ local function on_configuration_changed()
         end
     end
 
-    -- reverse 1.0 config
-    for _, ml_entity in pairs(This.MiniLoader:entities()) do
-        local ml_config = ml_entity.config
-        if not ml_config.inserter_config then
-            ml_config.inserter_config = {}
-            for key in pairs(This.MiniLoader.CONTROL_ATTRIBUTES) do
-                ml_config.inserter_config[key] = ml_config[key]
-                ml_config[key] = nil
-            end
-
-            ml_config.inserter_config.filters = ml_config.filters
-            ---@diagnostic disable-next-line: inject-field
-            ml_config.filters = nil
-
-            ml_config.inserter_config.read_transfers = ml_config.read_transfers or false
-            ---@diagnostic disable-next-line: inject-field
-            ml_config.read_transfers = nil
-
-            ml_config.inserter_config.loader_filter_mode = ml_config.filter_mode
-            ---@diagnostic disable-next-line: inject-field
-            ml_config.filter_mode = nil
-            ---@diagnostic disable-next-line: inject-field
-            ml_config.turbo_mode = nil
-            ---@diagnostic disable-next-line: inject-field
-            ml_config.lane_filter = nil
-
-            This.MiniLoader:reconfigure(ml_entity)
-        end
-    end
-
     if Framework.settings:startup_setting(const.settings_names.migrate_loaders) then
         assert(migration)
         migration:migrateMiniloaders()
