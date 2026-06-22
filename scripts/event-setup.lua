@@ -163,8 +163,7 @@ end
 local function on_entity_settings_pasted(event)
     if not (event and event.source and event.source.valid and event.destination and event.destination.valid) then return end
 
-    local player = Player.get(event.player_index)
-    if not (player and player.valid and player.force == event.source.force and player.force == event.destination.force) then return end
+    if event.source.force ~= event.destination.force then return end
 
     local src_entity = This.MiniLoader:getEntity(event.source.unit_number)
     local dst_entity = This.MiniLoader:getEntity(event.destination.unit_number)

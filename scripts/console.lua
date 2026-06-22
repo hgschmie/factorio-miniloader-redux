@@ -66,17 +66,14 @@ local function inspect_miniloaders(data)
     for _, surface in pairs(game.surfaces) do
         insert(surface.find_entities_filtered {
             name = const.supported_type_names,
-            type = 'inserter',
         }, 'miniloader')
 
         insert(surface.find_entities_filtered {
             name = const.supported_loader_names,
-            type = 'loader-1x1',
         }, 'loader')
 
         insert(surface.find_entities_filtered {
             name = const.supported_inserter_names,
-            type = 'inserter',
         }, 'inserter')
     end
 

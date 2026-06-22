@@ -353,7 +353,6 @@ end
 ---@return boolean True if entity was destroyed
 function Controller:destroy(entity_id)
     if not (entity_id and Is.Number(entity_id)) then return false end
-    assert(entity_id)
 
     local ml_entity = self:getEntity(entity_id)
     if not ml_entity then return false end

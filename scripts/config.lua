@@ -371,9 +371,9 @@ end
 local function update_filters(ml_entity)
     if ml_entity.config.filter_mode == ml_entity.state.filter_mode and table.compare(ml_entity.config.filters, ml_entity.state.filters) then return end
 
-    if table_size(ml_entity.config.filters) > 0 then
-        Config:flushEntities(ml_entity)
-    end
+    local needs_flush = (ml_entity.state.filter_mode == 'none' and ml_entity.config.filter_mode ~= 'none')
+        or (ml_entity.config.filter_mode == 'whitelist' and table_size(ml_entity.config.filters) == 0)
+    if needs_flush then Config:flushEntities(ml_entity) end
 
     local has_filters = (not ml_entity.config.nerf_mode) and (ml_entity.loader.filter_slot_count > 0)
 
