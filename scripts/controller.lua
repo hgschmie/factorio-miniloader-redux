@@ -410,7 +410,7 @@ local function rebuild_loader(ml_entity)
     This.Config:flushEntities(ml_entity)
 
     assert(ml_entity.loader.destroy())
-    ml_entity.loader = create_loader(ml_entity.main, ml_entity.config)
+    ml_entity.loader = assert(create_loader(ml_entity.main, ml_entity.config))
     ml_entity.state.filters = {}
     ml_entity.state.filter_mode = 'none'
 

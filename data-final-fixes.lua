@@ -91,9 +91,11 @@ if space_collision_layer then
 
     for _, entity_type in pairs { 'loader-1x1', 'inserter' } do
         for _, prototype in pairs(data.raw[entity_type]) do
-            -- if a prototype has an explicit "se_allow_in_space = false" (not just missing or true), then make it collide
-            -- with the space collision layer
-            if (not prototype.se_allow_in_space) and prototype.collision_mask then
+            -- Only patch prototypes THIS mod explicitly flagged se_allow_in_space = false
+            -- (its own non-space loaders). Compare to `false` on purpose: a missing/nil flag is a
+            -- vanilla or third-party entity that SE already handles itself, so `not ...` would
+            -- wrongly sweep in every inserter/loader in the game.
+            if (prototype.se_allow_in_space == false) and prototype.collision_mask then
                 ---@diagnostic disable-next-line: undefined-global
                 prototype.collision_mask.layers[space_collision_layer] = true
                 data_util.collision_description(prototype)

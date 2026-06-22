@@ -93,10 +93,11 @@ end
 ---@param dst_config miniloader.Config
 function Config:copyConfig(src_config, dst_config)
     local ml_config = util.copy(src_config)
+    local default_config = util.copy(DEFAULT_CONFIG)
 
     for _, key in pairs(CONFIG_KEYS) do
         if dst_config.nerf_mode then
-            dst_config[key] = DEFAULT_CONFIG[key]
+            dst_config[key] = default_config[key]
         else
             dst_config[key] = ml_config[key]
         end
@@ -105,7 +106,7 @@ function Config:copyConfig(src_config, dst_config)
     -- copy shared control keys over
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if dst_config.nerf_mode then
-            dst_config[control_key] = DEFAULT_CONFIG[control_key]
+            dst_config[control_key] = default_config[control_key]
         else
             dst_config[control_key] = ml_config[control_key]
         end
@@ -130,9 +131,10 @@ function Config:updateConfigFromInserter(ml_config, inserter)
     assert(control.valid)
 
     -- copy shared control keys over
+    local default_config = util.copy(DEFAULT_CONFIG)
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
-            ml_config[control_key] = DEFAULT_CONFIG[control_key]
+            ml_config[control_key] = default_config[control_key]
         else
             ml_config[control_key] = control[control_key]
         end
@@ -190,9 +192,10 @@ function Config:updateConfigFromLoader(ml_config, loader)
     assert(control.valid)
 
     -- copy shared control keys over
+    local default_config = util.copy(DEFAULT_CONFIG)
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
-            ml_config[control_key] = DEFAULT_CONFIG[control_key]
+            ml_config[control_key] = default_config[control_key]
         else
             ml_config[control_key] = control[control_key]
         end
@@ -335,18 +338,30 @@ function Config:flushEntities(ml_entity)
         end
     end
 
-    if not (container and container.valid) then
+    -- push as much as possible into the container (if any)
+    if container and container.valid then
+        local container_inventory = assert(container.get_inventory(defines.inventory.chest))
+        for idx = 1, #inventory, 1 do
+            local stack = inventory[idx]
+            if stack.count > 0 then
+                local inserted = container_inventory.insert(stack)
+                if inserted >= stack.count then
+                    stack.clear()
+                else
+                    stack.count = stack.count - inserted
+                end
+            end
+        end
+    end
+
+    -- spill whatever is left: no container, or the container could not hold it all
+    if not inventory.is_empty() then
         ml_entity.main.surface.spill_inventory {
             position = ml_entity.main.position,
             inventory = inventory,
             force = ml_entity.main.force,
             allow_belts = true,
         }
-    else
-        local container_inventory = assert(container.get_inventory(defines.inventory.chest))
-        for idx = 1, #inventory, 1 do
-            if inventory[idx].count > 0 then container_inventory.insert(inventory[idx]) end
-        end
     end
 
     inventory.destroy()
@@ -451,21 +466,25 @@ function Config:readConfigFromTag(tag_value)
         ml_config.filter_mode = ml_config.inserter_config.loader_filter_mode or 'none'
         ml_config.inserter_config.loader_filter_mode = nil
 
-        assert(table_size(ml_config.inserter_config) == 0, 'Remaining keys: ' .. serpent.line(ml_config.inserter_config))
+        if table_size(ml_config.inserter_config) > 0 then
+            Framework.logger:logf('Dropping unknown pre-1.0 inserter_config keys: %s', serpent.line(ml_config.inserter_config))
+        end
         ml_config.inserter_config = nil
     end
 
     -- sanitize all the config keys that are not common control behavior
+    local default_config = util.copy(DEFAULT_CONFIG)
+
     for _, config_key in pairs(CONFIG_KEYS) do
         if ml_config[config_key] == nil then
-            ml_config[config_key] = DEFAULT_CONFIG[config_key]
+            ml_config[config_key] = default_config[config_key]
         end
     end
 
     -- new config keys for 1.0 - sanitize all the control behavior keys
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode or (ml_config[control_key] == nil) then
-            ml_config[control_key] = DEFAULT_CONFIG[control_key]
+            ml_config[control_key] = default_config[control_key]
         end
     end
 
@@ -488,11 +507,12 @@ function Config:readConfigFromBlueprintInserter(ml_config, inserter)
     local control_behavior = inserter.control_behavior or {}
 
     -- copy blueprint control behavior attributes
+    local default_config = util.copy(DEFAULT_CONFIG)
     for control_key, bp_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
-            ml_config[control_key] = DEFAULT_CONFIG[control_key]
+            ml_config[control_key] = default_config[control_key]
         else
-            ml_config[control_key] = (control_behavior[bp_key] ~= nil) and control_behavior[bp_key] or DEFAULT_CONFIG[control_key]
+            ml_config[control_key] = (control_behavior[bp_key] ~= nil) and control_behavior[bp_key] or default_config[control_key]
         end
     end
 

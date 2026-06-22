@@ -104,7 +104,8 @@ local loader_postfix = { '-l', '-turbo-l', '-turbo-lf-l', }
 ---@param lane_filter boolean?
 ---@return string loader_name
 function Constants.loader_name(name, turbo, lane_filter)
-    return name .. loader_postfix[(turbo and 1 or 0) + (lane_filter and 2 or 0) + 1]
+    if lane_filter then assert(turbo) end
+    return name .. loader_postfix[(turbo and 1 or 0) + (lane_filter and 1 or 0) + 1]
 end
 
 ---@param name string

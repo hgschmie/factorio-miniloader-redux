@@ -197,6 +197,7 @@ local function create_entity(params)
 
     local drain_amount = math.ceil(speed_config.items_per_second / 15)
 
+    local consumption_amount
     if Framework.settings:startup_setting(const.settings_names.no_power) then
         primary_energy = void_energy
         drain_amount = 0
