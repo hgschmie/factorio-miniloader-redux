@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
-Date: ????
+Date: 2026-06-23
   Major Features:
     - Speed Mode: Move entities directly with the loader. Has some limitations but is able to keep up with the fastest belts.
     - Lane Filter Mode: In Speed Mode, apply one filter to the left and another to the right lane.
