@@ -5,6 +5,7 @@
 local table = require('stdlib.utils.table')
 
 ----------------------------------------------------------------------------------------------------
+assert(Framework)
 
 ---@enum FrameworkSettings.name
 local setting_types = {
@@ -197,7 +198,7 @@ if script then
     local Event = require('stdlib.event.event')
 
     local function flush()
-        Framework.settings:flush()
+        FrameworkSettings:flush()
     end
 
     local function register_events()

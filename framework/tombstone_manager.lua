@@ -8,8 +8,8 @@
 --   - entities dying
 ------------------------------------------------------------------------
 assert(script)
+assert(Framework)
 
-local Is = require('stdlib.utils.is')
 local Event = require('stdlib.event.event')
 
 local Matchers = require('framework.matchers')
@@ -56,12 +56,13 @@ local FrameworkTombstoneManager = {
     callbacks = {}
 }
 
+---@param force boolean? If true, force reinit
 ---@return ff2.tombstone.State state Manages undo/redo state
-function FrameworkTombstoneManager:state()
+function FrameworkTombstoneManager:state(force)
     local state = Framework.runtime:storage()
 
     ---@type ff2.tombstone.State
-    state.tombstone_manager = state.tombstone_manager or {
+    state.tombstone_manager = (state.tombstone_manager and not force) and state.tombstone_manager or {
         tombstones = {},
         tombstone_count = 0,
     }
@@ -179,7 +180,7 @@ function FrameworkTombstoneManager:retrieveTombstoneFromBlueprintEntity(blueprin
 end
 
 --- Retrieves a tombstone created at the current tick from the same position
---- 
+---
 ---@param tombstone_key ff2.tombstone.TombstoneKey
 ---@return ff2.tombstone.Tombstone? tombstone
 function FrameworkTombstoneManager:retrieveLatestTombstoneByType(tombstone_key)
