@@ -2,7 +2,7 @@
 -- runtime code
 ------------------------------------------------------------------------
 
-require('lib.init')
+This, Framework = require('lib.init')()
 
 -- setup events
 require('scripts.event-setup')

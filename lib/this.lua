@@ -9,7 +9,7 @@
 ---@field Console miniloader.Console
 ---@field Config miniloader.EntityConfig
 ---@field Gui miniloader.Gui
-This = {
+local This = {
     other_mods = {
         ['PickerDollies'] = 'picker-dollies',
         ['even-pickier-dollies'] = 'picker-dollies',
@@ -26,3 +26,5 @@ if script then
     This.Config = require('scripts.config')
     This.Gui = require('scripts.gui')
 end
+
+return This

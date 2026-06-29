@@ -11,24 +11,26 @@ local const = require('lib.constants')
 local Config = {}
 
 ---@type miniloader.Config
-local DEFAULT_CONFIG = {
-    enabled = true,
-    loader_type = const.loader_direction.input, -- freshly minted loader image is 'input'
-    highspeed = false,
-    nerf_mode = false,
-    turbo_mode = false,
-    lane_filter = false,
-    circuit_set_filters = false,
-    circuit_enable_disable = false,
-    circuit_condition = { constant = 0, comparator = '<', },
-    connect_to_logistic_network = false,
-    logistic_condition = { constant = 0, comparator = '<', },
-    filters = {},
-    filter_mode = 'none',
-    read_transfers = false,
-    spoil_priority = This.MiniLoader.spoiling and 'none' or nil,
-    stack_size = 1, -- 1 is always supported
-}
+local function get_default_config()
+    return util.copy {
+        enabled = true,
+        loader_type = const.loader_direction.input, -- freshly minted loader image is 'input'
+        highspeed = false,
+        nerf_mode = false,
+        turbo_mode = false,
+        lane_filter = false,
+        circuit_set_filters = false,
+        circuit_enable_disable = false,
+        circuit_condition = { constant = 0, comparator = '<', },
+        connect_to_logistic_network = false,
+        logistic_condition = { constant = 0, comparator = '<', },
+        filters = {},
+        filter_mode = 'none',
+        read_transfers = false,
+        spoil_priority = This.MiniLoader.spoiling and 'none' or nil,
+        stack_size = 1, -- 1 is always supported
+    }
+end
 
 --- loader and inserter control behavior keys
 --- keys are for entity attributes, values are for blueprint entities
@@ -60,7 +62,7 @@ local FIX_SPOIL_PRIO = {
 ---@param parent_config miniloader.Config?
 ---@return miniloader.Config config
 function Config:createConfiguration(main, parent_config)
-    local config = util.copy(DEFAULT_CONFIG)
+    local config = get_default_config()
 
     self:configureFromInserter(main, config)
 
@@ -93,7 +95,7 @@ end
 ---@param dst_config miniloader.Config
 function Config:copyConfig(src_config, dst_config)
     local ml_config = util.copy(src_config)
-    local default_config = util.copy(DEFAULT_CONFIG)
+    local default_config = get_default_config()
 
     for _, key in pairs(CONFIG_KEYS) do
         if dst_config.nerf_mode then
@@ -131,7 +133,7 @@ function Config:updateConfigFromInserter(ml_config, inserter)
     assert(control.valid)
 
     -- copy shared control keys over
-    local default_config = util.copy(DEFAULT_CONFIG)
+    local default_config = get_default_config()
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
             ml_config[control_key] = default_config[control_key]
@@ -192,7 +194,7 @@ function Config:updateConfigFromLoader(ml_config, loader)
     assert(control.valid)
 
     -- copy shared control keys over
-    local default_config = util.copy(DEFAULT_CONFIG)
+    local default_config = get_default_config()
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
             ml_config[control_key] = default_config[control_key]
@@ -242,9 +244,10 @@ local function write_config_to_inserter(ml_config, inserter)
     if not control.valid then return end
 
     -- copy control attributes
+    local default_config = get_default_config()
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
-            control[control_key] = DEFAULT_CONFIG[control_key]
+            control[control_key] = default_config[control_key]
         else
             control[control_key] = ml_config[control_key]
         end
@@ -276,9 +279,10 @@ local function write_config_to_loader(ml_config, loader)
     if not control.valid then return end
 
     -- copy control attributes
+    local default_config = get_default_config()
     for control_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
-            control[control_key] = DEFAULT_CONFIG[control_key]
+            control[control_key] = default_config[control_key]
         else
             control[control_key] = ml_config[control_key]
         end
@@ -473,7 +477,7 @@ function Config:readConfigFromTag(tag_value)
     end
 
     -- sanitize all the config keys that are not common control behavior
-    local default_config = util.copy(DEFAULT_CONFIG)
+    local default_config = get_default_config()
 
     for _, config_key in pairs(CONFIG_KEYS) do
         if ml_config[config_key] == nil then
@@ -507,7 +511,7 @@ function Config:readConfigFromBlueprintInserter(ml_config, inserter)
     local control_behavior = inserter.control_behavior or {}
 
     -- copy blueprint control behavior attributes
-    local default_config = util.copy(DEFAULT_CONFIG)
+    local default_config = get_default_config()
     for control_key, bp_key in pairs(CONTROL_BEHAVIOR_KEYS) do
         if ml_config.nerf_mode then
             ml_config[control_key] = default_config[control_key]

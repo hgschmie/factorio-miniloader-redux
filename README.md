@@ -7,10 +7,10 @@ Miniloaders can have different modes:
 - _Normal mode_ (which is the default)
   - supports sideloading from/to a belt
   - In Space Age, supports spoilage priority
-  - degrades with belts above 240 items/sec(The fastest "official" in-game belts are Space Age Turbo Belts, which move at 60 items/sec)
+  - degrades with belts above 240 items/sec (The fastest "official" in-game belts are Space Age Turbo Belts, which move at 60 items/sec)
 - _Speed mode_
   - can interact only with entities that are a container or container-like (e.g. cargo wagons or assembly machines)
-  - spupports speeds up to 480 items/sec
+  - supports speeds up to 480 items/sec
 - _Lane filter mode_
   - only available in Speed Mode
   - has a single filter for each lane, one for the left lane and one for the right lane

@@ -2,7 +2,7 @@
 -- data phase 3
 ------------------------------------------------------------------------
 
-require('lib.init')
+This, Framework = require('lib.init')()
 
 local util = require('util')
 
