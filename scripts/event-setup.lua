@@ -32,63 +32,46 @@ local function on_pre_build(event)
     pdata.pre_build.flip_vertical = event.flip_vertical
 end
 
----@param attached_entity framework.ghost_manager.AttachedEntity
-local function ghost_callback(attached_entity)
-    local pdata = Player.pdata(attached_entity.player_index)
-    ---@type miniloader.PreBuild?
-    local pre_build = pdata and pdata.pre_build
-
-    local tags = util.copy(attached_entity.tags)
-    local config = This.MiniLoader:deserializeConfiguration(tags)
-
-    -- correct config direction in the ml_config tag
-    if config and config.direction then
-        config.direction = This.Snapping:correct_direction(config.direction, pre_build)
-        -- reassign tags to entity
-        tags[const.config_tag_name] = config
-        -- must be replaced with direct assignment
-        attached_entity.entity.tags = tags
-    end
-end
-
 ---@param event EventData.on_built_entity | EventData.on_robot_built_entity | EventData.on_space_platform_built_entity | EventData.script_raised_revive | EventData.script_raised_built
 local function on_entity_created(event)
     local entity = event and event.entity
     if not (entity and entity.valid) then return end
 
-    -- pre_build as player and build as player is only possible in editor -> build blueprints directly.
-    -- Otherwise, the pre_build happens as player and the build is done by a robot.
-    local pdata = event.player_index and Player.pdata(event.player_index)
-    ---@type miniloader.PreBuild?
-    local pre_build = pdata and pdata.pre_build
-
+    ---@type Tags?
     local tags = event.tags
-    local config, no_snapping = This.MiniLoader:deserializeConfiguration(tags)
-    if config then
-        -- correct config direction in the ml_config tag
-        if config.direction then config.direction = This.Snapping:correct_direction(config.direction, pre_build) end
+    local player_index = event.player_index
+
+    local config, no_snapping = nil, false
+
+    -- see if a ghost (with tags) from a blueprint is replaced
+    local entity_ghost = Framework.Ghost:findGhostForEntity(entity)
+    if entity_ghost then
+        tags = tags or entity_ghost.tags
+        player_index = player_index or entity_ghost.player_index
+    end
+
+    if tags then
+        config, no_snapping = This.MiniLoader:deserializeConfiguration(tags)
     else
-        -- normal builds happens here.
-
-        -- see if a ghost (with tags) from a blueprint is replaced
-        local entity_ghost = Framework.ghost_manager:findGhostForEntity(entity)
-        if entity_ghost then
-            tags = tags or entity_ghost.tags
+        -- was it a fast upgrade, which leaves no traces. Pick up a tombstone that was dropped
+        -- when the old entity was destroyed
+        local tombstone = Framework.Tombstone:retrieveLatestTombstoneByType {
+            position = entity.position,
+            surface_index = entity.surface_index,
+            type = tools.getType(entity)
+        }
+        if tombstone then
+            config, no_snapping = This.MiniLoader:deserializeConfiguration(tombstone.data)
         end
+    end
 
-        if tags then
-            config, no_snapping = This.MiniLoader:deserializeConfiguration(tags)
-        else
-            -- was it a fast upgrade, which leaves no traces. Pick up a tombstone that was dropped
-            -- when the old entity was destroyed
-            local tombstone = Framework.Tombstone:retrieveLatestTombstoneByType {
-                position = entity.position,
-                surface_index = entity.surface_index,
-                type = tools.getType(entity)
-            }
-            if tombstone then
-                config, no_snapping = This.MiniLoader:deserializeConfiguration(tombstone.data)
-            end
+    if player_index then
+        local pdata = Player.pdata(player_index)
+        ---@type miniloader.PreBuild?
+        local pre_build = pdata and pdata.pre_build
+        -- correct config direction in the ml_config tag
+        if config and config.direction then
+            config.direction = This.Snapping:correct_direction(config.direction, pre_build)
         end
     end
 
@@ -331,8 +314,9 @@ local function register_events()
     Event.register(Matchers.CREATION_EVENTS, on_snappable_entity_created, match_snap_entities)
 
     -- manage ghost building (robot building)
-    Framework.ghost_manager:registerForName(const.supported_type_names)
-    Framework.ghost_manager:addGhostCallback(ghost_callback)
+    Framework.Ghost:registerForName {
+        names = const.supported_type_names,
+    }
 
     -- Configuration changes (startup)
     Event.on_configuration_changed(on_configuration_changed)
@@ -348,7 +332,7 @@ local function register_events()
     -- manage tombstones for undo/redo and dead entities
     Framework.Tombstone:registerCallback(const.supported_type_names, {
         create_tombstone = serialize_config,
-        apply_tombstone = Framework.ghost_manager.mapTombstoneToGhostTags,
+        apply_tombstone = Framework.Ghost.mapTombstoneToGhostTags,
     })
 
     -- Entity cloning
