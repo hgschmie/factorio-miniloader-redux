@@ -29,6 +29,7 @@ local function get_default_config()
         read_transfers = false,
         spoil_priority = This.MiniLoader.spoiling and 'none' or nil,
         stack_size = 1, -- 1 is always supported
+        spill_mode = Framework.settings:startup_setting(const.settings_names.spill_items),
     }
 end
 
@@ -45,8 +46,8 @@ local CONTROL_BEHAVIOR_KEYS = {
 
 -- all keys except the control behavior keys and 'filters'
 local CONFIG_KEYS = {
-    'enabled', 'turbo_mode', 'lane_filter',
-    'filter_mode', 'read_transfers', 'spoil_priority', 'stack_size',
+    'enabled', 'turbo_mode', 'lane_filter', 'filter_mode',
+    'read_transfers', 'spoil_priority', 'stack_size', 'spill_mode',
 }
 
 --- see https://forums.factorio.com/viewtopic.php?t=133512
@@ -359,7 +360,7 @@ function Config:flushEntities(ml_entity)
     end
 
     -- spill whatever is left: no container, or the container could not hold it all
-    if not inventory.is_empty() then
+    if not inventory.is_empty() and ml_entity.config.spill_mode then
         ml_entity.main.surface.spill_inventory {
             position = ml_entity.main.position,
             inventory = inventory,
@@ -375,8 +376,9 @@ end
 local function update_filters(ml_entity)
     if ml_entity.config.filter_mode == ml_entity.state.filter_mode and table.compare(ml_entity.config.filters, ml_entity.state.filters) then return end
 
-    local needs_flush = (ml_entity.state.filter_mode == 'none' and ml_entity.config.filter_mode ~= 'none')
-        or (ml_entity.config.filter_mode == 'whitelist' and table_size(ml_entity.config.filters) == 0)
+    local needs_flush = (ml_entity.config.loader_type == 'input')
+        and ((ml_entity.state.filter_mode == 'none' and ml_entity.config.filter_mode ~= 'none')
+            or (ml_entity.config.filter_mode == 'whitelist' and table_size(ml_entity.config.filters) == 0))
     if needs_flush then Config:flushEntities(ml_entity) end
 
     local has_filters = (not ml_entity.config.nerf_mode) and (ml_entity.loader.filter_slot_count > 0)

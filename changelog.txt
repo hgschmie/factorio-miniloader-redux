@@ -1,7 +1,11 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: ????
+  Major Features:
+    - Add startup and GUI settings for spilling or discarding stuck items from a miniloader.
   Changes:
+    - Make sure that creating miniloaders from ghosts or after entities died works correctly
+    - Factorio 2.1 fixes
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2026-06-23

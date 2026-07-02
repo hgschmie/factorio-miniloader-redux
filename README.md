@@ -122,6 +122,12 @@ All miniloaders are checked whether they interact with a chest or an assembly ma
 
 Default value is "off".
 
+### Spill stuck items on the ground (Startup)
+
+A Miniloader consists of multiple entities and it is possible when switching filters or the operations mode that items get stuck inside the loader which will block its operation. The Miniloader can either remove these items and spill them on the ground, marking them for pickup by robots or silently discard and destroy these items. This is the default setting for new miniloaders which can be changed in the GUI.
+
+Default value is "on".
+
 ### Migrate Factorio 1.1 Miniloaders (Startup)
 
 (This setting has not been tested in a while. If you use it and encounter errors, I am very interested in hearing about them)

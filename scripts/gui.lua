@@ -26,6 +26,7 @@ local function get_gui_event_definition()
             onSpoilPriority = Gui.onSpoilPriority,
             onToggleTurboMode = Gui.onToggleTurboMode,
             onToggleLaneFilter = Gui.onToggleLaneFilter,
+            onSpillMode = Gui.onSpillMode,
         },
         callback = Gui.guiUpdater,
     }
@@ -33,6 +34,7 @@ end
 
 
 ---@param gui framework.gui
+---@return framework.gui.element_definition ui
 local function spoilage_gui(gui)
     local gui_events = gui.gui_events
 
@@ -78,10 +80,10 @@ local function spoilage_gui(gui)
 end
 
 ---@param gui framework.gui
-local function turbo_gui(gui)
+---@param ml_entity miniloader.Data
+---@return framework.gui.element_definition ui
+local function turbo_gui(gui, ml_entity)
     local gui_events = gui.gui_events
-
-    local ml_entity = assert(This.MiniLoader:getEntity(gui.entity_id))
 
     return {
         type = 'flow',
@@ -117,6 +119,50 @@ local function turbo_gui(gui)
 end
 
 ---@param gui framework.gui
+---@param ml_entity miniloader.Data
+---@return framework.gui.element_definition ui
+local function spill_gui(gui, ml_entity)
+    local gui_events = gui.gui_events
+
+    return {
+        type = 'flow',
+        direction = 'vertical',
+        style_mods = {
+            top_padding = 8,
+        },
+        children = {
+            {
+                type = 'radiobutton',
+                caption = { '', { const:locale('spill_stuck_items') }, ' [img=info]' },
+                tooltip = { const:locale('spill_stuck_items_tooltip') },
+                name = 'spill_stuck_items',
+                elem_tags = { mode = 'spill_stuck_items', },
+                handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onSpillMode },
+                state = ml_entity.config.spill_mode,
+                enabled = true,
+            },
+            {
+                type = 'radiobutton',
+                caption = { '', { const:locale('discard_stuck_items') }, ' [img=info]' },
+                tooltip = { const:locale('discard_stuck_items_tooltip') },
+                name = 'discard_stuck_items',
+                elem_tags = { mode = 'discard_stuck_items', },
+                handler = { [defines.events.on_gui_checked_state_changed] = gui_events.onSpillMode },
+                state = not ml_entity.config.spill_mode,
+                enabled = true,
+            },
+            {
+                type = 'empty-widget',
+                style_mods = {
+                    horizontally_stretchable = true,
+                    horizontally_squashable = true,
+                },
+            },
+        },
+    }
+end
+
+---@param gui framework.gui
 ---@return framework.gui.element_definition? ui
 function Gui.getUi(gui)
     local ml_entity = assert(This.MiniLoader:getEntity(gui.entity_id))
@@ -126,7 +172,8 @@ function Gui.getUi(gui)
     local children = {}
 
     if not ml_entity.config.nerf_mode then
-        children[#children + 1] = turbo_gui(gui)
+        children[#children + 1] = turbo_gui(gui, ml_entity)
+        children[#children + 1] = spill_gui(gui, ml_entity)
     end
 
     if This.MiniLoader.spoiling then
@@ -203,6 +250,16 @@ function Gui.onToggleLaneFilter(event, gui)
     ml_entity.config.lane_filter = element.state or false
 end
 
+---@param event EventData.on_gui_checked_state_changed
+---@param gui framework.gui
+function Gui.onSpillMode(event, gui)
+    local ml_entity = This.MiniLoader:getEntity(gui.entity_id)
+    if not ml_entity then return end
+
+    local element = event.element
+    ml_entity.config.spill_mode = assert(element.tags.mode) == 'spill_stuck_items'
+end
+
 --------------------------------------------------------------------------------
 -- Gui Updater
 --------------------------------------------------------------------------------
@@ -244,6 +301,12 @@ local function update_gui(gui, ml_entity)
 
     lane_filter.state = ml_entity.config.lane_filter
     lane_filter.enabled = turbo_mode.state
+
+    local spill_stuck_items = assert(gui:findElement('spill_stuck_items'))
+    local discard_stuck_items = assert(gui:findElement('discard_stuck_items'))
+
+    spill_stuck_items.state = ml_entity.config.spill_mode
+    discard_stuck_items.state = not ml_entity.config.spill_mode
 end
 
 

@@ -17,6 +17,7 @@ local Settings = {
         [const.settings_names.double_recipes] = { key = const.settings.double_recipes, value = false },
         [const.settings_names.check_speed_mode] = { key = const.settings.check_speed_mode, value = false },
         [const.settings_names.fix_blueprint_mods] = { key = const.settings.fix_blueprint_mods, value = false },
+        [const.settings_names.spill_items] = { key = const.settings.spill_items, value = true },
     },
 }
 

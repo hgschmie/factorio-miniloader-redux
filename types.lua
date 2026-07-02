@@ -80,6 +80,7 @@
 ---@field read_transfers boolean                         1.0 Loader - maps to circuit_read_transfers
 ---@field spoil_priority SpoilPriority                   1.0 Inserter - maps to inserter_spoil_priority (not available in turbo mode)
 ---@field stack_size integer                             1.0 Stack size if stacking is supported
+---@field spill_mode boolean                             1.1 Spill mode. True: spill items, False: discard items.
 
 ---@class miniloader.State
 ---@field status defines.entity_status?                  The miniloader status. (FIXME - gets initialized from main and then nothing is done with it)

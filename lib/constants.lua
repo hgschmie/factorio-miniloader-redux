@@ -165,6 +165,7 @@ Constants.settings_keys = {
     'no_power',
     'double_recipes',
     'check_speed_mode',
+    'spill_items',
     'fix_blueprint_mods',
 }
 
