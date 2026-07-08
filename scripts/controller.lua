@@ -140,6 +140,7 @@ local function create_loader(main, config)
 
     if not loader then return nil end
 
+    loader.minable_flag = false
     loader.destructible = false
     loader.operable = true
 
@@ -178,6 +179,7 @@ function Controller:createInserters(main, speed_config, config)
 
         if not inserter then return inserters, false end
 
+        inserter.minable_flag = false
         inserter.destructible = false
         inserter.operable = false
 
