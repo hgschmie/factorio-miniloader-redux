@@ -41,7 +41,11 @@ for prefix, loader_definition in pairs(templates.loaders) do
         local params = util.copy(loader_definition.data(dash_prefix))
         params.prefix = prefix
         params.name = const:with_prefix(dash_prefix .. const.name)
+
         params.localised_name = params.localised_name and params.localised_name or { 'entity-name.' .. params.name }
+        params.internal_localised_name = params.internal_localised_name and params.localised_name or { 'entity-name.' .. params.name .. '-i' }
+        params.internal_localised_description = params.internal_localised_description and params.internal_localised_description or { 'entity-description.' .. params.name .. '-i' }
+
         if params.upgrade_from then
             upgrades[params.upgrade_from] = params.name
         end

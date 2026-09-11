@@ -317,10 +317,9 @@ local function create_entity(params)
 
     local hidden_inserter = meld(util.copy(inserter), {
         name = inserter_name,
-        icons = icon_gfx(params.tint, 'internal', 'internal'),
-        localised_name = { 'entity-name.' .. inserter_name },
-        description = { 'entity-description.' .. inserter_name },
-        localised_description = meld.delete(),
+        icons = meld.overwrite(icon_gfx(params.tint, 'internal', 'internal')),
+        localised_name = params.internal_localised_name,
+        localised_description = params.internal_localised_description,
 
         hidden = true,
         hidden_in_factoriopedia = true,
@@ -355,8 +354,8 @@ local function create_entity(params)
     local loader = {
         -- Prototype Base
         name                         = loader_name,
-        localised_name               = { 'entity-name.' .. loader_name },
-        description                  = { 'entity-description.' .. loader_name },
+        localised_name               = params.localised_name,
+        localised_description        = description,
         type                         = 'loader-1x1',
         order                        = params.order,
         subgroup                     = params.subgroup,
@@ -446,8 +445,6 @@ local function create_entity(params)
 
     local turbo_loader = meld(util.copy(loader), {
         name                        = const.loader_name(entity_name, true, false),
-        icons                       = icon_gfx(params.tint, params.entity_gfx),
-        localised_description       = description,
         container_distance          = 1,
         allow_rail_interaction      = true,
         allow_container_interaction = true,

@@ -30,6 +30,8 @@
 ---@field stack_size number
 ---@field speed_config miniloader.SpeedConfig
 ---@field localised_name string? Localised name for the loader. defaults to entity-name.<name>
+---@field internal_localised_name string? Localised name for the internal entities. defaults to entity-name.<name>-i
+---@field internal_localised_description string? Localised description for the internal entities. defaults to entity-description.<name>-i
 ---@field upgrade_from string? Tier name from which this loader is an upgrade.
 ---@field ingredients fun():IngredientPrototype[] Ingredients to make the loader
 ---@field prerequisites fun():TechnologyID[]? Technology prerequisites to make the miniloader
