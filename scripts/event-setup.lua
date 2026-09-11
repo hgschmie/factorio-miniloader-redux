@@ -53,7 +53,8 @@ local function on_entity_created(event)
             type = tools.getType(entity)
         }
         if tombstone then
-            config, no_snapping = This.MiniLoader:deserializeConfiguration(tombstone.data)
+            config = This.MiniLoader:deserializeConfiguration(tombstone.data)
+            no_snapping = false
         end
     end
 
@@ -61,9 +62,12 @@ local function on_entity_created(event)
         pre_build = Framework.Ghost:getPreBuild(player_index)
     end
 
-    -- correct config direction in the ml_config tag
-    if pre_build and config and config.direction then
-        config.direction = This.Snapping:correct_direction(config.direction, pre_build)
+    -- If there was a pre_build event, the entity was rotated and may
+    -- point in a different direction than the config. remove the
+    -- direction from the config and let the code pick up the entity
+    -- direction later
+    if pre_build and config then
+        config.direction = nil
     end
 
     -- this is a workaround for https://forums.factorio.com/viewtopic.php?t=133860
