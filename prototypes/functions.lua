@@ -520,88 +520,9 @@ local function create_recipe(params)
     data:extend { recipe, technology }
 end
 
----@param params miniloader.LoaderTemplate
-local function create_debug(params)
-    local debug_name = const.debug_name(params.name)
-    local subgroup = 'miniloader-debug'
-
-    local src = assert(data.raw['inserter'][params.name])
-
-    -- item
-    local debug_item = meld(util.copy(data.raw['item']['inserter']), {
-        name           = debug_name,
-        localised_name = { 'entity-name.' .. debug_name },
-        order          = params.order,
-        subgroup       = subgroup,
-        place_result   = debug_name,
-    })
-
-    debug_item.icons = {
-        {
-            icon = debug_item.icon,
-            tint = params.tint,
-        },
-    }
-
-    debug_item.icon = nil
-
-    -- entity
-    local debug_inserter = meld(util.copy(data.raw['inserter']['inserter']), {
-        -- Prototype Base
-        name                           = debug_name,
-        localised_name                 = { 'entity-name.' .. debug_name },
-        subgroup                       = subgroup,
-        hidden_in_factoriopedia        = true,
-
-        -- InserterPrototype
-        extension_speed                = src.extension_speed,
-        rotation_speed                 = src.rotation_speed,
-        insert_position                = src.insert_position,
-        pickup_position                = src.pickup_position,
-
-        uses_inserter_stack_size_bonus = src.uses_inserter_stack_size_bonus,
-        allow_custom_vectors           = src.allow_custom_vectors,
-        use_easter_egg                 = src.use_easter_egg,
-        filter_count                   = src.filter_count,
-
-        -- handle stacking
-        bulk                           = src.bulk,
-        wait_for_full_hand             = src.wait_for_full_hand,
-        grab_less_to_match_belt_stack  = src.grab_less_to_match_belt_stack,
-        stack_size_bonus               = src.stack_size_bonus,
-        max_belt_stack_size            = src.max_belt_stack_size,
-
-        circuit_wire_max_distance      = src.circuit_wire_max_distance,
-        chases_belt_items              = src.chases_belt_items,
-        circuit_connector              = src.circuit_connector,
-        collision_mask                 = meld.overwrite(collision_mask_util.new_mask()),
-        next_upgrade                   = meld.delete(),
-        minable                        = { mining_time = 0.1, result = debug_name },
-    })
-
-    debug_inserter.flags[#debug_inserter.flags + 1] = 'placeable-off-grid'
-    debug_inserter.platform_picture.sheet.tint = params.tint
-
-    local debug_recipe = meld(util.copy(data.raw['recipe']['inserter']), {
-        name           = debug_name,
-        localised_name = { 'entity-name.' .. debug_name },
-        enabled        = true,
-        results        = {
-            {
-                type = 'item',
-                name = debug_name,
-                amount = 1,
-            },
-        },
-    })
-
-    data:extend { debug_item, debug_inserter, debug_recipe }
-end
-
 return {
     create_item = create_item,
     create_entity = create_entity,
     create_recipe = create_recipe,
-    create_debug = create_debug,
     compute_dash_prefix = compute_dash_prefix,
 }

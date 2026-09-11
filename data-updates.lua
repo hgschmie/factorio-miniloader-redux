@@ -14,20 +14,7 @@ local const = require('lib.constants')
 local templates = require('prototypes.templates')
 local functions = require('prototypes.functions')
 
-local DEBUG_MODE = Framework.settings:get_debug_level() >= 1
-
 local upgrades = {}
-
-if DEBUG_MODE then
-    data:extend {
-        {
-            type = 'item-subgroup',
-            name = 'miniloader-debug',
-            group = 'logistics',
-            order = 'ca',
-        }
-    }
-end
 
 local mod_data = {
     type = 'mod-data',
@@ -71,10 +58,6 @@ for prefix, loader_definition in pairs(templates.loaders) do
             speed_config = params.speed_config,
             nerf_mode = params.nerf_mode or false,
         }
-
-        if DEBUG_MODE then
-            functions.create_debug(params)
-        end
     end
 end
 
