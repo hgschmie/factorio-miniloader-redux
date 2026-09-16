@@ -249,9 +249,9 @@ local function on_snappable_entity_created(event)
     if const.supported_types[entity.name] then return end
 
     -- if the entity is marked as non-snapping, don't update loaders
-    if event.tags and event.tags[const.no_snapping_tag_name] then return end
+    local no_snapping = event.tags and event.tags[const.no_snapping_tag_name]
 
-    This.Snapping:updateLoaders(entity)
+    This.Snapping:updateLoaders(entity, no_snapping)
 end
 
 local function on_snappable_entity_rotated(event)

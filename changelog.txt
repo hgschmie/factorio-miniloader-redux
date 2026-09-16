@@ -4,6 +4,8 @@ Date: ????
   Bugfixes:
     - When picking up from a perpendicular belt in normal mode, only pick up from the lane closest
       to the loader
+    - When changing the entity that a loader picks up from in normal mode, reconfigure the loader so
+      that it picks up from the correct lane
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.2
 Date: 2026-09-11

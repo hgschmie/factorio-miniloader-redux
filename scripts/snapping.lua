@@ -212,26 +212,32 @@ function Snapping:snapToNeighbor(ml_entity)
     end
 end
 
-function Snapping:updateNeighborLoaders(entity)
-    if not Is.Valid(entity) then return end
-    assert(entity)
+---@param entity LuaEntity
+---@param no_snapping boolean?
+function Snapping:updateNeighborLoaders(entity, no_snapping)
+    if not (entity and entity.valid) then return end
 
     local ml_entities = find_loader_by_entity(entity)
     for _, ml_entity in pairs(ml_entities) do
-        self:snapToNeighbor(ml_entity)
+
+        if not no_snapping then
+            self:snapToNeighbor(ml_entity)
+        end
+
         This.MiniLoader:reconfigure(ml_entity)
     end
 end
 
 -- called when entity was rotated or non loader was built
 ---@param entity LuaEntity
-function Snapping:updateLoaders(entity)
-    self:updateNeighborLoaders(entity)
+---@param no_snapping boolean?
+function Snapping:updateLoaders(entity, no_snapping)
+    self:updateNeighborLoaders(entity, no_snapping)
 
     if entity.type == 'underground-belt' then
-        self:updateNeighborLoaders(entity.underground_belt_neighbour)
+        self:updateNeighborLoaders(entity.underground_belt_neighbour, no_snapping)
     elseif entity.type == 'linked-belt' then
-        self:updateNeighborLoaders(entity.linked_belt_neighbour)
+        self:updateNeighborLoaders(entity.linked_belt_neighbour, no_snapping)
     end
 end
 
