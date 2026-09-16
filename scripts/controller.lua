@@ -459,11 +459,26 @@ local function configure_regular_mode(ml_entity)
         -- loader gets items, inserter drop them off
         if config.loader_type == const.loader_direction.input then
             inserter.pickup_target = ml_entity.loader
+
             inserter.drop_target = nil
         else
             -- inserter gets items, loader sends them down the belt
             pickup_position = outside_position
             drop_position = inside_position
+
+            -- see if there is a perpendicular belt
+            local entities = ml_entity.main.surface.find_entities_filtered {
+                type = { 'transport-belt', 'underground-belt', },
+                area = Position(back_position):expand_to_area(0.5),
+                force = ml_entity.main.force,
+            }
+            if #entities > 0 then
+                if This.Snapping:is_horizontal(entities[1].direction) ~= This.Snapping:is_horizontal(ml_entity.loader.direction) then
+                    local belt_direction = Direction.next(entities[1].direction)
+                    inserter.pickup_from_left_lane = belt_direction ~= ml_entity.loader.direction
+                    inserter.pickup_from_right_lane = belt_direction == ml_entity.loader.direction
+                end
+            end
 
             inserter.pickup_target = nil
             inserter.drop_target = ml_entity.loader
@@ -478,6 +493,7 @@ local function configure_regular_mode(ml_entity)
             draw_position(ml_entity, inserter.position, { r = 0, g = 0, b = 1 }, inserter_index)
         end
     end
+
 end
 
 ---@param ml_entity miniloader.Data

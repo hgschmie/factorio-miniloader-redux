@@ -1,7 +1,9 @@
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.3
 Date: ????
-  Changes:
+  Bugfixes:
+    - When picking up from a perpendicular belt in normal mode, only pick up from the lane closest
+      to the loader
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.2
 Date: 2026-09-11
