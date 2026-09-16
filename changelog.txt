@@ -6,6 +6,7 @@ Date: ????
       to the loader
     - When changing the entity that a loader picks up from in normal mode, reconfigure the loader so
       that it picks up from the correct lane
+    - When upgrading a chute miniloader to another tier, do not keep the nerf flag set
 ---------------------------------------------------------------------------------------------------
 Version: 2.2.2
 Date: 2026-09-11

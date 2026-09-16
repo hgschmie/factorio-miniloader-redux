@@ -291,15 +291,16 @@ end
 function Controller:setup(main, config, player_index)
     local entity_id = main.unit_number
 
+    ---@type miniloader.ModData
+    local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
+
     -- if tags were passed in and they contain a config, use that.
-    config = This.Config:createConfiguration(main, config, player_index)
+    config = This.Config:createConfiguration(main, config, player_index, inserter_data.nerf_mode)
     config.direction = config.direction or main.direction
     config.loader_type = config.loader_type or 'output'
 
     local loader = create_loader(main, config)
 
-    ---@type miniloader.ModData
-    local inserter_data = assert(prototypes.mod_data[const.name].data[main.name])
     local inserters, success = self:createInserters(main, inserter_data.speed_config, config)
 
     ---@type miniloader.Data

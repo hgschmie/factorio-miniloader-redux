@@ -62,21 +62,25 @@ local FIX_SPOIL_PRIO = {
 ---@param main LuaEntity
 ---@param parent_config miniloader.Config?
 ---@param player_index integer?
+---@param nerf_mode boolean
 ---@return miniloader.Config config
-function Config:createConfiguration(main, parent_config, player_index)
+function Config:createConfiguration(main, parent_config, player_index, nerf_mode)
     local config = get_default_config()
 
     self:configureFromInserter(main, config)
 
-    -- always copy the direction keys and nerf_mode if present
+    -- always copy the direction keys
     config.direction = parent_config and parent_config.direction
     config.loader_type = parent_config and parent_config.loader_type
-    config.nerf_mode = config.nerf_mode or (parent_config and parent_config.nerf_mode)
+
+    -- nerf mode is determined by the target inserter
+    config.nerf_mode = nerf_mode
 
     -- nerf mode just uses the defaults
     if config.nerf_mode then return config end
 
     if parent_config then
+        parent_config.nerf_mode = nil
         for key, parent_value in pairs(parent_config) do
             if config[key] ~= nil then config[key] = util.copy(parent_value) end
         end
