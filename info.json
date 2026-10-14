@@ -9,6 +9,7 @@
   "factorio_version": "2.1",
   "dependencies": [
     "base >= 2.1.7",
+    "(?) UltimateBeltsSpaceAgePlus",
     "(?) matts-logistics",
     "(?) Krastorio2 >= 2.0.7",
     "(?) boblogistics >= 2.1.0",

@@ -10,6 +10,7 @@ local SUPPORTED_MODS = {
     ['base'] = 'base',
     ['space-age'] = 'space_age',
     ['matts-logistics'] = 'matt',
+    ['UltimateBeltsSpaceAgePlus'] = 'ultimate_belts',
     ['Krastorio2'] = 'krastorio',
     ['bobelectronics'] = 'bob_electronics',
     ['boblogistics'] = 'bob',
@@ -85,12 +86,26 @@ local SPEED_SETTINGS = {
         stack_size_bonus = 5,
         power_correction = 1080/317, -- PRO-2
     },
+    speed_135 = {
+        items_per_second = 135,
+        rotation_speed = 0.375,
+        inserter_pairs = 1,
+        stack_size_bonus = 3,
+        power_correction = 1,
+    },
     speed_180 = {
         items_per_second = 180,
         rotation_speed = 0.5,
         inserter_pairs = 2,
         stack_size_bonus = 2,
         power_correction = 2070/703, -- Extreme fast
+    },
+    speed_225 = {
+        items_per_second = 225,
+        rotation_speed = 5/12,
+        inserter_pairs = 3,
+        stack_size_bonus = 2,
+        power_correction = 1,
     },
     speed_270 = {
         items_per_second = 270,
@@ -152,6 +167,10 @@ end
 
 local function check_matt()
     return game_mode.matt
+end
+
+local function check_ultimate_belts()
+    return game_mode.ultimate_belts
 end
 
 local function check_krastorio()
@@ -581,6 +600,181 @@ local loaders = {
                     }
                 end,
                 speed_config = SPEED_SETTINGS.speed_450,
+            }
+        end,
+    },
+
+    -- =================================================
+    -- == Ultimate Belts Space Age Plus
+    -- =================================================
+
+    ['ub-ultra-fast'] = {
+        condition = check_ultimate_belts,
+        data = function()
+            local previous = max_loader
+
+            return {
+                order = 'd[b]-f',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('00b30cFF'),
+                speed = data.raw['transport-belt']['ultra-fast-belt'].speed,
+                stack = STACKING_ENABLED,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = 'ultra-fast',
+                explosion_gfx = max_loader,
+                belt_gfx = 'ultra-fast',
+                ingredients = function()
+                    return select_data {
+                        ultimate_belts = {
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 1 },
+                            { type = 'item', name = 'ultra-fast-underground-belt',    amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                 amount = 4 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        ultimate_belts = { 'ultra-fast-logistics', const:name_from_prefix(previous), },
+                    }
+                end,
+                speed_config = SPEED_SETTINGS.speed_90,
+            }
+        end,
+    },
+    ['ub-extreme-fast'] = {
+        condition = check_ultimate_belts,
+        data = function()
+            local previous = 'ub-ultra-fast'
+
+            return {
+                order = 'd[b]-g',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('e00000FF'),
+                speed = data.raw['transport-belt']['extreme-fast-belt'].speed,
+                stack = STACKING_ENABLED,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = 'extreme-fast',
+                explosion_gfx = max_loader,
+                belt_gfx = 'extreme-fast',
+                ingredients = function()
+                    return select_data {
+                        ultimate_belts = {
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 2 },
+                            { type = 'item', name = 'extreme-fast-underground-belt',  amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                 amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        ultimate_belts = { 'extreme-fast-logistics', const:name_from_prefix(previous), },
+                    }
+                end,
+                speed_config = SPEED_SETTINGS.speed_135,
+            }
+        end,
+    },
+    ['ub-ultra-express'] = {
+        condition = check_ultimate_belts,
+        data = function()
+            local previous = 'ub-extreme-fast'
+
+            return {
+                order = 'd[b]-h',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('3604b5E8'),
+                speed = data.raw['transport-belt']['ultra-express-belt'].speed,
+                stack = STACKING_ENABLED,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = 'ultra-express',
+                explosion_gfx = max_loader,
+                belt_gfx = 'ultra-express',
+                ingredients = function()
+                    return select_data {
+                        ultimate_belts = {
+                            { type = 'item', name = const:name_from_prefix(previous), amount = 2 },
+                            { type = 'item', name = 'ultra-express-underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                 amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        ultimate_belts = { 'ultra-express-logistics', const:name_from_prefix(previous), },
+                    }
+                end,
+                speed_config = SPEED_SETTINGS.speed_180,
+            }
+        end,
+    },
+    ['ub-extreme-express'] = {
+        condition = check_ultimate_belts,
+        data = function()
+            local previous = 'ub-ultra-express'
+
+            return {
+                order = 'd[b]-i',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('002bffFF'),
+                speed = data.raw['transport-belt']['extreme-express-belt'].speed,
+                stack = STACKING_ENABLED,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = 'extreme-express',
+                explosion_gfx = max_loader,
+                belt_gfx = 'extreme-express',
+                ingredients = function()
+                    return select_data {
+                        ultimate_belts = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 2 },
+                            { type = 'item', name = 'extreme-express-underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        ultimate_belts = { 'extreme-express-logistics', const:name_from_prefix(previous), },
+                    }
+                end,
+                speed_config = SPEED_SETTINGS.speed_225,
+            }
+        end,
+    },
+    ['ub-ultimate'] = {
+        condition = check_ultimate_belts,
+        data = function()
+            local previous = 'ub-extreme-express'
+
+            return {
+                order = 'd[b]-j',
+                subgroup = 'belt',
+                stack_size = 50,
+                tint = util.color('00ffddD1'),
+                speed = data.raw['transport-belt']['ultimate-belt'].speed,
+                stack = STACKING_ENABLED,
+                upgrade_from = const:name_from_prefix(previous),
+                corpse_gfx = 'original-ultimate',
+                explosion_gfx = max_loader,
+                belt_gfx = 'original-ultimate',
+                ingredients = function()
+                    return select_data {
+                        ultimate_belts = {
+                            { type = 'item', name = const:name_from_prefix(previous),  amount = 2 },
+                            { type = 'item', name = 'original-ultimate-underground-belt', amount = 1 },
+                            { type = 'item', name = 'bulk-inserter',                   amount = 2 },
+                        },
+                    }
+                end,
+                prerequisites = function()
+                    return select_data {
+                        ultimate_belts = { 'ultimate-logistics', const:name_from_prefix(previous), },
+                    }
+                end,
+                speed_config = SPEED_SETTINGS.speed_270,
             }
         end,
     },
